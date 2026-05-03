@@ -2,11 +2,5 @@
   "version": 2,
   "rewrites": [
     { "source": "/api/:path*", "destination": "/api/index" }
-  ],
-  "crons": [
-    {
-      "path": "/api/cron",
-      "schedule": "*/2 * * * *"
-    }
   ]
 }
