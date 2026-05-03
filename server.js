@@ -166,6 +166,41 @@ app.get('/icons/icon-:size.png', (req, res) => {
   res.send(iconCache[size]);
 });
 
+// ── Yahoo Finance 인증: fc.yahoo.com 쿠키 + crumb (v7/quote 사용) ──────────
+const _YF = { crumb: null, cookie: null, expiry: 0 };
+
+async function getYahooCrumb() {
+  if (_YF.crumb && Date.now() < _YF.expiry) return _YF;
+  const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+  // Step 1: 쿠키 획득 (fc.yahoo.com — 헤더가 가벼워 overflow 없음)
+  const r1 = await fetch('https://fc.yahoo.com', { headers: { 'User-Agent': UA }, redirect: 'follow', timeout: 8000 });
+  _YF.cookie = (r1.headers.raw()['set-cookie'] || []).map(c => c.split(';')[0]).join('; ');
+  // Step 2: crumb 획득
+  const r2 = await fetch('https://query2.finance.yahoo.com/v1/test/getcrumb', {
+    headers: { 'User-Agent': UA, 'Cookie': _YF.cookie },
+    timeout: 5000,
+  });
+  _YF.crumb = await r2.text();
+  _YF.expiry = Date.now() + 50 * 60 * 1000; // 50분 캐시
+  return _YF;
+}
+
+async function fetchQuotesBatch(symbols) {
+  const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+  const { crumb, cookie } = await getYahooCrumb();
+  const r = await fetch(
+    `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${symbols.map(encodeURIComponent).join(',')}&crumb=${encodeURIComponent(crumb)}&fields=regularMarketPrice,shortName,currency,regularMarketChangePercent,regularMarketChange`,
+    { headers: { 'User-Agent': UA, 'Cookie': cookie, 'Accept': 'application/json' }, timeout: 10000 }
+  );
+  if (!r.ok) {
+    // 인증 만료 시 캐시 초기화 후 다음 호출에서 재시도
+    if (r.status === 401 || r.status === 403) _YF.expiry = 0;
+    throw new Error(`Yahoo Finance HTTP ${r.status}`);
+  }
+  const data = await r.json();
+  return data.quoteResponse?.result || [];
+}
+
 // ── Push Notification Helper ───────────────────────────────────────────────
 async function sendPush(subscription, payload) {
   try {
@@ -187,13 +222,9 @@ async function checkPrices() {
 
   let quotes;
   try {
-    const r = await fetch(
-      `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${[...allSymbols].join(',')}&fields=regularMarketPrice,shortName,currency`,
-      { headers: { 'User-Agent': 'Mozilla/5.0' }, timeout: 10000 }
-    );
-    const data = await r.json();
+    const results = await fetchQuotesBatch([...allSymbols]);
     quotes = {};
-    (data.quoteResponse?.result || []).forEach(q => { quotes[q.symbol] = q; });
+    results.forEach(q => { quotes[q.symbol] = q; });
   } catch (e) {
     console.error('Quote fetch error:', e.message);
     return { checked: 0, notified: 0, error: e.message };
@@ -332,11 +363,9 @@ app.get('/api/quote', async (req, res) => {
   const { symbols } = req.query;
   if (!symbols) return res.json({ quoteResponse: { result: [] } });
   try {
-    const r = await fetch(
-      `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(symbols)}&fields=regularMarketPrice,shortName,longName,currency,regularMarketChangePercent,regularMarketChange`,
-      { headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36' }, timeout: 8000 }
-    );
-    res.json(await r.json());
+    const symList = symbols.split(',').map(s => s.trim()).filter(Boolean);
+    const result = await fetchQuotesBatch(symList);
+    res.json({ quoteResponse: { result } });
   } catch (e) {
     res.status(502).json({ quoteResponse: { result: [] }, error: e.message });
   }
