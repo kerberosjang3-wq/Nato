@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <title>주식알람 - 관심가/목표가 알림</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#2563EB">
+
+  <!-- iOS PWA -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="주식알람">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+
+  <!-- Android -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="application-name" content="주식알람">
+
+  <!-- SEO -->
+  <meta name="description" content="관심 주식의 관심가와 목표가를 등록하고 실시간 알림을 받으세요">
+
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div id="app">
+  <!-- Header -->
+  <header class="header">
+    <span class="header-title">📈 주식알람</span>
+    <div class="header-actions">
+      <button class="icon-btn" id="refresh-btn" title="새로고침">
+        <span>🔄</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main content -->
+  <main class="main">
+    <!-- Home Screen -->
+    <section class="screen active" id="screen-home">
+      <!-- Notification banner -->
+      <div class="notif-banner hidden" id="notif-banner">
+        <div class="notif-banner-text">
+          <strong>🔔 알림 활성화</strong>
+          관심가/목표가 도달 시 즉시 알림을 받으세요
+        </div>
+        <button class="banner-btn" id="notif-enable-btn">허용</button>
+        <button class="banner-close" id="notif-close-btn">✕</button>
+      </div>
+
+      <!-- Install banner -->
+      <div class="install-banner hidden" id="install-banner">
+        <div class="install-icon">📲</div>
+        <div class="install-text">
+          <strong>앱으로 설치하기</strong>
+          <span>홈 화면에 추가하면 네이티브 앱처럼 사용할 수 있어요</span>
+        </div>
+        <button class="banner-btn" style="background:var(--primary);color:white;" id="install-btn">설치</button>
+        <button class="banner-close" id="install-close-btn">✕</button>
+      </div>
+
+      <!-- Stock list -->
+      <div id="home-list" class="stock-list"></div>
+    </section>
+
+    <!-- Search Screen -->
+    <section class="screen" id="screen-search">
+      <div class="search-wrap">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="search" class="search-input" id="search-input"
+            placeholder="종목명 또는 티커 입력 (예: 삼성전자, AAPL)"
+            autocomplete="off" autocorrect="off" spellcheck="false">
+          <button class="search-clear" id="search-clear">✕</button>
+        </div>
+      </div>
+      <div id="search-results"></div>
+    </section>
+
+    <!-- Settings Screen -->
+    <section class="screen" id="screen-settings">
+      <div id="settings-content"></div>
+    </section>
+  </main>
+
+  <!-- Bottom Navigation -->
+  <nav class="tab-bar">
+    <button class="tab-btn active" id="tab-home">
+      <span class="tab-icon">🏠</span>
+      <span>홈</span>
+    </button>
+    <button class="tab-btn" id="tab-search">
+      <span class="tab-icon">🔍</span>
+      <span>검색</span>
+    </button>
+    <button class="tab-btn" id="tab-settings">
+      <span class="tab-icon">⚙️</span>
+      <span>설정</span>
+    </button>
+  </nav>
+</div>
+
+<!-- Add/Edit Modal -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modal-title">종목 추가</div>
+    <div class="modal-sub" id="modal-sub">관심가와 목표가를 설정하세요</div>
+
+    <div class="modal-stock-info">
+      <div>
+        <div class="modal-stock-name" id="modal-stock-name">—</div>
+        <div class="modal-stock-symbol" id="modal-stock-symbol">—</div>
+      </div>
+      <div class="modal-current">
+        <div class="modal-current-label">현재가</div>
+        <div class="modal-current-price" id="modal-current-price">—</div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <div class="form-label">
+        <span class="label-dot alert"></span>
+        관심가 <span style="font-weight:400;font-size:12px">(이 가격 이하 도달 시 알림)</span>
+      </div>
+      <div class="form-input-wrap">
+        <input type="number" class="form-input" id="modal-alert-price"
+          placeholder="숫자 입력 (선택사항)" step="any" min="0">
+      </div>
+      <div class="form-input-hint" id="modal-hint-alert"></div>
+    </div>
+
+    <div class="form-group">
+      <div class="form-label">
+        <span class="label-dot target"></span>
+        목표가 <span style="font-weight:400;font-size:12px">(이 가격 이상 도달 시 알림)</span>
+      </div>
+      <div class="form-input-wrap">
+        <input type="number" class="form-input" id="modal-target-price"
+          placeholder="숫자 입력 (선택사항)" step="any" min="0">
+      </div>
+      <div class="form-input-hint" id="modal-hint-target"></div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-cancel" id="modal-cancel">취소</button>
+      <button class="btn-save" id="modal-save">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script src="/js/app.js"></script>
+</body>
+</html>
