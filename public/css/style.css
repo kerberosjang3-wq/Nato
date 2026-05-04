@@ -256,29 +256,50 @@ html, body {
 /* ── Bottom Nav ── */
 .tab-bar {
   height: calc(var(--tab-h) + var(--safe-bottom));
-  padding-bottom: var(--safe-bottom);
   background: var(--tab-bg);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border-top: 1px solid var(--glass-border);
   display: flex;
   flex-shrink: 0;
   position: sticky;
   bottom: 0;
   z-index: 100;
+  padding-bottom: calc(var(--safe-bottom) / 2); /* Distribute safe area more naturally */
 }
 
 .tab-btn {
-  flex: 1; display: flex; flex-direction: column;
-  align-items: center; justify-content: center; gap: 4px;
-  border: none; background: none; cursor: pointer;
-  color: var(--text-sub); font-size: 11px; font-weight: 600;
-  transition: all 0.2s; padding: 0;
+  flex: 1; 
+  display: flex; 
+  flex-direction: column;
+  align-items: center; 
+  justify-content: center; 
+  gap: 4px;
+  border: none; 
+  background: none; 
+  cursor: pointer;
+  color: var(--text-sub); 
+  font-size: 10px; 
+  font-weight: 600;
+  transition: all 0.25s ease; 
+  padding-top: 6px; /* Balance the top space */
 }
-.tab-btn .tab-icon { font-size: 22px; transition: transform 0.2s; }
-.tab-btn.active { color: var(--primary); }
-.tab-btn.active .tab-icon { transform: translateY(-2px); }
-.tab-btn:active .tab-icon { transform: scale(0.9); }
+.tab-btn .tab-icon { 
+  font-size: 24px; 
+  transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  opacity: 0.6;
+}
+.tab-btn.active { 
+  color: var(--primary); 
+}
+.tab-btn.active .tab-icon { 
+  transform: translateY(-2px); 
+  opacity: 1;
+  filter: drop-shadow(0 0 8px var(--primary-glow));
+}
+.tab-btn:active .tab-icon { 
+  transform: scale(0.85); 
+}
 
 /* ── Modal ── */
 .modal-overlay {
