@@ -517,13 +517,18 @@ async function confirmDelete(event, symbol) {
   }
 }
 
+let isSwiping = false;
+
 function handleCardTap(symbol) {
-  // 스와이프 방식 도입으로 탭 시 액션 토글 기능은 제거하거나
-  // 스와이프된 상태라면 닫는 역할로 변경
+  if (isSwiping) return; // 스와이프 직후 발생하는 클릭 무시
+  
   const card = document.querySelector(`.stock-card[data-symbol="${symbol}"]`);
   if (!card) return;
+  
+  // 스와이프된 상태라면 탭 시 닫기
   if (card.classList.contains('swiped')) {
     card.classList.remove('swiped');
+    if (currentSwipedCard === card) currentSwipedCard = null;
   }
 }
 
@@ -541,6 +546,17 @@ function setupSwipeEvents() {
     if (!card) return;
     swipeStart.x = e.touches[0].clientX;
     swipeStart.y = e.touches[0].clientY;
+    isSwiping = false;
+  });
+
+  watchlist.addEventListener('touchmove', e => {
+    const diffX = swipeStart.x - e.touches[0].clientX;
+    const diffY = Math.abs(swipeStart.y - e.touches[0].clientY);
+    
+    // 가로 이동이 일정 수준 이상이면 스와이프 중으로 간주
+    if (Math.abs(diffX) > 10 && diffY < 20) {
+      isSwiping = true;
+    }
   }, { passive: true });
 
   watchlist.addEventListener('touchend', e => {
@@ -550,14 +566,15 @@ function setupSwipeEvents() {
     const diffX = swipeStart.x - e.changedTouches[0].clientX;
     const diffY = Math.abs(swipeStart.y - e.changedTouches[0].clientY);
 
-    // 왼쪽으로 50px 이상 스와이프 시 (세로 이동이 적을 때)
-    if (diffX > 50 && diffY < 40) {
+    // 왼쪽으로 40px 이상 스와이프 시 (세로 이동이 적을 때)
+    if (diffX > 40 && diffY < 50) {
       if (currentSwipedCard && currentSwipedCard !== card) {
         currentSwipedCard.classList.remove('swiped');
       }
       
       card.classList.add('swiped');
       currentSwipedCard = card;
+      isSwiping = true;
 
       if (swipeTimer) clearTimeout(swipeTimer);
       swipeTimer = setTimeout(() => {
@@ -571,8 +588,12 @@ function setupSwipeEvents() {
     else if (diffX < -30 && card.classList.contains('swiped')) {
       card.classList.remove('swiped');
       currentSwipedCard = null;
+      isSwiping = true;
     }
-  }, { passive: true });
+
+    // 클릭 이벤트 무시를 위해 약간의 지연 후 플래그 해제
+    setTimeout(() => { isSwiping = false; }, 100);
+  });
 }
 
 function formatPriceInputPlain(price, currency) {

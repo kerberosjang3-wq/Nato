@@ -191,8 +191,7 @@ html, body {
   position: relative;
   background: var(--bg-card);
   border: 1px solid var(--border);
-  border-radius: 20px;
-  /* padding moved to .stock-card-main */
+  border-radius: 16px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
   user-select: none;
@@ -200,10 +199,10 @@ html, body {
 }
 
 .stock-card-main {
-  padding: 20px;
+  padding: 12px 16px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 10px;
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   background: var(--bg-card);
   position: relative;
@@ -219,40 +218,40 @@ html, body {
 .stock-card.alert-reached { background: linear-gradient(135deg, var(--bg-card), rgba(255, 171, 0, 0.05)); border-color: var(--warning); }
 .stock-card.target-reached { background: linear-gradient(135deg, var(--bg-card), rgba(0, 208, 132, 0.05)); border-color: var(--success); }
 
-.stock-card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
-.stock-name { font-size: 17px; font-weight: 700; color: var(--text); letter-spacing: -0.01em; }
-.stock-symbol { font-size: 12px; font-weight: 600; color: var(--text-sub); margin-top: 2px; text-transform: uppercase; }
+.stock-card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; }
+.stock-name { font-size: 15px; font-weight: 700; color: var(--text); letter-spacing: -0.01em; }
+.stock-symbol { font-size: 11px; font-weight: 600; color: var(--text-sub); margin-top: 1px; text-transform: uppercase; }
 
 .stock-price-wrap { text-align: right; }
-.stock-price { font-size: 20px; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
+.stock-price { font-size: 17px; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
 .stock-change {
-  font-size: 12px; font-weight: 700; margin-top: 4px;
-  display: inline-flex; align-items: center; gap: 4px;
-  padding: 4px 8px; border-radius: 8px;
+  font-size: 11px; font-weight: 700; margin-top: 2px;
+  display: inline-flex; align-items: center; gap: 3px;
+  padding: 3px 6px; border-radius: 6px;
 }
 .stock-change.up { color: var(--stock-up); background: rgba(255,82,82,0.12); }
 .stock-change.down { color: var(--stock-down); background: rgba(62,123,250,0.12); }
 .stock-change.flat { color: var(--text-sub); background: var(--bg-elevated); }
 
-.stock-targets { display: flex; gap: 10px; margin-bottom: 16px; }
+.stock-targets { display: flex; gap: 8px; margin-bottom: 2px; }
 .target-badge {
   flex: 1; background: var(--bg-elevated);
-  border-radius: 12px; padding: 10px; text-align: center;
+  border-radius: 10px; padding: 6px 8px; text-align: center;
   border: 1px solid var(--border);
   transition: border-color 0.2s;
 }
-.target-badge-label { font-size: 10px; font-weight: 700; color: var(--text-sub); margin-bottom: 4px; text-transform: uppercase; }
-.target-badge-value { font-size: 14px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
+.target-badge-label { font-size: 9px; font-weight: 700; color: var(--text-sub); margin-bottom: 2px; text-transform: uppercase; }
+.target-badge-value { font-size: 13px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
 .target-badge.alert .target-badge-value { color: var(--warning); }
 .target-badge.goal .target-badge-value { color: var(--success); }
-.target-badge.unset .target-badge-value { color: var(--text-sub); font-weight: 400; font-size: 12px; }
+.target-badge.unset .target-badge-value { color: var(--text-sub); font-weight: 400; font-size: 11px; }
 
 /* Progress bar */
-.progress-wrap { margin-top: 4px; }
-.progress-labels { display: flex; justify-content: space-between; font-size: 10px; font-weight: 600; color: var(--text-sub); margin-bottom: 6px; }
-.progress-bar { height: 6px; background: var(--bg-elevated); border-radius: 10px; overflow: hidden; position: relative; }
-.progress-fill { height: 100%; border-radius: 10px; background: linear-gradient(90deg, var(--warning), var(--primary), var(--success)); transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
-.progress-cursor { position: absolute; top: 0; width: 6px; height: 6px; background: white; border-radius: 50%; transform: translateX(-50%); box-shadow: 0 0 10px rgba(255,255,255,0.8); }
+.progress-wrap { margin-top: 2px; }
+.progress-labels { display: flex; justify-content: space-between; font-size: 9px; font-weight: 600; color: var(--text-sub); margin-bottom: 4px; }
+.progress-bar { height: 4px; background: var(--bg-elevated); border-radius: 8px; overflow: hidden; position: relative; }
+.progress-fill { height: 100%; border-radius: 8px; background: linear-gradient(90deg, var(--warning), var(--primary), var(--success)); transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.progress-cursor { position: absolute; top: 0; width: 4px; height: 4px; background: white; border-radius: 50%; transform: translateX(-50%); box-shadow: 0 0 8px rgba(255,255,255,0.8); }
 
 .card-actions {
   position: absolute;
@@ -482,10 +481,10 @@ html, body {
 
 /* ── Reached Badges ── */
 .reached-badge {
-  position: absolute; top: 16px; right: 16px;
-  font-size: 10px; font-weight: 800; padding: 4px 10px;
-  border-radius: 8px; text-transform: uppercase; letter-spacing: 0.5px;
-  display: flex; align-items: center; gap: 4px;
+  position: absolute; top: 12px; right: 12px;
+  font-size: 9px; font-weight: 800; padding: 3px 8px;
+  border-radius: 6px; text-transform: uppercase; letter-spacing: 0.3px;
+  display: flex; align-items: center; gap: 3px;
 }
 .reached-badge.alert { background: rgba(255,171,0,0.15); color: var(--warning); border: 1px solid rgba(255,171,0,0.2); }
 .reached-badge.target { background: rgba(0,208,132,0.15); color: var(--success); border: 1px solid rgba(0,208,132,0.2); }
@@ -493,7 +492,7 @@ html, body {
 /* Skeleton */
 .skeleton { background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-elevated) 50%, var(--bg-card) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 14px; }
 @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
-.skeleton-card { height: 160px; margin-bottom: 16px; }
+.skeleton-card { height: 110px; margin-bottom: 12px; }
 
 /* Scrollbar */
 ::-webkit-scrollbar { width: 0; background: transparent; }
