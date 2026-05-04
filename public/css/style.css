@@ -284,8 +284,8 @@ html, body {
   box-shadow: 0 2px 8px rgba(0,0,0,0.15);
 }
 
-.card-btn.edit { background: #e0f2fe; color: #0284c7; }
-.card-btn.del { background: #fee2e2; color: #dc2626; }
+.card-btn.edit { background: none; color: #0284c7; }
+.card-btn.del { background: none; color: #dc2626; }
 .card-btn:active { transform: scale(0.9); }
 
 /* ── Bottom Nav ── */
