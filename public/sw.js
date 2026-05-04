@@ -39,7 +39,7 @@ self.addEventListener('fetch', e => {
 self.addEventListener('push', e => {
   let data = {};
   try { data = e.data?.json() ?? {}; } catch (_) {}
-  const { title = '주식알람', body = '', tag = 'stock', icon = '/icons/icon-192.png' } = data;
+  const { title = 'NATO', body = '', tag = 'stock', icon = '/icons/logo.png' } = data;
   e.waitUntil(
     self.registration.showNotification(title, {
       body,

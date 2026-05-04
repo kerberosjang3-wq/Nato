@@ -417,7 +417,7 @@ function renderSettings() {
     <div class="section-title">앱 정보</div>
     <div class="info-card">
       <div class="info-row">
-        <div class="info-row-label"><i class="ph ph-info info-row-icon"></i>주식알람 PWA</div>
+        <div class="info-row-label"><i class="ph ph-info info-row-icon"></i>NATO</div>
         <div class="info-row-value">v1.1.0</div>
       </div>
       <div class="info-row">

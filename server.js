@@ -345,72 +345,14 @@ app.delete('/api/watchlist/:symbol', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// 한국 주요 종목 내장 DB (한글 검색 지원용)
-const KR_STOCKS = [
-  { symbol: '005930.KS', shortname: '삼성전자', longname: '삼성전자', exchange: 'KSC', quoteType: 'EQUITY' },
-  { symbol: '000660.KS', shortname: 'SK하이닉스', longname: 'SK하이닉스', exchange: 'KSC', quoteType: 'EQUITY' },
-  { symbol: '035720.KS', shortname: '카카오', longname: '카카오', exchange: 'KSC', quoteType: 'EQUITY' },
-  { symbol: '035420.KS', shortname: 'NAVER', longname: 'NAVER', exchange: 'KSC', quoteType: 'EQUITY' },
-  { symbol: '005380.KS', shortname: '현대차', longname: '현대자동차', exchange: 'KSC', quoteType: 'EQUITY' },
-  { symbol: '000270.KS', shortname: '기아', longname: '기아', exchange: 'KSC', quoteType: 'EQUITY' },
-  { symbol: '068270.KS', shortname: '셀트리온', longname: '셀트리온', exchange: 'KSC', quoteType: 'EQUITY' },
-  { symbol: '207940.KS', shortname: '삼성바이오로직스', longname: '삼성바이오로직스', exchange: 'KSC', quoteType: 'EQUITY' },
-  { symbol: '006400.KS', shortname: '삼성SDI', longname: '삼성SDI', exchange: 'KSC', quoteType: 'EQUITY' },
-  { symbol: '051910.KS', shortname: 'LG화학', longname: 'LG화학', exchange: 'KSC', quoteType: 'EQUITY' },
-  { symbol: '003550.KS', shortname: 'LG', longname: 'LG', exchange: 'KSC', quoteType: 'EQUITY' },
-  { symbol: '003670.KS', shortname: '포스코퓨처엠', longname: '포스코퓨처엠', exchange: 'KSC', quoteType: 'EQUITY' },
-  { symbol: '028260.KS', shortname: '삼성물산', longname: '삼성물산', exchange: 'KSC', quoteType: 'EQUITY' },
-  { symbol: '012330.KS', shortname: '현대모비스', longname: '현대모비스', exchange: 'KSC', quoteType: 'EQUITY' },
-  { symbol: '066570.KS', shortname: 'LG전자', longname: 'LG전자', exchange: 'KSC', quoteType: 'EQUITY' },
-  { symbol: '105560.KS', shortname: 'KB금융', longname: 'KB금융', exchange: 'KSC', quoteType: 'EQUITY' },
-  { symbol: '055550.KS', shortname: '신한지주', longname: '신한지주', exchange: 'KSC', quoteType: 'EQUITY' },
-  { symbol: '086790.KS', shortname: '하나금융지주', longname: '하나금융지주', exchange: 'KSC', quoteType: 'EQUITY' },
-  { symbol: '316140.KS', shortname: '우리금융지주', longname: '우리금융지주', exchange: 'KSC', quoteType: 'EQUITY' },
-  { symbol: '003490.KS', shortname: '대한항공', longname: '대한항공', exchange: 'KSC', quoteType: 'EQUITY' },
-  { symbol: '018260.KS', shortname: '삼성에스디에스', longname: '삼성SDS', exchange: 'KSC', quoteType: 'EQUITY' },
-  { symbol: '009830.KS', shortname: '한화솔루션', longname: '한화솔루션', exchange: 'KSC', quoteType: 'EQUITY' },
-  { symbol: '011170.KS', shortname: '롯데케미칼', longname: '롯데케미칼', exchange: 'KSC', quoteType: 'EQUITY' },
-  { symbol: '010130.KS', shortname: '고려아연', longname: '고려아연', exchange: 'KSC', quoteType: 'EQUITY' },
-  { symbol: '034730.KS', shortname: 'SK', longname: 'SK', exchange: 'KSC', quoteType: 'EQUITY' },
-  { symbol: '017670.KS', shortname: 'SK텔레콤', longname: 'SK텔레콤', exchange: 'KSC', quoteType: 'EQUITY' },
-  { symbol: '030200.KS', shortname: 'KT', longname: 'KT', exchange: 'KSC', quoteType: 'EQUITY' },
-  { symbol: '032830.KS', shortname: '삼성생명', longname: '삼성생명', exchange: 'KSC', quoteType: 'EQUITY' },
-  { symbol: '011200.KS', shortname: 'HMM', longname: 'HMM', exchange: 'KSC', quoteType: 'EQUITY' },
-  { symbol: '096770.KS', shortname: 'SK이노베이션', longname: 'SK이노베이션', exchange: 'KSC', quoteType: 'EQUITY' },
-  { symbol: '009150.KS', shortname: '삼성전기', longname: '삼성전기', exchange: 'KSC', quoteType: 'EQUITY' },
-  { symbol: '000810.KS', shortname: '삼성화재', longname: '삼성화재', exchange: 'KSC', quoteType: 'EQUITY' },
-  { symbol: '047810.KS', shortname: '한국항공우주', longname: '한국항공우주', exchange: 'KSC', quoteType: 'EQUITY' },
-  { symbol: '042700.KS', shortname: '한미반도체', longname: '한미반도체', exchange: 'KSC', quoteType: 'EQUITY' },
-  { symbol: '377300.KS', shortname: '카카오페이', longname: '카카오페이', exchange: 'KSC', quoteType: 'EQUITY' },
-  { symbol: '035900.KS', shortname: 'JYP Ent.', longname: 'JYP엔터테인먼트', exchange: 'KSC', quoteType: 'EQUITY' },
-  { symbol: '352820.KS', shortname: '하이브', longname: '하이브', exchange: 'KSC', quoteType: 'EQUITY' },
-  { symbol: '041510.KS', shortname: 'SM엔터테인먼트', longname: 'SM엔터테인먼트', exchange: 'KSC', quoteType: 'EQUITY' },
-  { symbol: '112040.KS', shortname: '위메이드', longname: '위메이드', exchange: 'KSC', quoteType: 'EQUITY' },
-  { symbol: '251270.KS', shortname: '넷마블', longname: '넷마블', exchange: 'KSC', quoteType: 'EQUITY' },
-  { symbol: '036570.KS', shortname: 'NC소프트', longname: 'NC소프트', exchange: 'KSC', quoteType: 'EQUITY' },
-  { symbol: '263750.KS', shortname: '펄어비스', longname: '펄어비스', exchange: 'KSC', quoteType: 'EQUITY' },
-  { symbol: '293490.KS', shortname: '카카오게임즈', longname: '카카오게임즈', exchange: 'KSC', quoteType: 'EQUITY' },
-  { symbol: '259960.KS', shortname: '크래프톤', longname: '크래프톤', exchange: 'KSC', quoteType: 'EQUITY' },
-  { symbol: '000100.KS', shortname: '유한양행', longname: '유한양행', exchange: 'KSC', quoteType: 'EQUITY' },
-  { symbol: '128940.KS', shortname: '한미약품', longname: '한미약품', exchange: 'KSC', quoteType: 'EQUITY' },
-  { symbol: '326030.KS', shortname: 'SK바이오팜', longname: 'SK바이오팜', exchange: 'KSC', quoteType: 'EQUITY' },
-  { symbol: '091990.KS', shortname: '셀트리온헬스케어', longname: '셀트리온헬스케어', exchange: 'KSC', quoteType: 'EQUITY' },
-  { symbol: '196170.KS', shortname: '알테오젠', longname: '알테오젠', exchange: 'KSC', quoteType: 'EQUITY' },
-  { symbol: '000080.KS', shortname: '하이트진로', longname: '하이트진로', exchange: 'KSC', quoteType: 'EQUITY' },
-  { symbol: '271560.KS', shortname: '오리온', longname: '오리온', exchange: 'KSC', quoteType: 'EQUITY' },
-  { symbol: '097950.KS', shortname: 'CJ제일제당', longname: 'CJ제일제당', exchange: 'KSC', quoteType: 'EQUITY' },
-  { symbol: '051900.KS', shortname: 'LG생활건강', longname: 'LG생활건강', exchange: 'KSC', quoteType: 'EQUITY' },
-  { symbol: '090430.KS', shortname: '아모레퍼시픽', longname: '아모레퍼시픽', exchange: 'KSC', quoteType: 'EQUITY' },
-  { symbol: '004020.KS', shortname: '현대제철', longname: '현대제철', exchange: 'KSC', quoteType: 'EQUITY' },
-  { symbol: '005490.KS', shortname: 'POSCO홀딩스', longname: 'POSCO홀딩스', exchange: 'KSC', quoteType: 'EQUITY' },
-  { symbol: '000720.KS', shortname: '현대건설', longname: '현대건설', exchange: 'KSC', quoteType: 'EQUITY' },
-  { symbol: '006360.KS', shortname: 'GS건설', longname: 'GS건설', exchange: 'KSC', quoteType: 'EQUITY' },
-  { symbol: '010950.KS', shortname: 'S-Oil', longname: 'S-Oil', exchange: 'KSC', quoteType: 'EQUITY' },
-  { symbol: '015760.KS', shortname: '한국전력', longname: '한국전력', exchange: 'KSC', quoteType: 'EQUITY' },
-  { symbol: '020150.KS', shortname: '롯데에너지머티리얼즈', longname: '롯데에너지머티리얼즈', exchange: 'KSC', quoteType: 'EQUITY' },
-  { symbol: '247540.KS', shortname: '에코프로비엠', longname: '에코프로비엠', exchange: 'KSC', quoteType: 'EQUITY' },
-  { symbol: '086280.KS', shortname: '현대글로비스', longname: '현대글로비스', exchange: 'KSC', quoteType: 'EQUITY' },
-];
+// 한국 주요 종목 DB (kr-stocks.json에서 로드)
+const KR_STOCKS = require('./kr-stocks.json').map(s => ({
+  symbol: s.s,
+  shortname: s.n,
+  longname: s.n,
+  exchange: s.s.endsWith('.KQ') ? 'KOQ' : 'KSC',
+  quoteType: 'EQUITY',
+}));
 
 function searchKrStocks(q) {
   const lower = q.toLowerCase().trim();
@@ -423,52 +365,6 @@ function searchKrStocks(q) {
 
 const SEARCH_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
 
-function parseNaverItems(items, isKosdaq) {
-  return (items || []).map(item => ({
-    symbol: item[1] + (isKosdaq ? '.KQ' : '.KS'),
-    shortname: item[0],
-    longname: item[0],
-    exchange: isKosdaq ? 'KOQ' : 'KSC',
-    quoteType: 'EQUITY',
-  })).filter(s => s.shortname && s.symbol.length > 3);
-}
-
-async function searchNaverFinance(q) {
-  const opts = { headers: { 'User-Agent': SEARCH_UA, 'Referer': 'https://finance.naver.com/' }, timeout: 5000 };
-  const enc = encodeURIComponent(q);
-  // KOSPI(stock)와 KOSDAQ(cosd) 병렬 검색
-  const [kospiRes, kosdaqRes] = await Promise.all([
-    fetch(`https://ac.finance.naver.com/ac?q=${enc}&q_enc=UTF-8&target=stock`, opts),
-    fetch(`https://ac.finance.naver.com/ac?q=${enc}&q_enc=UTF-8&target=cosd`, opts),
-  ]);
-  const kospiItems  = kospiRes.ok  ? (await kospiRes.json()).items  || [] : [];
-  const kosdaqItems = kosdaqRes.ok ? (await kosdaqRes.json()).items || [] : [];
-
-  const kospiResults  = parseNaverItems(kospiItems,  false);
-  const kosdaqResults = parseNaverItems(kosdaqItems, true);
-
-  // 합치고 중복 제거 후 최대 10개
-  const seen = new Set();
-  return [...kospiResults, ...kosdaqResults].filter(s => {
-    if (seen.has(s.symbol)) return false;
-    seen.add(s.symbol);
-    return true;
-  }).slice(0, 10);
-}
-
-app.get('/api/debug-naver', async (req, res) => {
-  const q = req.query.q || '에코';
-  const enc = encodeURIComponent(q);
-  const opts = { headers: { 'User-Agent': SEARCH_UA, 'Referer': 'https://finance.naver.com/' }, timeout: 5000 };
-  const [r1, r2] = await Promise.all([
-    fetch(`https://ac.finance.naver.com/ac?q=${enc}&q_enc=UTF-8&target=stock`, opts),
-    fetch(`https://ac.finance.naver.com/ac?q=${enc}&q_enc=UTF-8&target=cosd`, opts),
-  ]);
-  res.json({
-    stock: await r1.json(),
-    cosd: await r2.json(),
-  });
-});
 
 app.get('/api/search', async (req, res) => {
   const { q } = req.query;
@@ -477,11 +373,7 @@ app.get('/api/search', async (req, res) => {
   const hasKorean = /[\uAC00-\uD7A3]/.test(q);
 
   if (hasKorean) {
-    // 한글 검색: 네이버 금융 자동완성 API → 내장 DB 폴백
-    try {
-      const results = await searchNaverFinance(q);
-      if (results.length) return res.json({ quotes: results });
-    } catch {}
+    // 한글 검색: 로컬 DB (Naver API는 Vercel에서 geo-block됨)
     return res.json({ quotes: searchKrStocks(q) });
   }
 
@@ -535,7 +427,7 @@ module.exports = app;
 if (require.main === module) {
   const PORT = process.env.PORT || 3000;
   app.listen(PORT, () => {
-    console.log(`\n🚀 주식알람 PWA: http://localhost:${PORT}`);
+    console.log(`\n🚀 NATO: http://localhost:${PORT}`);
     console.log(`   저장소: ${process.env.UPSTASH_REDIS_REST_URL ? 'Upstash Redis' : 'data.json'}\n`);
   });
   // 로컬에서는 node-cron으로 2분마다 자동 체크

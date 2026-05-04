@@ -1,7 +1,7 @@
 {
-  "name": "stock-alert-pwa",
-  "version": "1.0.0",
-  "description": "주식 관심가/목표가 알람 PWA",
+  "name": "nato",
+  "version": "1.1.0",
+  "description": "NATO - 주식 관심가/목표가 알림",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
