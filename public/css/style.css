@@ -27,7 +27,7 @@
   --radius-lg: 24px;
   
   --header-h: clamp(56px, 10vh, 72px);
-  --tab-h: clamp(22px, 3.5vh, 28px);
+  --tab-h: clamp(14px, 2.5vh, 20px);
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
@@ -267,12 +267,6 @@ html, body {
 .target-badge.goal .target-badge-value { color: var(--success); }
 .target-badge.unset .target-badge-value { color: var(--text-sub); font-weight: 400; font-size: 10px; }
 
-/* Progress bar */
-.progress-wrap { margin-top: 1px; }
-.progress-labels { display: flex; justify-content: space-between; font-size: 8px; font-weight: 600; color: var(--text-sub); margin-bottom: 2px; }
-.progress-bar { height: 3px; background: var(--bg-elevated); border-radius: 8px; overflow: hidden; position: relative; }
-.progress-fill { height: 100%; border-radius: 8px; background: linear-gradient(90deg, var(--warning), var(--primary), var(--success)); transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
-.progress-cursor { position: absolute; top: 0; width: 3px; height: 3px; background: white; border-radius: 50%; transform: translateX(-50%); box-shadow: 0 0 6px rgba(255,255,255,0.8); }
 
 .card-actions {
   position: absolute;
@@ -345,7 +339,7 @@ html, body {
   padding-top: 0;
 }
 .tab-btn .tab-icon {
-  font-size: 18px;
+  font-size: 15px;
   transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   opacity: 0.6;
 }

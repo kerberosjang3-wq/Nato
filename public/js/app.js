@@ -252,24 +252,6 @@ function getChangeStr(pct) {
   return `${icon} ${Math.abs(pct).toFixed(2)}%`;
 }
 
-function renderProgress(current, alertPrice, targetPrice) {
-  if (!alertPrice && !targetPrice) return '';
-  const lo = alertPrice || (current * 0.9);
-  const hi = targetPrice || (current * 1.1);
-  if (hi <= lo) return '';
-  const pct = Math.max(0, Math.min(100, ((current - lo) / (hi - lo)) * 100));
-  return `
-    <div class="progress-wrap">
-      <div class="progress-labels">
-        <span>${alertPrice ? '관심가' : ''}</span>
-        <span>${targetPrice ? '목표가' : ''}</span>
-      </div>
-      <div class="progress-bar">
-        <div class="progress-fill" style="width:${pct}%"></div>
-        <div class="progress-cursor" style="left:${pct}%"></div>
-      </div>
-    </div>`;
-}
 
 function renderStockCard(item) {
   if (!item || !item.symbol) return ''; // Safety check
@@ -311,7 +293,6 @@ function renderStockCard(item) {
           <div class="target-badge-value">${item.targetPrice ? formatPrice(item.targetPrice, currency) : '미설정'}</div>
         </div>
       </div>
-      ${renderProgress(price, item.alertPrice, item.targetPrice)}
     </div>
     <div class="card-actions">
       <button class="card-btn edit" onclick="openEditModal(event,'${item.symbol}')"><i class="ph ph-pencil-simple"></i></button>
