@@ -48,20 +48,22 @@ async function getStore() {
     try {
       const raw = await redisCmd('GET', 'stock-alarm-v1');
       const data = raw ? JSON.parse(raw) : {};
-      return { 
-        watchlists: data.watchlists || {}, 
-        subscriptions: data.subscriptions || {} 
+      return {
+        watchlists: data.watchlists || {},
+        subscriptions: data.subscriptions || {},
+        portfolios: data.portfolios || {}
       };
     } catch (e) {
-      return { watchlists: {}, subscriptions: {} };
+      return { watchlists: {}, subscriptions: {}, portfolios: {} };
     }
   }
   if (!_fileCache) {
     try {
       _fileCache = fs.existsSync(DATA_FILE) ? JSON.parse(fs.readFileSync(DATA_FILE, 'utf8')) : null;
     } catch (e) {}
-    if (!_fileCache) _fileCache = { watchlists: {}, subscriptions: {} };
+    if (!_fileCache) _fileCache = { watchlists: {}, subscriptions: {}, portfolios: {} };
   }
+  if (!_fileCache.portfolios) _fileCache.portfolios = {};
   return _fileCache;
 }
 
