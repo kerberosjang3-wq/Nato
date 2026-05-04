@@ -57,6 +57,7 @@ const state = {
   currentTab: 'home',
   searchResults: [],
   searching: false,
+  fetchingPrices: false,
   installPrompt: null,
   notifBannerClosed: false,
   installBannerClosed: false,
@@ -131,26 +132,34 @@ async function doSearch(q) {
   state.searching = true;
   renderSearchResults();
   searchTimer = setTimeout(async () => {
-    // 1단계: 종목 검색 (실패 시 빈 결과 표시)
+    // 1단계: 종목 검색 결과 즉시 표시
     try {
       const data = await apiFetch(`/api/search?q=${encodeURIComponent(q)}`);
       state.searchResults = (data.quotes || []).filter(r => r.quoteType === 'EQUITY' || r.quoteType === 'ETF');
-    } catch {
+      state.searching = false;
+      renderSearchResults(); 
+    } catch (e) {
+      console.warn('Search failed:', e);
       state.searchResults = [];
       state.searching = false;
       renderSearchResults();
       return;
     }
-    // 2단계: 가격 조회 (실패해도 검색 결과는 그대로 표시)
-    try {
-      const syms = state.searchResults.slice(0, 10).map(r => encodeURIComponent(r.symbol)).join(',');
-      if (syms) {
+
+    // 2단계: 주가 정보 추가 조회
+    if (state.searchResults.length > 0) {
+      state.fetchingPrices = true;
+      try {
+        const syms = state.searchResults.slice(0, 10).map(r => encodeURIComponent(r.symbol)).join(',');
         const pd = await apiFetch(`/api/quote?symbols=${syms}`);
         const priceMap = {};
         (pd.quoteResponse?.result || []).forEach(p => { 
-          if (p.symbol) priceMap[p.symbol] = p; 
+          if (p.symbol) priceMap[p.symbol.toUpperCase()] = p; 
         });
-        state.searchResults = state.searchResults.map(r => ({ ...r, quote: priceMap[r.symbol] }));
+        state.searchResults = state.searchResults.map(r => ({ 
+          ...r, 
+          quote: priceMap[r.symbol.toUpperCase()] 
+        }));
       }
     } catch (e) { console.warn('Search price fetch failed:', e); }
     state.searching = false;
@@ -379,7 +388,7 @@ function renderSearchResults() {
         </div>
       </div>
       <div class="result-right">
-        <div class="result-price">${price ? formatPrice(price, currency) : '—'}</div>
+        <div class="result-price">${price ? formatPrice(price, currency) : (state.fetchingPrices ? '<span style="font-size:11px;color:var(--primary);font-weight:500">가격 로딩 중...</span>' : '—')}</div>
         <div class="result-change ${cls}">${getChangeStr(pct)}</div>
       </div>
       <button class="add-btn ${added ? 'added' : ''}" onclick="event.stopPropagation();openAddModal('${r.symbol}','${(r.longname || r.shortname || r.symbol).replace(/'/g, '')}','${currency}')">
