@@ -145,10 +145,13 @@ app.get('/api/quote', async (req, res) => {
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok', env: process.env.VERCEL ? 'vercel' : 'local' }));
 
-// 정적 파일 미들웨어 (로컬 전용)
-if (!process.env.VERCEL) {
-  app.use(express.static(path.join(__dirname, 'public')));
-}
+// 정적 파일 미들웨어
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Root route (Fallback)
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public/index.html'));
+});
 
 module.exports = app;
 
