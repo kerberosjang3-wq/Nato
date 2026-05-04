@@ -520,12 +520,14 @@ async function confirmDelete(event, symbol) {
 let isSwiping = false;
 
 function handleCardTap(symbol) {
-  if (isSwiping) return; // 스와이프 직후 발생하는 클릭 무시
+  if (isSwiping) {
+    console.log('Tap ignored due to swipe');
+    return;
+  }
   
   const card = document.querySelector(`.stock-card[data-symbol="${symbol}"]`);
   if (!card) return;
   
-  // 스와이프된 상태라면 탭 시 닫기
   if (card.classList.contains('swiped')) {
     card.classList.remove('swiped');
     if (currentSwipedCard === card) currentSwipedCard = null;
@@ -541,37 +543,25 @@ function setupSwipeEvents() {
   const watchlist = document.getElementById('watchlist');
   if (!watchlist) return;
 
-  watchlist.addEventListener('touchstart', e => {
-    const card = e.target.closest('.stock-card');
+  const handleStart = (x, y, target) => {
+    const card = target.closest('.stock-card');
     if (!card) return;
-    swipeStart.x = e.touches[0].clientX;
-    swipeStart.y = e.touches[0].clientY;
+    swipeStart.x = x;
+    swipeStart.y = y;
     isSwiping = false;
-  });
+  };
 
-  watchlist.addEventListener('touchmove', e => {
-    const diffX = swipeStart.x - e.touches[0].clientX;
-    const diffY = Math.abs(swipeStart.y - e.touches[0].clientY);
-    
-    // 가로 이동이 일정 수준 이상이면 스와이프 중으로 간주
-    if (Math.abs(diffX) > 10 && diffY < 20) {
-      isSwiping = true;
-    }
-  }, { passive: true });
-
-  watchlist.addEventListener('touchend', e => {
-    const card = e.target.closest('.stock-card');
+  const handleEnd = (x, y, target) => {
+    const card = target.closest('.stock-card');
     if (!card) return;
     
-    const diffX = swipeStart.x - e.changedTouches[0].clientX;
-    const diffY = Math.abs(swipeStart.y - e.changedTouches[0].clientY);
+    const diffX = swipeStart.x - x;
+    const diffY = Math.abs(swipeStart.y - y);
 
-    // 왼쪽으로 40px 이상 스와이프 시 (세로 이동이 적을 때)
-    if (diffX > 40 && diffY < 50) {
+    if (diffX > 40 && diffY < 60) {
       if (currentSwipedCard && currentSwipedCard !== card) {
         currentSwipedCard.classList.remove('swiped');
       }
-      
       card.classList.add('swiped');
       currentSwipedCard = card;
       isSwiping = true;
@@ -583,16 +573,33 @@ function setupSwipeEvents() {
           if (currentSwipedCard === card) currentSwipedCard = null;
         }
       }, 2000);
-    } 
-    // 오른쪽으로 스와이프 시 닫기
-    else if (diffX < -30 && card.classList.contains('swiped')) {
+    } else if (diffX < -30 && card.classList.contains('swiped')) {
       card.classList.remove('swiped');
       currentSwipedCard = null;
       isSwiping = true;
     }
 
-    // 클릭 이벤트 무시를 위해 약간의 지연 후 플래그 해제
-    setTimeout(() => { isSwiping = false; }, 100);
+    if (isSwiping) {
+      setTimeout(() => { isSwiping = false; }, 400); // 넉넉한 지연 시간으로 클릭 무시
+    }
+  };
+
+  // 터치 이벤트
+  watchlist.addEventListener('touchstart', e => {
+    handleStart(e.touches[0].clientX, e.touches[0].clientY, e.target);
+  }, { passive: true });
+
+  watchlist.addEventListener('touchend', e => {
+    handleEnd(e.changedTouches[0].clientX, e.changedTouches[0].clientY, e.target);
+  }, { passive: true });
+
+  // 마우스 이벤트 (데스크탑 테스트용)
+  watchlist.addEventListener('mousedown', e => {
+    handleStart(e.clientX, e.clientY, e.target);
+  });
+
+  watchlist.addEventListener('mouseup', e => {
+    handleEnd(e.clientX, e.clientY, e.target);
   });
 }
 
