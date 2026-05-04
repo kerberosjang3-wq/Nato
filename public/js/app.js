@@ -58,6 +58,8 @@ const state = {
   searchResults: [],
   searching: false,
   installPrompt: null,
+  notifBannerClosed: false,
+  installBannerClosed: false,
 };
 
 // ── API ────────────────────────────────────────────────────────────────────
@@ -70,10 +72,21 @@ async function apiFetch(path, opts = {}) {
 
 async function loadWatchlist() {
   try {
-    state.watchlist = await apiFetch('/api/watchlist');
+    const data = await apiFetch('/api/watchlist');
+    if (data && !data.error) {
+      state.watchlist = data;
+    } else {
+      throw new Error(data?.error || 'load error');
+    }
   } catch {
     const cached = localStorage.getItem('watchlist');
     if (cached) state.watchlist = JSON.parse(cached);
+  }
+  // Sanitize: remove nulls or items without symbols
+  for (const key in state.watchlist) {
+    if (!state.watchlist[key] || !state.watchlist[key].symbol) {
+      delete state.watchlist[key];
+    }
   }
   localStorage.setItem('watchlist', JSON.stringify(state.watchlist));
 }
@@ -199,16 +212,17 @@ async function updateNotifStatus() {
 function renderBanners() {
   const notifBanner = document.getElementById('notif-banner');
   const installBanner = document.getElementById('install-banner');
+  if (!notifBanner || !installBanner) return;
 
   // Notification banner
-  if (state.notifStatus === 'default') {
+  if (state.notifStatus === 'default' && !state.notifBannerClosed) {
     notifBanner.classList.remove('hidden');
   } else {
     notifBanner.classList.add('hidden');
   }
 
   // Install banner
-  if (state.installPrompt) {
+  if (state.installPrompt && !state.installBannerClosed) {
     installBanner.classList.remove('hidden');
   } else {
     installBanner.classList.add('hidden');
@@ -246,6 +260,7 @@ function renderProgress(current, alertPrice, targetPrice) {
 }
 
 function renderStockCard(item) {
+  if (!item || !item.symbol) return ''; // Safety check
   const q = state.prices[item.symbol];
   const price = q?.regularMarketPrice;
   const pct = q?.regularMarketChangePercent;
@@ -293,7 +308,9 @@ function renderStockCard(item) {
 
 function renderHome() {
   const list = document.getElementById('home-list');
-  const items = Object.values(state.watchlist);
+  if (!list) return;
+  // Error check: state.watchlist might be an error object or empty
+  const items = (state.watchlist && typeof state.watchlist === 'object' && !state.watchlist.error) ? Object.values(state.watchlist) : [];
 
   if (state.loading) {
     list.innerHTML = [1, 2, 3].map(() => `<div class="skeleton skeleton-card"></div>`).join('');
@@ -314,7 +331,10 @@ function renderHome() {
   const updated = state.lastUpdated
     ? `<div class="last-updated">마지막 업데이트: ${timeAgo(state.lastUpdated)}</div>`
     : '';
-  list.innerHTML = updated + items.map(item => renderStockCard(item, true)).join('');
+  list.innerHTML = updated + items
+    .filter(item => item && item.symbol) // Only valid items
+    .map(item => renderStockCard(item))
+    .join('');
 }
 
 function renderSearchResults() {
@@ -574,7 +594,8 @@ async function installApp() {
 function setupEventListeners() {
   // Tab navigation
   ['home', 'search', 'settings'].forEach(tab => {
-    document.getElementById(`tab-${tab}`)?.addEventListener('click', () => switchTab(tab));
+    const btn = document.getElementById(`tab-${tab}`);
+    if (btn) btn.onclick = () => switchTab(tab);
   });
 
   // Search
@@ -605,16 +626,25 @@ function setupEventListeners() {
 
   // Notification banner
   document.getElementById('notif-enable-btn')?.addEventListener('click', requestPushPermission);
-  document.getElementById('notif-close-btn')?.addEventListener('click', () => {
-    document.getElementById('notif-banner').classList.add('hidden');
-  });
+  const nClose = document.getElementById('notif-close-btn');
+  if (nClose) {
+    nClose.onclick = (e) => {
+      e.preventDefault();
+      state.notifBannerClosed = true;
+      renderBanners();
+    };
+  }
 
   // Install banner
   document.getElementById('install-btn')?.addEventListener('click', installApp);
-  document.getElementById('install-close-btn')?.addEventListener('click', () => {
-    state.installPrompt = null;
-    renderBanners();
-  });
+  const iClose = document.getElementById('install-close-btn');
+  if (iClose) {
+    iClose.onclick = (e) => {
+      e.preventDefault();
+      state.installBannerClosed = true;
+      renderBanners();
+    };
+  }
 
   // PWA install prompt
   window.addEventListener('beforeinstallprompt', e => {
@@ -631,36 +661,41 @@ function setupEventListeners() {
 
 // ── Init ───────────────────────────────────────────────────────────────────
 async function init() {
-  document.documentElement.setAttribute('data-theme', state.theme);
+  try {
+    document.documentElement.setAttribute('data-theme', state.theme);
 
-  // Register SW
-  if ('serviceWorker' in navigator) {
-    try {
-      state.swReg = await navigator.serviceWorker.register('/sw.js');
-    } catch (e) {
-      console.warn('SW registration failed:', e);
+    // Register SW
+    if ('serviceWorker' in navigator) {
+      try {
+        state.swReg = await navigator.serviceWorker.register('/sw.js');
+      } catch (e) {
+        console.warn('SW registration failed:', e);
+      }
     }
-  }
 
-  await updateNotifStatus();
-  renderBanners();
-  setupEventListeners();
-
-  // Load data
-  state.loading = true;
-  renderHome();
-  await loadWatchlist();
-  await loadPrices();
-  state.loading = false;
-  renderHome();
-
-  switchTab('home');
-  startAutoRefresh();
-
-  // Auto-subscribe if permission already granted
-  if (Notification.permission === 'granted' && state.notifStatus !== 'active') {
-    await subscribePush();
     await updateNotifStatus();
+    renderBanners();
+    setupEventListeners();
+
+    // Load data
+    state.loading = true;
+    renderHome();
+    await loadWatchlist();
+    await loadPrices();
+    state.loading = false;
+    renderHome();
+
+    switchTab('home');
+    startAutoRefresh();
+
+    // Auto-subscribe if permission already granted
+    if (Notification.permission === 'granted' && state.notifStatus !== 'active') {
+      await subscribePush();
+      await updateNotifStatus();
+    }
+  } catch (err) {
+    console.error('Init error:', err);
+    showToast('앱 초기화 중 오류가 발생했습니다');
   }
 }
 

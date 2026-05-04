@@ -26,7 +26,7 @@
   --radius-lg: 24px;
   
   --header-h: clamp(56px, 10vh, 72px);
-  --tab-h: clamp(50px, 8vh, 64px);
+  --tab-h: clamp(32px, 5vh, 40px);
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
@@ -276,7 +276,7 @@ html, body {
   flex-direction: column;
   align-items: center; 
   justify-content: center; 
-  gap: 4px;
+  gap: 0;
   border: none; 
   background: none; 
   cursor: pointer;
@@ -284,7 +284,7 @@ html, body {
   font-size: 10px; 
   font-weight: 600;
   transition: all 0.25s ease; 
-  padding-top: 6px; /* Balance the top space */
+  padding-top: 0;
 }
 .tab-btn .tab-icon { 
   font-size: 24px; 
