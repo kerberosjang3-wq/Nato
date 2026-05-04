@@ -304,11 +304,11 @@ function renderStockCard(item) {
       <div class="stock-targets">
         <div class="target-badge alert ${!item.alertPrice ? 'unset' : ''}">
           <div class="target-badge-label">관심가</div>
-          <div class="target-badge-value">${item.alertPrice ? formatPriceInput(item.alertPrice, currency) : '미설정'}</div>
+          <div class="target-badge-value">${item.alertPrice ? formatPrice(item.alertPrice, currency) : '미설정'}</div>
         </div>
         <div class="target-badge goal ${!item.targetPrice ? 'unset' : ''}">
           <div class="target-badge-label">목표가</div>
-          <div class="target-badge-value">${item.targetPrice ? formatPriceInput(item.targetPrice, currency) : '미설정'}</div>
+          <div class="target-badge-value">${item.targetPrice ? formatPrice(item.targetPrice, currency) : '미설정'}</div>
         </div>
       </div>
       ${renderProgress(price, item.alertPrice, item.targetPrice)}
