@@ -143,17 +143,19 @@ async function doSearch(q) {
     }
     // 2단계: 가격 조회 (실패해도 검색 결과는 그대로 표시)
     try {
-      const syms = state.searchResults.slice(0, 8).map(r => r.symbol).join(',');
+      const syms = state.searchResults.slice(0, 10).map(r => encodeURIComponent(r.symbol)).join(',');
       if (syms) {
         const pd = await apiFetch(`/api/quote?symbols=${syms}`);
         const priceMap = {};
-        (pd.quoteResponse?.result || []).forEach(p => { priceMap[p.symbol] = p; });
+        (pd.quoteResponse?.result || []).forEach(p => { 
+          if (p.symbol) priceMap[p.symbol] = p; 
+        });
         state.searchResults = state.searchResults.map(r => ({ ...r, quote: priceMap[r.symbol] }));
       }
-    } catch { /* 가격 실패 시 검색 결과는 유지, 가격만 미표시 */ }
+    } catch (e) { console.warn('Search price fetch failed:', e); }
     state.searching = false;
     renderSearchResults();
-  }, 350);
+  }, 400);
 }
 
 // ── Push Notifications ─────────────────────────────────────────────────────
