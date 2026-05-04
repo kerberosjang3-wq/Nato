@@ -222,8 +222,8 @@ function getChangeClass(pct) {
 
 function getChangeStr(pct) {
   if (!pct && pct !== 0) return '';
-  const arrow = pct > 0 ? '▲' : pct < 0 ? '▼' : '';
-  return `${arrow} ${Math.abs(pct).toFixed(2)}%`;
+  const icon = pct > 0 ? '<i class="ph ph-caret-up"></i>' : pct < 0 ? '<i class="ph ph-caret-down"></i>' : '';
+  return `${icon} ${Math.abs(pct).toFixed(2)}%`;
 }
 
 function renderProgress(current, alertPrice, targetPrice) {
@@ -255,8 +255,8 @@ function renderStockCard(item) {
   const atTarget = item.targetPrice && price && price >= item.targetPrice;
 
   let badge = '';
-  if (atTarget) badge = `<div class="reached-badge target">🎯 목표가 도달</div>`;
-  else if (atAlert) badge = `<div class="reached-badge alert">🔔 관심가 도달</div>`;
+  if (atTarget) badge = `<div class="reached-badge target"><i class="ph-fill ph-target"></i> 목표가 도달</div>`;
+  else if (atAlert) badge = `<div class="reached-badge alert"><i class="ph-fill ph-bell-simple-ringing"></i> 관심가 도달</div>`;
 
   const cardClass = ['stock-card', atAlert ? 'alert-reached' : '', atTarget ? 'target-reached' : ''].filter(Boolean).join(' ');
 
@@ -275,18 +275,18 @@ function renderStockCard(item) {
     </div>
     <div class="stock-targets">
       <div class="target-badge alert ${!item.alertPrice ? 'unset' : ''}">
-        <div class="target-badge-label">🔔 관심가</div>
+        <div class="target-badge-label">관심가</div>
         <div class="target-badge-value">${item.alertPrice ? formatPriceInput(item.alertPrice, currency) : '미설정'}</div>
       </div>
       <div class="target-badge goal ${!item.targetPrice ? 'unset' : ''}">
-        <div class="target-badge-label">🎯 목표가</div>
+        <div class="target-badge-label">목표가</div>
         <div class="target-badge-value">${item.targetPrice ? formatPriceInput(item.targetPrice, currency) : '미설정'}</div>
       </div>
     </div>
     ${renderProgress(price, item.alertPrice, item.targetPrice)}
     <div class="card-actions">
-      <button class="card-btn edit" onclick="openEditModal(event,'${item.symbol}')">✏️</button>
-      <button class="card-btn del" onclick="confirmDelete(event,'${item.symbol}')">🗑️</button>
+      <button class="card-btn edit" onclick="openEditModal(event,'${item.symbol}')"><i class="ph ph-pencil-simple"></i></button>
+      <button class="card-btn del" onclick="confirmDelete(event,'${item.symbol}')"><i class="ph ph-trash"></i></button>
     </div>
   </div>`;
 }
@@ -303,7 +303,7 @@ function renderHome() {
   if (!items.length) {
     list.innerHTML = `
       <div class="empty">
-        <div class="empty-icon">📈</div>
+        <div class="empty-icon"><i class="ph ph-trend-up"></i></div>
         <div class="empty-title">관심 종목이 없습니다</div>
         <div class="empty-sub">검색에서 종목을 추가하면<br>여기에 표시됩니다</div>
         <button class="btn-primary" onclick="switchTab('search')">종목 검색하기</button>
@@ -327,14 +327,14 @@ function renderSearchResults() {
   if (!q?.trim()) {
     wrap.innerHTML = `
       <div class="search-hint">
-        <div class="hint-icon">🔍</div>
+        <div class="hint-icon"><i class="ph ph-magnifying-glass"></i></div>
         <div>종목명 또는 티커를 입력하세요<br>
         <span style="font-size:12px;color:var(--text-sub)">예: 삼성전자, AAPL, 카카오, TSLA</span></div>
       </div>`;
     return;
   }
   if (!state.searchResults.length) {
-    wrap.innerHTML = `<div class="search-hint"><div class="hint-icon">😶</div><div>검색 결과가 없습니다</div></div>`;
+    wrap.innerHTML = `<div class="search-hint"><div class="hint-icon"><i class="ph ph-smiley-blank"></i></div><div>검색 결과가 없습니다</div></div>`;
     return;
   }
 
@@ -359,7 +359,7 @@ function renderSearchResults() {
         <div class="result-change ${cls}">${getChangeStr(pct)}</div>
       </div>
       <button class="add-btn ${added ? 'added' : ''}" onclick="event.stopPropagation();openAddModal('${r.symbol}','${(r.longname || r.shortname || r.symbol).replace(/'/g, '')}','${currency}')">
-        ${added ? '✓' : '+'}
+        ${added ? '<i class="ph ph-check"></i>' : '<i class="ph ph-plus"></i>'}
       </button>
     </div>`;
   }).join('');
@@ -377,44 +377,44 @@ function renderSettings() {
     <div class="section-title">알림 설정</div>
     <div class="info-card">
       <div class="info-row">
-        <div class="info-row-label"><span class="info-row-icon">🔔</span>푸시 알림</div>
+        <div class="info-row-label"><i class="ph ph-bell info-row-icon"></i>푸시 알림</div>
         <button class="toggle ${state.notifStatus === 'active' ? 'on' : ''}"
           onclick="${state.notifStatus === 'active' ? 'unsubscribePush()' : 'requestPushPermission()'}"
           id="notif-toggle"></button>
       </div>
       <div class="info-row">
-        <div class="info-row-label"><span class="info-row-icon">📊</span>알림 상태</div>
+        <div class="info-row-label"><i class="ph ph-activity info-row-icon"></i>알림 상태</div>
         <div class="info-row-value">${notifLabel}</div>
       </div>
     </div>
     <div class="section-title">화면 설정</div>
     <div class="info-card">
       <div class="info-row">
-        <div class="info-row-label"><span class="info-row-icon">🌙</span>다크 모드</div>
+        <div class="info-row-label"><i class="ph ph-moon info-row-icon"></i>다크 모드</div>
         <button class="toggle ${state.theme === 'dark' ? 'on' : ''}" onclick="toggleTheme()" id="theme-toggle"></button>
       </div>
     </div>
     <div class="section-title">앱 정보</div>
     <div class="info-card">
       <div class="info-row">
-        <div class="info-row-label"><span class="info-row-icon">📈</span>주식알람 PWA</div>
-        <div class="info-row-value">v1.0.0</div>
+        <div class="info-row-label"><i class="ph ph-info info-row-icon"></i>주식알람 PWA</div>
+        <div class="info-row-value">v1.1.0</div>
       </div>
       <div class="info-row">
-        <div class="info-row-label"><span class="info-row-icon">🔄</span>데이터 갱신</div>
+        <div class="info-row-label"><i class="ph ph-clock info-row-icon"></i>데이터 갱신</div>
         <div class="info-row-value">2분마다</div>
       </div>
       <div class="info-row">
-        <div class="info-row-label"><span class="info-row-icon">💾</span>관심 종목</div>
+        <div class="info-row-label"><i class="ph ph-stack info-row-icon"></i>관심 종목</div>
         <div class="info-row-value">${Object.keys(state.watchlist).length}개</div>
       </div>
     </div>
     <div class="section-title">iOS 안내</div>
     <div class="info-card">
       <div class="info-row" style="flex-direction:column;align-items:flex-start;gap:8px">
-        <div class="info-row-label"><span class="info-row-icon">📱</span>홈 화면 추가 방법</div>
+        <div class="info-row-label"><i class="ph ph-device-mobile info-row-icon"></i>홈 화면 추가 방법</div>
         <div style="font-size:12px;color:var(--text-sub);line-height:1.6">
-          Safari → 공유 버튼(□↑) → <strong style="color:var(--text)">홈 화면에 추가</strong> 를 탭하세요.<br>
+          Safari → 공유 버튼(<i class="ph ph-export"></i>) → <strong style="color:var(--text)">홈 화면에 추가</strong> 를 탭하세요.<br>
           iOS 16.4 이상에서 푸시 알림이 지원됩니다.
         </div>
       </div>
@@ -540,10 +540,10 @@ function showToast(msg) {
 // ── Refresh ────────────────────────────────────────────────────────────────
 async function refreshPrices() {
   const btn = document.getElementById('refresh-btn');
-  if (btn) btn.querySelector('span').classList.add('spinning');
+  if (btn) btn.querySelector('i').classList.add('spinning');
   await loadPrices();
   renderHome();
-  if (btn) btn.querySelector('span').classList.remove('spinning');
+  if (btn) btn.querySelector('i').classList.remove('spinning');
 }
 
 // ── Auto refresh ───────────────────────────────────────────────────────────

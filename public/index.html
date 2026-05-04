@@ -7,7 +7,7 @@
 
   <!-- PWA -->
   <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#2563EB">
+  <meta name="theme-color" content="#3E7BFA">
 
   <!-- iOS PWA -->
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -22,6 +22,12 @@
   <!-- SEO -->
   <meta name="description" content="관심 주식의 관심가와 목표가를 등록하고 실시간 알림을 받으세요">
 
+  <!-- Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
@@ -31,7 +37,7 @@
     <img src="/icons/logo.png" alt="NATO" class="header-logo">
     <div class="header-actions">
       <button class="icon-btn" id="refresh-btn" title="새로고침">
-        <span>🔄</span>
+        <i class="ph ph-arrows-clockwise"></i>
       </button>
     </div>
   </header>
@@ -42,23 +48,30 @@
     <section class="screen active" id="screen-home">
       <!-- Notification banner -->
       <div class="notif-banner hidden" id="notif-banner">
+        <div class="notif-banner-icon">
+          <i class="ph-fill ph-bell-simple-ringing"></i>
+        </div>
         <div class="notif-banner-text">
-          <strong>🔔 알림 활성화</strong>
+          <strong>알림 활성화</strong>
           관심가/목표가 도달 시 즉시 알림을 받으세요
         </div>
-        <button class="banner-btn" id="notif-enable-btn">허용</button>
-        <button class="banner-close" id="notif-close-btn">✕</button>
+        <div class="notif-banner-actions">
+          <button class="banner-btn" id="notif-enable-btn">허용</button>
+          <button class="banner-close" id="notif-close-btn"><i class="ph ph-x"></i></button>
+        </div>
       </div>
 
       <!-- Install banner -->
       <div class="install-banner hidden" id="install-banner">
-        <div class="install-icon">📲</div>
+        <div class="install-icon"><i class="ph-fill ph-device-mobile"></i></div>
         <div class="install-text">
           <strong>앱으로 설치하기</strong>
-          <span>홈 화면에 추가하면 네이티브 앱처럼 사용할 수 있어요</span>
+          <span>홈 화면에 추가하면 더 편리해요</span>
         </div>
-        <button class="banner-btn" style="background:var(--primary);color:white;" id="install-btn">설치</button>
-        <button class="banner-close" id="install-close-btn">✕</button>
+        <div class="install-banner-actions">
+          <button class="banner-btn primary" id="install-btn">설치</button>
+          <button class="banner-close" id="install-close-btn"><i class="ph ph-x"></i></button>
+        </div>
       </div>
 
       <!-- Stock list -->
@@ -69,11 +82,11 @@
     <section class="screen" id="screen-search">
       <div class="search-wrap">
         <div class="search-box">
-          <span class="search-icon">🔍</span>
+          <i class="ph ph-magnifying-glass search-icon"></i>
           <input type="search" class="search-input" id="search-input"
             placeholder="종목명 또는 티커 입력 (예: 삼성전자, AAPL)"
             autocomplete="off" autocorrect="off" spellcheck="false">
-          <button class="search-clear" id="search-clear">✕</button>
+          <button class="search-clear" id="search-clear"><i class="ph ph-x-circle"></i></button>
         </div>
       </div>
       <div id="search-results"></div>
@@ -88,15 +101,15 @@
   <!-- Bottom Navigation -->
   <nav class="tab-bar">
     <button class="tab-btn active" id="tab-home">
-      <span class="tab-icon">🏠</span>
+      <i class="ph-fill ph-house tab-icon"></i>
       <span>홈</span>
     </button>
     <button class="tab-btn" id="tab-search">
-      <span class="tab-icon">🔍</span>
+      <i class="ph ph-magnifying-glass tab-icon"></i>
       <span>검색</span>
     </button>
     <button class="tab-btn" id="tab-settings">
-      <span class="tab-icon">⚙️</span>
+      <i class="ph ph-gear tab-icon"></i>
       <span>설정</span>
     </button>
   </nav>

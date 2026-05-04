@@ -4,8 +4,8 @@
   "description": "관심 주식의 관심가와 목표가를 등록하고 알림을 받으세요",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0B0B12",
-  "theme_color": "#2563EB",
+  "background_color": "#09090D",
+  "theme_color": "#3E7BFA",
   "orientation": "portrait-primary",
   "lang": "ko",
   "icons": [
