@@ -423,6 +423,27 @@ function searchKrStocks(q) {
 
 const SEARCH_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
 
+async function searchNaverFinance(q) {
+  const r = await fetch(
+    `https://ac.finance.naver.com/ac?q=${encodeURIComponent(q)}&q_enc=UTF-8&target=stock`,
+    { headers: { 'User-Agent': SEARCH_UA, 'Referer': 'https://finance.naver.com/' }, timeout: 5000 }
+  );
+  if (!r.ok) throw new Error(`Naver ${r.status}`);
+  const { items = [] } = await r.json();
+  return items.slice(0, 10).map(item => {
+    const name = item[0];
+    const code = item[1];
+    const isKosdaq = String(item[4]) === '2';
+    return {
+      symbol: code + (isKosdaq ? '.KQ' : '.KS'),
+      shortname: name,
+      longname: name,
+      exchange: isKosdaq ? 'KOQ' : 'KSC',
+      quoteType: 'EQUITY',
+    };
+  }).filter(s => s.shortname);
+}
+
 app.get('/api/search', async (req, res) => {
   const { q } = req.query;
   if (!q) return res.json({ quotes: [] });
@@ -430,9 +451,12 @@ app.get('/api/search', async (req, res) => {
   const hasKorean = /[\uAC00-\uD7A3]/.test(q);
 
   if (hasKorean) {
-    // 한글 검색: 내장 DB에서 필터링 (Yahoo Finance는 한글 미지원)
-    const matched = searchKrStocks(q);
-    return res.json({ quotes: matched });
+    // 한글 검색: 네이버 금융 자동완성 API → 내장 DB 폴백
+    try {
+      const results = await searchNaverFinance(q);
+      if (results.length) return res.json({ quotes: results });
+    } catch {}
+    return res.json({ quotes: searchKrStocks(q) });
   }
 
   // 영문/티커 검색: Yahoo Finance API 사용
@@ -442,9 +466,7 @@ app.get('/api/search', async (req, res) => {
       { headers: { 'User-Agent': SEARCH_UA, 'Accept': 'application/json' }, timeout: 8000 }
     );
     if (!r.ok) {
-      // Yahoo 실패 시 내장 DB 폴백
-      const matched = searchKrStocks(q);
-      return res.json({ quotes: matched });
+      return res.json({ quotes: searchKrStocks(q) });
     }
     res.json(await r.json());
   } catch (e) {
