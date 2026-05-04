@@ -153,15 +153,16 @@ async function doSearch(q) {
         const syms = state.searchResults.slice(0, 10).map(r => encodeURIComponent(r.symbol)).join(',');
         const pd = await apiFetch(`/api/quote?symbols=${syms}`);
         const priceMap = {};
-        (pd.quoteResponse?.result || []).forEach(p => { 
-          if (p.symbol) priceMap[p.symbol.toUpperCase()] = p; 
+        (pd.quoteResponse?.result || []).forEach(p => {
+          if (p.symbol) priceMap[p.symbol.toUpperCase()] = p;
         });
-        state.searchResults = state.searchResults.map(r => ({ 
-          ...r, 
-          quote: priceMap[r.symbol.toUpperCase()] 
+        state.searchResults = state.searchResults.map(r => ({
+          ...r,
+          quote: priceMap[r.symbol.toUpperCase()]
         }));
-      }
-    } catch (e) { console.warn('Search price fetch failed:', e); }
+      } catch (e) { console.warn('Search price fetch failed:', e); }
+      state.fetchingPrices = false;
+    }
     state.searching = false;
     renderSearchResults();
   }, 400);
