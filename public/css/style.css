@@ -188,15 +188,30 @@ html, body {
 .stock-list { display: flex; flex-direction: column; gap: 16px; }
 
 .stock-card {
-  background: var(--bg-card);
-  backdrop-filter: blur(8px);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-md);
-  padding: 20px;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  /* padding moved to .stock-card-main */
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
+  user-select: none;
+  touch-action: pan-y;
+}
+
+.stock-card-main {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: var(--bg-card);
+  position: relative;
+  z-index: 2;
+}
+
+.stock-card.swiped .stock-card-main {
+  transform: translateX(-120px);
 }
 .stock-card:hover { border-color: var(--primary); transform: translateY(-2px); box-shadow: var(--shadow-lg); }
 .stock-card:active { transform: scale(0.98) translateY(0); }
@@ -240,20 +255,48 @@ html, body {
 .progress-cursor { position: absolute; top: 0; width: 6px; height: 6px; background: white; border-radius: 50%; transform: translateX(-50%); box-shadow: 0 0 10px rgba(255,255,255,0.8); }
 
 .card-actions {
-  position: absolute; right: 12px; bottom: 12px;
-  display: flex; gap: 8px; opacity: 0; transform: translateY(10px);
-  transition: all 0.2s ease;
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 120px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: rgba(var(--bg-rgb), 0.5);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  padding-right: 12px;
+  z-index: 1;
+  transform: translateX(100%);
 }
-.stock-card:hover .card-actions, .stock-card.show-actions .card-actions { opacity: 1; transform: translateY(0); }
+
+.stock-card.swiped .card-actions {
+  transform: translateX(0);
+}
 
 .card-btn {
-  width: 36px; height: 36px; border-radius: 12px; border: 1px solid var(--glass-border);
-  cursor: pointer; display: flex; align-items: center; justify-content: center;
-  font-size: 16px; transition: all 0.2s; background: var(--bg-card); color: var(--text);
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
-.card-btn:hover { background: var(--bg-elevated); border-color: var(--text-sub); }
-.card-btn.edit:hover { color: var(--primary); border-color: var(--primary); }
-.card-btn.del:hover { color: var(--danger); border-color: var(--danger); }
+
+.card-btn.edit { background: #e0f2fe; color: #0284c7; }
+.card-btn.del { background: #fee2e2; color: #dc2626; }
+.card-btn:active { transform: scale(0.9); }
+
+/* 기존 호버 효과 제거 (스와이프 전용으로 변경) */
+.stock-card:hover .card-actions, .stock-card.show-actions .card-actions { 
+  /* transform은 스와이프 클래스가 처리함 */
+}
 
 /* ── Bottom Nav ── */
 .tab-bar {

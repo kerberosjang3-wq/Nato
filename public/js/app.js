@@ -277,28 +277,30 @@ function renderStockCard(item) {
 
   return `
   <div class="${cardClass}" data-symbol="${item.symbol}" onclick="handleCardTap('${item.symbol}')">
-    ${badge}
-    <div class="stock-card-top">
-      <div>
-        <div class="stock-name">${item.name || item.symbol}</div>
-        <div class="stock-symbol">${item.symbol}</div>
+    <div class="stock-card-main">
+      ${badge}
+      <div class="stock-card-top">
+        <div>
+          <div class="stock-name">${item.name || item.symbol}</div>
+          <div class="stock-symbol">${item.symbol}</div>
+        </div>
+        <div class="stock-price-wrap">
+          <div class="stock-price">${price ? formatPrice(price, currency) : '—'}</div>
+          <div class="stock-change ${getChangeClass(pct)}">${getChangeStr(pct)}</div>
+        </div>
       </div>
-      <div class="stock-price-wrap">
-        <div class="stock-price">${price ? formatPrice(price, currency) : '—'}</div>
-        <div class="stock-change ${getChangeClass(pct)}">${getChangeStr(pct)}</div>
+      <div class="stock-targets">
+        <div class="target-badge alert ${!item.alertPrice ? 'unset' : ''}">
+          <div class="target-badge-label">관심가</div>
+          <div class="target-badge-value">${item.alertPrice ? formatPriceInput(item.alertPrice, currency) : '미설정'}</div>
+        </div>
+        <div class="target-badge goal ${!item.targetPrice ? 'unset' : ''}">
+          <div class="target-badge-label">목표가</div>
+          <div class="target-badge-value">${item.targetPrice ? formatPriceInput(item.targetPrice, currency) : '미설정'}</div>
+        </div>
       </div>
+      ${renderProgress(price, item.alertPrice, item.targetPrice)}
     </div>
-    <div class="stock-targets">
-      <div class="target-badge alert ${!item.alertPrice ? 'unset' : ''}">
-        <div class="target-badge-label">관심가</div>
-        <div class="target-badge-value">${item.alertPrice ? formatPriceInput(item.alertPrice, currency) : '미설정'}</div>
-      </div>
-      <div class="target-badge goal ${!item.targetPrice ? 'unset' : ''}">
-        <div class="target-badge-label">목표가</div>
-        <div class="target-badge-value">${item.targetPrice ? formatPriceInput(item.targetPrice, currency) : '미설정'}</div>
-      </div>
-    </div>
-    ${renderProgress(price, item.alertPrice, item.targetPrice)}
     <div class="card-actions">
       <button class="card-btn edit" onclick="openEditModal(event,'${item.symbol}')"><i class="ph ph-pencil-simple"></i></button>
       <button class="card-btn del" onclick="confirmDelete(event,'${item.symbol}')"><i class="ph ph-trash"></i></button>
@@ -516,9 +518,61 @@ async function confirmDelete(event, symbol) {
 }
 
 function handleCardTap(symbol) {
+  // 스와이프 방식 도입으로 탭 시 액션 토글 기능은 제거하거나
+  // 스와이프된 상태라면 닫는 역할로 변경
   const card = document.querySelector(`.stock-card[data-symbol="${symbol}"]`);
   if (!card) return;
-  card.classList.toggle('show-actions');
+  if (card.classList.contains('swiped')) {
+    card.classList.remove('swiped');
+  }
+}
+
+// ── Swipe Logic ────────────────────────────────────────────────────────────
+let swipeStart = { x: 0, y: 0 };
+let currentSwipedCard = null;
+let swipeTimer = null;
+
+function setupSwipeEvents() {
+  const watchlist = document.getElementById('watchlist');
+  if (!watchlist) return;
+
+  watchlist.addEventListener('touchstart', e => {
+    const card = e.target.closest('.stock-card');
+    if (!card) return;
+    swipeStart.x = e.touches[0].clientX;
+    swipeStart.y = e.touches[0].clientY;
+  }, { passive: true });
+
+  watchlist.addEventListener('touchend', e => {
+    const card = e.target.closest('.stock-card');
+    if (!card) return;
+    
+    const diffX = swipeStart.x - e.changedTouches[0].clientX;
+    const diffY = Math.abs(swipeStart.y - e.changedTouches[0].clientY);
+
+    // 왼쪽으로 50px 이상 스와이프 시 (세로 이동이 적을 때)
+    if (diffX > 50 && diffY < 40) {
+      if (currentSwipedCard && currentSwipedCard !== card) {
+        currentSwipedCard.classList.remove('swiped');
+      }
+      
+      card.classList.add('swiped');
+      currentSwipedCard = card;
+
+      if (swipeTimer) clearTimeout(swipeTimer);
+      swipeTimer = setTimeout(() => {
+        if (card.classList.contains('swiped')) {
+          card.classList.remove('swiped');
+          if (currentSwipedCard === card) currentSwipedCard = null;
+        }
+      }, 2000);
+    } 
+    // 오른쪽으로 스와이프 시 닫기
+    else if (diffX < -30 && card.classList.contains('swiped')) {
+      card.classList.remove('swiped');
+      currentSwipedCard = null;
+    }
+  }, { passive: true });
 }
 
 function formatPriceInputPlain(price, currency) {
@@ -686,6 +740,7 @@ async function init() {
     renderHome();
 
     switchTab('home');
+    setupSwipeEvents();
     startAutoRefresh();
 
     // Auto-subscribe if permission already granted
