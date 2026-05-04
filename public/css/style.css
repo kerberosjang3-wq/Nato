@@ -76,6 +76,11 @@ html, body {
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
+.header-logo {
+  height: 36px;
+  width: auto;
+  object-fit: contain;
+}
 
 .header-actions { display: flex; gap: 8px; align-items: center; }
 

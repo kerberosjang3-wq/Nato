@@ -118,20 +118,26 @@ async function doSearch(q) {
   state.searching = true;
   renderSearchResults();
   searchTimer = setTimeout(async () => {
+    // 1단계: 종목 검색 (실패 시 빈 결과 표시)
     try {
       const data = await apiFetch(`/api/search?q=${encodeURIComponent(q)}`);
       state.searchResults = (data.quotes || []).filter(r => r.quoteType === 'EQUITY' || r.quoteType === 'ETF');
-      // Fetch prices for results
+    } catch {
+      state.searchResults = [];
+      state.searching = false;
+      renderSearchResults();
+      return;
+    }
+    // 2단계: 가격 조회 (실패해도 검색 결과는 그대로 표시)
+    try {
       const syms = state.searchResults.slice(0, 8).map(r => r.symbol).join(',');
       if (syms) {
         const pd = await apiFetch(`/api/quote?symbols=${syms}`);
         const priceMap = {};
-        (pd.quoteResponse?.result || []).forEach(q => { priceMap[q.symbol] = q; });
+        (pd.quoteResponse?.result || []).forEach(p => { priceMap[p.symbol] = p; });
         state.searchResults = state.searchResults.map(r => ({ ...r, quote: priceMap[r.symbol] }));
       }
-    } catch {
-      state.searchResults = [];
-    }
+    } catch { /* 가격 실패 시 검색 결과는 유지, 가격만 미표시 */ }
     state.searching = false;
     renderSearchResults();
   }, 350);
@@ -214,7 +220,7 @@ function getChangeClass(pct) {
   return pct > 0 ? 'up' : pct < 0 ? 'down' : 'flat';
 }
 
-function getChangeStr(pct, change, currency) {
+function getChangeStr(pct) {
   if (!pct && pct !== 0) return '';
   const arrow = pct > 0 ? '▲' : pct < 0 ? '▼' : '';
   return `${arrow} ${Math.abs(pct).toFixed(2)}%`;
@@ -239,7 +245,7 @@ function renderProgress(current, alertPrice, targetPrice) {
     </div>`;
 }
 
-function renderStockCard(item, showActions = false) {
+function renderStockCard(item) {
   const q = state.prices[item.symbol];
   const price = q?.regularMarketPrice;
   const pct = q?.regularMarketChangePercent;
@@ -460,20 +466,21 @@ function closeModal() {
 async function saveModal() {
   const alertPrice = parseFloat(document.getElementById('modal-alert-price').value.replace(/,/g, '')) || null;
   const targetPrice = parseFloat(document.getElementById('modal-target-price').value.replace(/,/g, '')) || null;
-  const { symbol, name, currency } = modalData;
+  const { symbol, name, currency, existing } = modalData;
   const q = state.prices[symbol];
   const cur = q?.currency || currency;
   try {
     await saveStock(symbol, name, alertPrice, targetPrice, cur);
-    closeModal();
-    await loadPrices();
-    renderHome();
-    renderSearchResults();
-    if (state.currentTab === 'settings') renderSettings();
-    showToast(modalData.existing ? '✅ 종목이 수정되었습니다' : '✅ 종목이 추가되었습니다');
   } catch {
     showToast('저장 중 오류가 발생했습니다');
+    return;
   }
+  closeModal();
+  await loadPrices();
+  renderHome();
+  renderSearchResults();
+  if (state.currentTab === 'settings') renderSettings();
+  showToast(existing ? '✅ 종목이 수정되었습니다' : '✅ 종목이 추가되었습니다');
 }
 
 async function confirmDelete(event, symbol) {
