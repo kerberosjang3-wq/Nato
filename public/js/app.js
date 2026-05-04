@@ -583,33 +583,30 @@ let swipeStart = { x: 0, y: 0 };
 let currentSwipedCard = null;
 let swipeTimer = null;
 
-function setupSwipeEvents() {
-  const list = document.getElementById('home-list');
+function revealActions(card) {
+  if (currentSwipedCard && currentSwipedCard !== card) {
+    currentSwipedCard.classList.remove('swiped');
+  }
+  card.classList.add('swiped');
+  currentSwipedCard = card;
+  isSwiping = true;
+  if (swipeTimer) clearTimeout(swipeTimer);
+  swipeTimer = setTimeout(() => {
+    if (currentSwipedCard) { currentSwipedCard.classList.remove('swiped'); currentSwipedCard = null; }
+  }, 3000);
+}
+
+function hideActions(card) {
+  card.classList.remove('swiped');
+  if (currentSwipedCard === card) currentSwipedCard = null;
+  isSwiping = true;
+}
+
+function setupSwipeForList(list) {
   if (!list) return;
-
-  // touchstart에서 카드 참조를 직접 저장 — touchend에서 재탐색하면 target이 달라질 수 있음
   let activeCard = null;
+  let mouseCard = null;
 
-  function revealActions(card) {
-    if (currentSwipedCard && currentSwipedCard !== card) {
-      currentSwipedCard.classList.remove('swiped');
-    }
-    card.classList.add('swiped');
-    currentSwipedCard = card;
-    isSwiping = true;
-    if (swipeTimer) clearTimeout(swipeTimer);
-    swipeTimer = setTimeout(() => {
-      if (currentSwipedCard) { currentSwipedCard.classList.remove('swiped'); currentSwipedCard = null; }
-    }, 3000);
-  }
-
-  function hideActions(card) {
-    card.classList.remove('swiped');
-    if (currentSwipedCard === card) currentSwipedCard = null;
-    isSwiping = true;
-  }
-
-  // 터치 이벤트
   list.addEventListener('touchstart', e => {
     const card = e.target.closest('.stock-card');
     activeCard = card || null;
@@ -632,8 +629,6 @@ function setupSwipeEvents() {
 
   list.addEventListener('touchcancel', () => { activeCard = null; }, { passive: true });
 
-  // 마우스 이벤트 (데스크탑 테스트용) — mouseup은 document에서 받아 드래그 범위 밖도 처리
-  let mouseCard = null;
   list.addEventListener('mousedown', e => {
     const card = e.target.closest('.stock-card');
     mouseCard = card || null;
@@ -650,6 +645,11 @@ function setupSwipeEvents() {
     if (dx > 30 && dy < 80) revealActions(card);
     else if (dx < -20 && card.classList.contains('swiped')) hideActions(card);
   });
+}
+
+function setupSwipeEvents() {
+  setupSwipeForList(document.getElementById('home-list'));
+  setupSwipeForList(document.getElementById('portfolio-holdings'));
 }
 
 function formatPriceInputPlain(price, currency) {
@@ -717,41 +717,66 @@ function renderPortfolioCard(item) {
   const currentVal = currentPrice ? currentPrice * item.qty : null;
   const gain = currentVal !== null ? currentVal - invested : null;
   const gainPct = gain !== null && invested > 0 ? (gain / invested) * 100 : null;
-  const gainClass = gain !== null ? (gain >= 0 ? 'up' : 'down') : '';
+  const gainClass = gain !== null ? (gain >= 0 ? 'gain-up' : 'gain-down') : '';
   const gainSign = gain !== null && gain >= 0 ? '+' : '';
 
   return `
-  <div class="portfolio-card">
-    <div class="portfolio-card-top">
-      <div>
-        <div class="portfolio-card-name">${item.name || item.symbol}</div>
-        <div class="portfolio-card-symbol">${item.symbol} · ${item.qty}주</div>
+  <div class="stock-card" data-symbol="${item.symbol}" data-portfolio="1" onclick="handlePortfolioCardTap('${item.symbol}')">
+    <div class="stock-card-main">
+      <div class="stock-card-top">
+        <div>
+          <div class="stock-name">${item.name || item.symbol}</div>
+          <div class="stock-symbol">${item.symbol} · ${item.qty}주</div>
+        </div>
+        <div class="stock-price-wrap">
+          <div class="stock-price">${currentPrice ? formatPrice(currentPrice, currency) : '—'}</div>
+          <div class="stock-change ${getChangeClass(pct)}">${getChangeStr(pct)}</div>
+        </div>
       </div>
-      <div class="portfolio-card-price">
-        <div class="portfolio-card-current">${currentPrice ? formatPrice(currentPrice, currency) : '—'}</div>
-        <div class="portfolio-card-change ${getChangeClass(pct)}">${getChangeStr(pct)}</div>
+      <div class="stock-targets">
+        <div class="target-badge">
+          <div class="target-badge-label">매수가</div>
+          <div class="target-badge-value">${formatPrice(item.buyPrice, currency)}</div>
+        </div>
+        <div class="target-badge">
+          <div class="target-badge-label">투자금액</div>
+          <div class="target-badge-value">${formatPrice(invested, currency)}</div>
+        </div>
+        <div class="target-badge">
+          <div class="target-badge-label">평가금액</div>
+          <div class="target-badge-value">${currentVal !== null ? formatPrice(currentVal, currency) : '—'}</div>
+        </div>
+        <div class="target-badge ${gainClass}">
+          <div class="target-badge-label">수익률</div>
+          <div class="target-badge-value">${gainPct !== null ? `${gainSign}${gainPct.toFixed(2)}%` : '—'}</div>
+        </div>
       </div>
     </div>
-    <div class="portfolio-card-stats">
-      <div class="portfolio-card-stat">
-        <div class="portfolio-card-stat-label">매수가</div>
-        <div class="portfolio-card-stat-value">${formatPrice(item.buyPrice, currency)}</div>
-      </div>
-      <div class="portfolio-card-stat">
-        <div class="portfolio-card-stat-label">투자금액</div>
-        <div class="portfolio-card-stat-value">${formatPrice(invested, currency)}</div>
-      </div>
-      <div class="portfolio-card-stat">
-        <div class="portfolio-card-stat-label">평가금액</div>
-        <div class="portfolio-card-stat-value">${currentVal !== null ? formatPrice(currentVal, currency) : '—'}</div>
-      </div>
-      <div class="portfolio-card-stat">
-        <div class="portfolio-card-stat-label">수익률</div>
-        <div class="portfolio-card-stat-value ${gainClass}">${gainPct !== null ? `${gainSign}${gainPct.toFixed(2)}%` : '—'}</div>
-      </div>
+    <div class="card-actions">
+      <button class="card-btn edit" onclick="openPortfolioEditModal(event,'${item.symbol}')"><i class="ph ph-pencil-simple"></i></button>
+      <button class="card-btn del" onclick="confirmDeletePortfolio(event,'${item.symbol}')"><i class="ph ph-trash"></i></button>
     </div>
-    <button class="portfolio-card-del" onclick="confirmDeletePortfolio('${item.symbol}')"><i class="ph ph-trash"></i></button>
   </div>`;
+}
+
+function handlePortfolioCardTap(symbol) {
+  if (isSwiping) return;
+  const card = document.querySelector(`.stock-card[data-symbol="${symbol}"][data-portfolio="1"]`);
+  if (!card) return;
+  if (card.classList.contains('swiped')) {
+    card.classList.remove('swiped');
+    if (currentSwipedCard === card) currentSwipedCard = null;
+  } else {
+    const item = state.portfolio[symbol];
+    if (item) openPortfolioModal(item.symbol, item.name, item.currency);
+  }
+}
+
+function openPortfolioEditModal(event, symbol) {
+  event.stopPropagation();
+  const item = state.portfolio[symbol];
+  if (!item) return;
+  openPortfolioModal(item.symbol, item.name, item.currency);
 }
 
 function renderPortfolioSearch() {
@@ -898,7 +923,8 @@ async function savePortfolioModal() {
   showToast(existing ? '✅ 수정되었습니다' : '✅ 추가되었습니다');
 }
 
-async function confirmDeletePortfolio(symbol) {
+async function confirmDeletePortfolio(event, symbol) {
+  event.stopPropagation();
   if (!confirm(`${state.portfolio[symbol]?.name || symbol} 종목을 삭제할까요?`)) return;
   try {
     await deletePortfolioItem(symbol);
@@ -911,6 +937,7 @@ async function confirmDeletePortfolio(symbol) {
 
 // ── Tabs ───────────────────────────────────────────────────────────────────
 function switchTab(tab) {
+  if (currentSwipedCard) { currentSwipedCard.classList.remove('swiped'); currentSwipedCard = null; }
   state.currentTab = tab;
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
