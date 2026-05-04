@@ -77,7 +77,7 @@ html, body {
   background-clip: text;
 }
 .header-logo {
-  height: 36px;
+  height: 24px;
   width: auto;
   object-fit: contain;
 }
