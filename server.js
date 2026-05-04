@@ -456,6 +456,20 @@ async function searchNaverFinance(q) {
   }).slice(0, 10);
 }
 
+app.get('/api/debug-naver', async (req, res) => {
+  const q = req.query.q || '에코';
+  const enc = encodeURIComponent(q);
+  const opts = { headers: { 'User-Agent': SEARCH_UA, 'Referer': 'https://finance.naver.com/' }, timeout: 5000 };
+  const [r1, r2] = await Promise.all([
+    fetch(`https://ac.finance.naver.com/ac?q=${enc}&q_enc=UTF-8&target=stock`, opts),
+    fetch(`https://ac.finance.naver.com/ac?q=${enc}&q_enc=UTF-8&target=cosd`, opts),
+  ]);
+  res.json({
+    stock: await r1.json(),
+    cosd: await r2.json(),
+  });
+});
+
 app.get('/api/search', async (req, res) => {
   const { q } = req.query;
   if (!q) return res.json({ quotes: [] });
