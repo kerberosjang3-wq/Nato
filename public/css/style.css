@@ -96,29 +96,10 @@ html, body {
 }
 
 .header-logo {
-  display: flex;
-  flex-direction: column;
-  line-height: 1;
-  gap: 3px;
-}
-
-.logo-wordmark {
-  font-size: clamp(18px, 4vw, 22px);
-  font-weight: 900;
-  letter-spacing: 4px;
-  background: linear-gradient(135deg, var(--primary) 0%, var(--success) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  filter: drop-shadow(0 0 10px var(--primary-glow));
-}
-
-.logo-tagline {
-  font-size: 8px;
-  font-weight: 600;
-  color: var(--text-sub);
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
+  height: clamp(24px, 5vh, 32px);
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 0 8px var(--primary-glow));
 }
 
 .header-actions { display: flex; gap: 10px; align-items: center; }
