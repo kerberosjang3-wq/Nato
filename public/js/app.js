@@ -552,66 +552,71 @@ let currentSwipedCard = null;
 let swipeTimer = null;
 
 function setupSwipeEvents() {
-  const watchlist = document.getElementById('home-list');
-  if (!watchlist) return;
+  const list = document.getElementById('home-list');
+  if (!list) return;
 
-  const handleStart = (x, y, target) => {
-    const card = target.closest('.stock-card');
-    if (!card) return;
-    swipeStart.x = x;
-    swipeStart.y = y;
-    isSwiping = false;
-  };
+  // touchstart에서 카드 참조를 직접 저장 — touchend에서 재탐색하면 target이 달라질 수 있음
+  let activeCard = null;
 
-  const handleEnd = (x, y, target) => {
-    const card = target.closest('.stock-card');
-    if (!card) return;
-    
-    const diffX = swipeStart.x - x;
-    const diffY = Math.abs(swipeStart.y - y);
-
-    if (diffX > 40 && diffY < 60) {
-      if (currentSwipedCard && currentSwipedCard !== card) {
-        currentSwipedCard.classList.remove('swiped');
-      }
-      card.classList.add('swiped');
-      currentSwipedCard = card;
-      isSwiping = true;
-
-      if (swipeTimer) clearTimeout(swipeTimer);
-      swipeTimer = setTimeout(() => {
-        if (card.classList.contains('swiped')) {
-          card.classList.remove('swiped');
-          if (currentSwipedCard === card) currentSwipedCard = null;
-        }
-      }, 2000);
-    } else if (diffX < -30 && card.classList.contains('swiped')) {
-      card.classList.remove('swiped');
-      currentSwipedCard = null;
-      isSwiping = true;
+  function revealActions(card) {
+    if (currentSwipedCard && currentSwipedCard !== card) {
+      currentSwipedCard.classList.remove('swiped');
     }
+    card.classList.add('swiped');
+    currentSwipedCard = card;
+    isSwiping = true;
+    if (swipeTimer) clearTimeout(swipeTimer);
+    swipeTimer = setTimeout(() => {
+      if (currentSwipedCard) { currentSwipedCard.classList.remove('swiped'); currentSwipedCard = null; }
+    }, 3000);
+  }
 
-    if (isSwiping) {
-      setTimeout(() => { isSwiping = false; }, 400); // 넉넉한 지연 시간으로 클릭 무시
-    }
-  };
+  function hideActions(card) {
+    card.classList.remove('swiped');
+    if (currentSwipedCard === card) currentSwipedCard = null;
+    isSwiping = true;
+  }
 
   // 터치 이벤트
-  watchlist.addEventListener('touchstart', e => {
-    handleStart(e.touches[0].clientX, e.touches[0].clientY, e.target);
+  list.addEventListener('touchstart', e => {
+    const card = e.target.closest('.stock-card');
+    activeCard = card || null;
+    if (!card) return;
+    swipeStart.x = e.touches[0].clientX;
+    swipeStart.y = e.touches[0].clientY;
+    isSwiping = false;
   }, { passive: true });
 
-  watchlist.addEventListener('touchend', e => {
-    handleEnd(e.changedTouches[0].clientX, e.changedTouches[0].clientY, e.target);
+  list.addEventListener('touchend', e => {
+    const card = activeCard;
+    activeCard = null;
+    if (!card) return;
+    const dx = swipeStart.x - e.changedTouches[0].clientX;
+    const dy = Math.abs(swipeStart.y - e.changedTouches[0].clientY);
+    if (dx > 30 && dy < 80) revealActions(card);
+    else if (dx < -20 && card.classList.contains('swiped')) hideActions(card);
+    if (isSwiping) setTimeout(() => { isSwiping = false; }, 300);
   }, { passive: true });
 
-  // 마우스 이벤트 (데스크탑 테스트용)
-  watchlist.addEventListener('mousedown', e => {
-    handleStart(e.clientX, e.clientY, e.target);
+  list.addEventListener('touchcancel', () => { activeCard = null; }, { passive: true });
+
+  // 마우스 이벤트 (데스크탑 테스트용) — mouseup은 document에서 받아 드래그 범위 밖도 처리
+  let mouseCard = null;
+  list.addEventListener('mousedown', e => {
+    const card = e.target.closest('.stock-card');
+    mouseCard = card || null;
+    if (!card) return;
+    swipeStart.x = e.clientX;
+    swipeStart.y = e.clientY;
   });
-
-  watchlist.addEventListener('mouseup', e => {
-    handleEnd(e.clientX, e.clientY, e.target);
+  document.addEventListener('mouseup', e => {
+    const card = mouseCard;
+    mouseCard = null;
+    if (!card) return;
+    const dx = swipeStart.x - e.clientX;
+    const dy = Math.abs(swipeStart.y - e.clientY);
+    if (dx > 30 && dy < 80) revealActions(card);
+    else if (dx < -20 && card.classList.contains('swiped')) hideActions(card);
   });
 }
 

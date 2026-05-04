@@ -187,24 +187,24 @@ html, body {
 }
 
 /* ── Stock List & Cards ── */
-.stock-list { display: flex; flex-direction: column; gap: 16px; }
+.stock-list { display: flex; flex-direction: column; gap: 10px; }
 
 .stock-card {
   position: relative;
   background: var(--bg-card);
   border: 1px solid var(--border);
-  border-radius: 16px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 14px;
+  transition: border-color 0.3s, box-shadow 0.3s;
   overflow: hidden;
   user-select: none;
   touch-action: pan-y;
 }
 
 .stock-card-main {
-  padding: 12px 16px;
+  padding: 8px 14px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 6px;
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   background: var(--bg-card);
   position: relative;
@@ -212,62 +212,62 @@ html, body {
 }
 
 .stock-card.swiped .stock-card-main {
-  transform: translateX(-120px);
+  transform: translateX(-90px);
 }
-.stock-card:hover { border-color: var(--primary); transform: translateY(-2px); box-shadow: var(--shadow-lg); }
-.stock-card:active { transform: scale(0.98) translateY(0); }
+.stock-card:hover { border-color: var(--primary); box-shadow: var(--shadow-lg); }
+.stock-card.swiped:hover { border-color: var(--border); box-shadow: none; }
 
 .stock-card.alert-reached { background: linear-gradient(135deg, var(--bg-card), rgba(255, 171, 0, 0.05)); border-color: var(--warning); }
 .stock-card.target-reached { background: linear-gradient(135deg, var(--bg-card), rgba(0, 208, 132, 0.05)); border-color: var(--success); }
 
-.stock-card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; }
-.stock-name { font-size: 15px; font-weight: 700; color: var(--text); letter-spacing: -0.01em; }
-.stock-symbol { font-size: 11px; font-weight: 600; color: var(--text-sub); margin-top: 1px; text-transform: uppercase; }
+.stock-card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1px; }
+.stock-name { font-size: 13px; font-weight: 700; color: var(--text); letter-spacing: -0.01em; }
+.stock-symbol { font-size: 10px; font-weight: 600; color: var(--text-sub); margin-top: 1px; text-transform: uppercase; }
 
 .stock-price-wrap { text-align: right; }
-.stock-price { font-size: 17px; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
+.stock-price { font-size: 14px; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
 .stock-change {
-  font-size: 11px; font-weight: 700; margin-top: 2px;
-  display: inline-flex; align-items: center; gap: 3px;
-  padding: 3px 6px; border-radius: 6px;
+  font-size: 10px; font-weight: 700; margin-top: 1px;
+  display: inline-flex; align-items: center; gap: 2px;
+  padding: 2px 5px; border-radius: 5px;
 }
 .stock-change.up { color: var(--stock-up); background: rgba(255,82,82,0.12); }
 .stock-change.down { color: var(--stock-down); background: rgba(62,123,250,0.12); }
 .stock-change.flat { color: var(--text-sub); background: var(--bg-elevated); }
 
-.stock-targets { display: flex; gap: 8px; margin-bottom: 2px; }
+.stock-targets { display: flex; gap: 5px; margin-bottom: 1px; }
 .target-badge {
   flex: 1; background: var(--bg-elevated);
-  border-radius: 10px; padding: 6px 8px; text-align: center;
+  border-radius: 8px; padding: 4px 6px; text-align: center;
   border: 1px solid var(--border);
   transition: border-color 0.2s;
 }
-.target-badge-label { font-size: 9px; font-weight: 700; color: var(--text-sub); margin-bottom: 2px; text-transform: uppercase; }
-.target-badge-value { font-size: 13px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
+.target-badge-label { font-size: 8px; font-weight: 700; color: var(--text-sub); margin-bottom: 1px; text-transform: uppercase; }
+.target-badge-value { font-size: 11px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
 .target-badge.alert .target-badge-value { color: var(--warning); }
 .target-badge.goal .target-badge-value { color: var(--success); }
-.target-badge.unset .target-badge-value { color: var(--text-sub); font-weight: 400; font-size: 11px; }
+.target-badge.unset .target-badge-value { color: var(--text-sub); font-weight: 400; font-size: 10px; }
 
 /* Progress bar */
-.progress-wrap { margin-top: 2px; }
-.progress-labels { display: flex; justify-content: space-between; font-size: 9px; font-weight: 600; color: var(--text-sub); margin-bottom: 4px; }
-.progress-bar { height: 4px; background: var(--bg-elevated); border-radius: 8px; overflow: hidden; position: relative; }
+.progress-wrap { margin-top: 1px; }
+.progress-labels { display: flex; justify-content: space-between; font-size: 8px; font-weight: 600; color: var(--text-sub); margin-bottom: 2px; }
+.progress-bar { height: 3px; background: var(--bg-elevated); border-radius: 8px; overflow: hidden; position: relative; }
 .progress-fill { height: 100%; border-radius: 8px; background: linear-gradient(90deg, var(--warning), var(--primary), var(--success)); transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
-.progress-cursor { position: absolute; top: 0; width: 4px; height: 4px; background: white; border-radius: 50%; transform: translateX(-50%); box-shadow: 0 0 8px rgba(255,255,255,0.8); }
+.progress-cursor { position: absolute; top: 0; width: 3px; height: 3px; background: white; border-radius: 50%; transform: translateX(-50%); box-shadow: 0 0 6px rgba(255,255,255,0.8); }
 
 .card-actions {
   position: absolute;
   top: 0;
   right: 0;
-  width: 120px;
+  width: 90px;
   height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 6px;
   background: rgba(var(--bg-rgb), 0.5);
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  padding-right: 12px;
+  padding-right: 8px;
   z-index: 1;
   transform: translateX(100%);
 }
@@ -277,27 +277,22 @@ html, body {
 }
 
 .card-btn {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
   border: none;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.2rem;
+  font-size: 1rem;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
 }
 
 .card-btn.edit { background: #e0f2fe; color: #0284c7; }
 .card-btn.del { background: #fee2e2; color: #dc2626; }
 .card-btn:active { transform: scale(0.9); }
-
-/* 기존 호버 효과 제거 (스와이프 전용으로 변경) */
-.stock-card:hover .card-actions, .stock-card.show-actions .card-actions { 
-  /* transform은 스와이프 클래스가 처리함 */
-}
 
 /* ── Bottom Nav ── */
 .tab-bar {
@@ -490,10 +485,10 @@ html, body {
 
 /* ── Reached Badges ── */
 .reached-badge {
-  position: absolute; top: 12px; right: 12px;
-  font-size: 9px; font-weight: 800; padding: 3px 8px;
-  border-radius: 6px; text-transform: uppercase; letter-spacing: 0.3px;
-  display: flex; align-items: center; gap: 3px;
+  position: absolute; top: 8px; right: 8px;
+  font-size: 8px; font-weight: 800; padding: 2px 6px;
+  border-radius: 5px; text-transform: uppercase; letter-spacing: 0.3px;
+  display: flex; align-items: center; gap: 2px;
 }
 .reached-badge.alert { background: rgba(255,171,0,0.15); color: var(--warning); border: 1px solid rgba(255,171,0,0.2); }
 .reached-badge.target { background: rgba(0,208,132,0.15); color: var(--success); border: 1px solid rgba(0,208,132,0.2); }
@@ -501,7 +496,7 @@ html, body {
 /* Skeleton */
 .skeleton { background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-elevated) 50%, var(--bg-card) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 14px; }
 @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
-.skeleton-card { height: 110px; margin-bottom: 12px; }
+.skeleton-card { height: 80px; margin-bottom: 8px; }
 
 /* Scrollbar */
 ::-webkit-scrollbar { width: 0; background: transparent; }
