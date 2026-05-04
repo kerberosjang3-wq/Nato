@@ -61,6 +61,12 @@ const state = {
   installPrompt: null,
   notifBannerClosed: false,
   installBannerClosed: false,
+  portfolio: {},
+  portfolioPrices: {},
+  portfolioSearchResults: [],
+  portfolioSearchQ: '',
+  portfolioSearching: false,
+  portfolioFetchingPrices: false,
 };
 
 // ── API ────────────────────────────────────────────────────────────────────
@@ -123,6 +129,51 @@ async function deleteStock(symbol) {
   delete state.watchlist[symbol];
   delete state.prices[symbol];
   localStorage.setItem('watchlist', JSON.stringify(state.watchlist));
+}
+
+async function loadPortfolio() {
+  try {
+    const data = await apiFetch('/api/portfolio');
+    if (data && !data.error) {
+      state.portfolio = data;
+    } else {
+      throw new Error(data?.error || 'load error');
+    }
+  } catch {
+    const cached = localStorage.getItem('portfolio');
+    if (cached) state.portfolio = JSON.parse(cached);
+  }
+  for (const key in state.portfolio) {
+    if (!state.portfolio[key] || !state.portfolio[key].symbol) delete state.portfolio[key];
+  }
+  localStorage.setItem('portfolio', JSON.stringify(state.portfolio));
+}
+
+async function loadPortfolioPrices() {
+  const symbols = Object.keys(state.portfolio);
+  if (!symbols.length) return;
+  try {
+    const data = await apiFetch(`/api/quote?symbols=${symbols.join(',')}`);
+    (data.quoteResponse?.result || []).forEach(q => { state.portfolioPrices[q.symbol] = q; });
+    localStorage.setItem('portfolioPrices', JSON.stringify(state.portfolioPrices));
+  } catch {
+    const cached = localStorage.getItem('portfolioPrices');
+    if (cached) state.portfolioPrices = JSON.parse(cached);
+  }
+}
+
+async function savePortfolioItem(symbol, name, buyPrice, qty, currency) {
+  const item = { symbol, name, buyPrice, qty, currency };
+  await apiFetch('/api/portfolio', { method: 'POST', body: JSON.stringify(item) });
+  state.portfolio[symbol] = item;
+  localStorage.setItem('portfolio', JSON.stringify(state.portfolio));
+}
+
+async function deletePortfolioItem(symbol) {
+  await apiFetch(`/api/portfolio/${encodeURIComponent(symbol)}`, { method: 'DELETE' });
+  delete state.portfolio[symbol];
+  delete state.portfolioPrices[symbol];
+  localStorage.setItem('portfolio', JSON.stringify(state.portfolio));
 }
 
 let searchTimer;
@@ -606,6 +657,254 @@ function formatPriceInputPlain(price, currency) {
   return price.toFixed(2);
 }
 
+// ── Portfolio Rendering ────────────────────────────────────────────────────
+function renderPortfolioSummary() {
+  const items = Object.values(state.portfolio);
+  if (!items.length) return '';
+
+  const groups = {};
+  for (const item of items) {
+    const q = state.portfolioPrices[item.symbol];
+    const currency = q?.currency || item.currency || 'USD';
+    if (!groups[currency]) groups[currency] = { invested: 0, current: 0, hasPrices: false };
+    if (item.buyPrice && item.qty) {
+      const price = q?.regularMarketPrice;
+      groups[currency].invested += item.buyPrice * item.qty;
+      if (price) { groups[currency].current += price * item.qty; groups[currency].hasPrices = true; }
+    }
+  }
+
+  const rows = Object.entries(groups).map(([currency, g]) => {
+    if (!g.hasPrices) return '';
+    const gain = g.current - g.invested;
+    const gainPct = g.invested > 0 ? (gain / g.invested) * 100 : 0;
+    const gainClass = gain >= 0 ? 'up' : 'down';
+    const gainSign = gain >= 0 ? '+' : '';
+    return `
+    <div class="portfolio-summary-block">
+      <div class="portfolio-total-value">${formatPrice(g.current, currency)}</div>
+      <div class="portfolio-stats-row">
+        <div class="portfolio-stat">
+          <div class="portfolio-stat-label">투자금액</div>
+          <div class="portfolio-stat-value">${formatPrice(g.invested, currency)}</div>
+        </div>
+        <div class="portfolio-stat">
+          <div class="portfolio-stat-label">평가손익</div>
+          <div class="portfolio-stat-value ${gainClass}">${gainSign}${formatPrice(Math.abs(gain), currency)}</div>
+        </div>
+        <div class="portfolio-stat">
+          <div class="portfolio-stat-label">수익률</div>
+          <div class="portfolio-stat-value ${gainClass}">${gainSign}${gainPct.toFixed(2)}%</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  if (!rows.trim()) return '';
+  return `<div class="portfolio-summary"><div class="portfolio-total-label">총 평가금액</div>${rows}</div>`;
+}
+
+function renderPortfolioCard(item) {
+  const q = state.portfolioPrices[item.symbol];
+  const currentPrice = q?.regularMarketPrice;
+  const pct = q?.regularMarketChangePercent;
+  const currency = q?.currency || item.currency || 'USD';
+  const invested = (item.buyPrice || 0) * (item.qty || 0);
+  const currentVal = currentPrice ? currentPrice * item.qty : null;
+  const gain = currentVal !== null ? currentVal - invested : null;
+  const gainPct = gain !== null && invested > 0 ? (gain / invested) * 100 : null;
+  const gainClass = gain !== null ? (gain >= 0 ? 'up' : 'down') : '';
+  const gainSign = gain !== null && gain >= 0 ? '+' : '';
+
+  return `
+  <div class="portfolio-card">
+    <div class="portfolio-card-top">
+      <div>
+        <div class="portfolio-card-name">${item.name || item.symbol}</div>
+        <div class="portfolio-card-symbol">${item.symbol} · ${item.qty}주</div>
+      </div>
+      <div class="portfolio-card-price">
+        <div class="portfolio-card-current">${currentPrice ? formatPrice(currentPrice, currency) : '—'}</div>
+        <div class="portfolio-card-change ${getChangeClass(pct)}">${getChangeStr(pct)}</div>
+      </div>
+    </div>
+    <div class="portfolio-card-stats">
+      <div class="portfolio-card-stat">
+        <div class="portfolio-card-stat-label">매수가</div>
+        <div class="portfolio-card-stat-value">${formatPrice(item.buyPrice, currency)}</div>
+      </div>
+      <div class="portfolio-card-stat">
+        <div class="portfolio-card-stat-label">투자금액</div>
+        <div class="portfolio-card-stat-value">${formatPrice(invested, currency)}</div>
+      </div>
+      <div class="portfolio-card-stat">
+        <div class="portfolio-card-stat-label">평가금액</div>
+        <div class="portfolio-card-stat-value">${currentVal !== null ? formatPrice(currentVal, currency) : '—'}</div>
+      </div>
+      <div class="portfolio-card-stat">
+        <div class="portfolio-card-stat-label">수익률</div>
+        <div class="portfolio-card-stat-value ${gainClass}">${gainPct !== null ? `${gainSign}${gainPct.toFixed(2)}%` : '—'}</div>
+      </div>
+    </div>
+    <button class="portfolio-card-del" onclick="confirmDeletePortfolio('${item.symbol}')"><i class="ph ph-trash"></i></button>
+  </div>`;
+}
+
+function renderPortfolioSearch() {
+  const wrap = document.getElementById('portfolio-search-results');
+  if (!wrap) return;
+
+  if (state.portfolioSearching) {
+    wrap.innerHTML = [1, 2, 3].map(() => `<div class="skeleton" style="height:72px;border-radius:12px;margin-bottom:8px"></div>`).join('');
+    return;
+  }
+  if (!state.portfolioSearchQ) { wrap.innerHTML = ''; return; }
+  if (!state.portfolioSearchResults.length) {
+    wrap.innerHTML = `<div class="search-hint"><div class="hint-icon"><i class="ph ph-smiley-blank"></i></div><div>검색 결과가 없습니다</div></div>`;
+    return;
+  }
+
+  wrap.innerHTML = state.portfolioSearchResults.slice(0, 10).map(r => {
+    const q = r.quote;
+    const price = q?.regularMarketPrice;
+    const pct = q?.regularMarketChangePercent;
+    const currency = q?.currency || 'USD';
+    const cls = getChangeClass(pct);
+    const added = !!state.portfolio[r.symbol];
+    const name = (r.longname || r.shortname || r.symbol).replace(/'/g, '');
+    return `
+    <div class="result-item ${added ? 'added' : ''}" onclick="openPortfolioModal('${r.symbol}','${name}','${currency}')">
+      <div class="result-info">
+        <div class="result-name">${r.longname || r.shortname || r.symbol}</div>
+        <div class="result-meta"><span class="result-exchange">${r.exchange || ''}</span> <span>${r.symbol}</span></div>
+      </div>
+      <div class="result-right">
+        <div class="result-price">${price ? formatPrice(price, currency) : (state.portfolioFetchingPrices ? '<span style="font-size:11px;color:var(--primary)">로딩중...</span>' : '—')}</div>
+        <div class="result-change ${cls}">${getChangeStr(pct)}</div>
+      </div>
+      <button class="add-btn ${added ? 'added' : ''}" onclick="event.stopPropagation();openPortfolioModal('${r.symbol}','${name}','${currency}')">
+        ${added ? '<i class="ph ph-check"></i>' : '<i class="ph ph-plus"></i>'}
+      </button>
+    </div>`;
+  }).join('');
+}
+
+function renderPortfolioHoldings() {
+  const wrap = document.getElementById('portfolio-holdings');
+  if (!wrap) return;
+  const items = Object.values(state.portfolio);
+
+  if (!items.length) {
+    wrap.innerHTML = `
+      <div class="empty">
+        <div class="empty-icon"><i class="ph ph-wallet"></i></div>
+        <div class="empty-title">보유 종목이 없습니다</div>
+        <div class="empty-sub">위에서 종목을 검색하여<br>내 주식을 추가하세요</div>
+      </div>`;
+    return;
+  }
+
+  const summary = renderPortfolioSummary();
+  const cards = items.map(item => renderPortfolioCard(item)).join('');
+  wrap.innerHTML = `${summary}<div class="section-title" style="margin-top:0">보유 종목</div>${cards}`;
+}
+
+// ── Portfolio Search ───────────────────────────────────────────────────────
+let portfolioSearchTimer;
+async function doPortfolioSearch(q) {
+  clearTimeout(portfolioSearchTimer);
+  if (!q.trim()) { state.portfolioSearchResults = []; renderPortfolioSearch(); return; }
+  state.portfolioSearching = true;
+  renderPortfolioSearch();
+  portfolioSearchTimer = setTimeout(async () => {
+    try {
+      const data = await apiFetch(`/api/search?q=${encodeURIComponent(q)}`);
+      state.portfolioSearchResults = (data.quotes || []).filter(r => r.quoteType === 'EQUITY' || r.quoteType === 'ETF');
+      state.portfolioSearching = false;
+    } catch {
+      state.portfolioSearchResults = [];
+      state.portfolioSearching = false;
+    }
+    renderPortfolioSearch();
+
+    if (state.portfolioSearchResults.length > 0) {
+      state.portfolioFetchingPrices = true;
+      try {
+        const syms = state.portfolioSearchResults.slice(0, 10).map(r => encodeURIComponent(r.symbol)).join(',');
+        const pd = await apiFetch(`/api/quote?symbols=${syms}`);
+        const priceMap = {};
+        (pd.quoteResponse?.result || []).forEach(p => { if (p.symbol) priceMap[p.symbol.toUpperCase()] = p; });
+        state.portfolioSearchResults = state.portfolioSearchResults.map(r => ({ ...r, quote: priceMap[r.symbol.toUpperCase()] }));
+      } catch {}
+      state.portfolioFetchingPrices = false;
+      renderPortfolioSearch();
+    }
+  }, 400);
+}
+
+// ── Portfolio Modal ────────────────────────────────────────────────────────
+let portfolioModalData = {};
+
+function openPortfolioModal(symbol, name, currency) {
+  const existing = state.portfolio[symbol];
+  portfolioModalData = { symbol, name, currency, existing };
+
+  const q = state.portfolioPrices[symbol];
+  const price = q?.regularMarketPrice;
+  const cur = q?.currency || currency;
+
+  document.getElementById('portfolio-modal-title').textContent = existing ? '내 주식 수정' : '내 주식 추가';
+  document.getElementById('portfolio-modal-name').textContent = name;
+  document.getElementById('portfolio-modal-symbol').textContent = symbol;
+  document.getElementById('portfolio-modal-price').textContent = price ? formatPrice(price, cur) : '—';
+
+  const buyInput = document.getElementById('portfolio-buy-price');
+  const qtyInput = document.getElementById('portfolio-qty');
+  buyInput.value = existing?.buyPrice || '';
+  qtyInput.value = existing?.qty || '';
+  if (!existing && price) buyInput.placeholder = formatPriceInputPlain(price, cur);
+
+  document.getElementById('portfolio-modal-overlay').classList.add('open');
+}
+
+function closePortfolioModal() {
+  document.getElementById('portfolio-modal-overlay').classList.remove('open');
+  setTimeout(() => { portfolioModalData = {}; }, 300);
+}
+
+async function savePortfolioModal() {
+  const buyPrice = parseFloat(document.getElementById('portfolio-buy-price').value.replace(/,/g, '')) || null;
+  const qty = parseFloat(document.getElementById('portfolio-qty').value.replace(/,/g, '')) || null;
+  const { symbol, name, currency, existing } = portfolioModalData;
+
+  if (!buyPrice || !qty) { showToast('매수가와 수량을 입력해주세요'); return; }
+
+  const q = state.portfolioPrices[symbol];
+  const cur = q?.currency || currency;
+  try {
+    await savePortfolioItem(symbol, name, buyPrice, qty, cur);
+  } catch {
+    showToast('저장 중 오류가 발생했습니다');
+    return;
+  }
+  closePortfolioModal();
+  await loadPortfolioPrices();
+  renderPortfolioHoldings();
+  renderPortfolioSearch();
+  showToast(existing ? '✅ 수정되었습니다' : '✅ 추가되었습니다');
+}
+
+async function confirmDeletePortfolio(symbol) {
+  if (!confirm(`${state.portfolio[symbol]?.name || symbol} 종목을 삭제할까요?`)) return;
+  try {
+    await deletePortfolioItem(symbol);
+    renderPortfolioHoldings();
+    showToast('종목이 삭제되었습니다');
+  } catch {
+    showToast('삭제 중 오류가 발생했습니다');
+  }
+}
+
 // ── Tabs ───────────────────────────────────────────────────────────────────
 function switchTab(tab) {
   state.currentTab = tab;
@@ -617,6 +916,7 @@ function switchTab(tab) {
   if (tab === 'home') renderHome();
   if (tab === 'search') { setTimeout(() => document.getElementById('search-input')?.focus(), 100); }
   if (tab === 'settings') renderSettings();
+  if (tab === 'portfolio') { renderPortfolioHoldings(); renderPortfolioSearch(); }
 }
 
 // ── Theme ──────────────────────────────────────────────────────────────────
@@ -673,7 +973,7 @@ async function installApp() {
 // ── Event Listeners ────────────────────────────────────────────────────────
 function setupEventListeners() {
   // Tab navigation
-  ['home', 'search', 'settings'].forEach(tab => {
+  ['home', 'search', 'portfolio', 'settings'].forEach(tab => {
     const btn = document.getElementById(`tab-${tab}`);
     if (btn) btn.onclick = () => switchTab(tab);
   });
@@ -700,6 +1000,32 @@ function setupEventListeners() {
   });
   document.getElementById('modal-cancel')?.addEventListener('click', closeModal);
   document.getElementById('modal-save')?.addEventListener('click', saveModal);
+
+  // Portfolio search
+  const portfolioSearchInput = document.getElementById('portfolio-search-input');
+  const portfolioSearchClear = document.getElementById('portfolio-search-clear');
+  portfolioSearchInput?.addEventListener('input', e => {
+    const v = e.target.value;
+    state.portfolioSearchQ = v;
+    portfolioSearchClear?.classList.toggle('visible', !!v);
+    if (!v) { state.portfolioSearchResults = []; renderPortfolioSearch(); return; }
+    doPortfolioSearch(v);
+  });
+  portfolioSearchClear?.addEventListener('click', () => {
+    if (portfolioSearchInput) portfolioSearchInput.value = '';
+    portfolioSearchClear.classList.remove('visible');
+    state.portfolioSearchResults = [];
+    state.portfolioSearchQ = '';
+    renderPortfolioSearch();
+    portfolioSearchInput?.focus();
+  });
+
+  // Portfolio modal
+  document.getElementById('portfolio-modal-overlay')?.addEventListener('click', e => {
+    if (e.target === document.getElementById('portfolio-modal-overlay')) closePortfolioModal();
+  });
+  document.getElementById('portfolio-modal-cancel')?.addEventListener('click', closePortfolioModal);
+  document.getElementById('portfolio-modal-save')?.addEventListener('click', savePortfolioModal);
 
   // Refresh
   document.getElementById('refresh-btn')?.addEventListener('click', refreshPrices);
@@ -762,6 +1088,8 @@ async function init() {
     renderHome();
     await loadWatchlist();
     await loadPrices();
+    await loadPortfolio();
+    await loadPortfolioPrices();
     state.loading = false;
     renderHome();
 

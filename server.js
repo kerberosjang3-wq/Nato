@@ -249,6 +249,35 @@ app.delete('/api/watchlist/:symbol', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// ── Portfolio API ──────────────────────────────────────────────────────────
+app.get('/api/portfolio', async (req, res) => {
+  try { const s = await getStore(); res.json(s.portfolios?.[getCid(req)] || {}); }
+  catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/portfolio', async (req, res) => {
+  try {
+    const s = await getStore();
+    const id = getCid(req);
+    if (!s.portfolios) s.portfolios = {};
+    if (!s.portfolios[id]) s.portfolios[id] = {};
+    s.portfolios[id][req.body.symbol] = { ...req.body, addedAt: Date.now() };
+    await saveStore(s);
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.delete('/api/portfolio/:symbol', async (req, res) => {
+  try {
+    const s = await getStore();
+    const id = getCid(req);
+    const sym = decodeURIComponent(req.params.symbol);
+    if (s.portfolios?.[id]) delete s.portfolios[id][sym];
+    await saveStore(s);
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // 한국 종목 데이터 로드
 let KR_STOCKS = [];
 try {

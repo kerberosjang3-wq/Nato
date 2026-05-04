@@ -506,3 +506,68 @@ html, body {
 
 .spinning { animation: spin 0.8s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+/* ── Portfolio ── */
+#screen-portfolio { padding-top: 16px; }
+.portfolio-search-wrap { position: sticky; top: 0; background: var(--bg); padding: 0 0 14px; z-index: 5; }
+
+.portfolio-summary {
+  background: var(--bg-card);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  margin-bottom: 16px;
+  position: relative;
+  overflow: hidden;
+}
+.portfolio-summary::before {
+  content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%;
+  background: linear-gradient(180deg, var(--primary), var(--success));
+}
+.portfolio-total-label { font-size: 11px; font-weight: 700; color: var(--text-sub); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px; }
+.portfolio-summary-block + .portfolio-summary-block { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+.portfolio-total-value { font-size: 24px; font-weight: 800; color: var(--text); margin-bottom: 12px; font-variant-numeric: tabular-nums; }
+
+.portfolio-stats-row { display: flex; gap: 8px; }
+.portfolio-stat {
+  flex: 1; background: var(--bg-elevated); border-radius: 8px; padding: 8px;
+  text-align: center;
+}
+.portfolio-stat-label { font-size: 10px; color: var(--text-sub); font-weight: 600; margin-bottom: 3px; }
+.portfolio-stat-value { font-size: 13px; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
+.portfolio-stat-value.up { color: var(--stock-up); }
+.portfolio-stat-value.down { color: var(--stock-down); }
+
+.portfolio-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  position: relative;
+  overflow: hidden;
+}
+.portfolio-card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+.portfolio-card-name { font-size: 14px; font-weight: 700; color: var(--text); padding-right: 32px; }
+.portfolio-card-symbol { font-size: 11px; color: var(--text-sub); font-weight: 600; margin-top: 2px; }
+.portfolio-card-price { text-align: right; flex-shrink: 0; }
+.portfolio-card-current { font-size: 15px; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
+.portfolio-card-change { font-size: 11px; font-weight: 700; margin-top: 2px; }
+
+.portfolio-card-stats { display: flex; gap: 6px; }
+.portfolio-card-stat {
+  flex: 1; background: var(--bg-elevated); border-radius: 8px; padding: 6px 4px; text-align: center;
+}
+.portfolio-card-stat-label { font-size: 9px; color: var(--text-sub); font-weight: 600; margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.3px; }
+.portfolio-card-stat-value { font-size: 11px; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
+.portfolio-card-stat-value.up { color: var(--stock-up); }
+.portfolio-card-stat-value.down { color: var(--stock-down); }
+
+.portfolio-card-del {
+  position: absolute; top: 8px; right: 8px;
+  width: 26px; height: 26px; border-radius: 7px;
+  border: none; background: rgba(255, 82, 82, 0.1);
+  color: var(--danger); font-size: 13px;
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.portfolio-card-del:active { background: rgba(255, 82, 82, 0.25); }
