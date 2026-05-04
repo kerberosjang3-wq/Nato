@@ -1,5 +1,6 @@
 :root {
   /* Colors - Premium Dark Palette */
+  --bg-rgb: 9, 9, 13;
   --primary: #3E7BFA;
   --primary-glow: rgba(62, 123, 250, 0.3);
   --success: #00D084;
@@ -32,6 +33,7 @@
 }
 
 [data-theme="light"] {
+  --bg-rgb: 245, 247, 255;
   --bg: #F5F7FF;
   --bg-card: rgba(255, 255, 255, 0.8);
   --bg-elevated: rgba(240, 242, 250, 0.6);

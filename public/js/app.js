@@ -552,7 +552,7 @@ let currentSwipedCard = null;
 let swipeTimer = null;
 
 function setupSwipeEvents() {
-  const watchlist = document.getElementById('watchlist');
+  const watchlist = document.getElementById('home-list');
   if (!watchlist) return;
 
   const handleStart = (x, y, target) => {
