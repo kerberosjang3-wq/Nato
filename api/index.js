@@ -15,9 +15,11 @@ const zlib = require('zlib');
 const app = express();
 app.use(express.json());
 
-// Vercel에서 정적 파일은 기본적으로 Edge에서 서비스되지만, 
-// 만약 이 함수가 루트를 핸들링하게 될 경우를 대비해 설정
-app.use(express.static(path.join(__dirname, '../public')));
+// Vercel에서 정적 파일은 기본적으로 Edge에서 서비스됩니다.
+// 로컬 환경에서만 Express가 정적 파일을 제공하도록 설정합니다.
+if (!process.env.VERCEL) {
+  app.use(express.static(path.join(__dirname, '../public')));
+}
 
 // ── Storage: Upstash Redis (Vercel) or JSON file (로컬) ────────────────────
 const DATA_FILE = path.join(__dirname, '../data.json');
@@ -377,10 +379,9 @@ app.get('/api/cron', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// Root route (Fallback)
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/index.html'));
-});
+// Root route (Vercel에서는 public/index.html이 자동으로 서비스되므로 제거)
+// 로컬 환경에서도 정적 미들웨어가 처리하므로 필요 없습니다.
+
 
 module.exports = app;
 
