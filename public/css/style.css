@@ -3,6 +3,8 @@
   --primary-light: #3B82F6;
   --success: #10B981;
   --danger: #EF4444;
+  --stock-up: #EF4444;
+  --stock-down: #3B82F6;
   --warning: #F59E0B;
   --bg: #0B0B12;
   --bg-card: #161622;
@@ -15,7 +17,7 @@
   --shadow: 0 4px 24px rgba(0,0,0,0.4);
   --radius: 16px;
   --header-h: 60px;
-  --tab-h: 68px;
+  --tab-h: 41px;
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
@@ -126,12 +128,12 @@ html, body {
 
 .tab-btn {
   flex: 1; display: flex; flex-direction: column;
-  align-items: center; justify-content: center; gap: 4px;
+  align-items: center; justify-content: center; gap: 2px;
   border: none; background: none; cursor: pointer;
-  color: var(--text-sub); font-size: 11px; font-weight: 500;
+  color: var(--text-sub); font-size: 10px; font-weight: 500;
   transition: color 0.15s; padding: 0;
 }
-.tab-btn .tab-icon { font-size: 22px; line-height: 1; }
+.tab-btn .tab-icon { font-size: 14px; line-height: 1; }
 .tab-btn.active { color: var(--primary-light); }
 .tab-btn:active { opacity: 0.7; }
 
@@ -164,8 +166,10 @@ html, body {
   display: inline-flex; align-items: center; gap: 2px;
   padding: 2px 6px; border-radius: 6px;
 }
-.stock-change.up { color: var(--success); background: rgba(16,185,129,0.1); }
-.stock-change.down { color: var(--danger); background: rgba(239,68,68,0.1); }
+.stock-change.up { color: var(--stock-up); background: rgba(239,68,68,0.1); }
+.stock-change.down { color: var(--stock-down); background: rgba(59,130,246,0.1); }
+.result-change.up { color: var(--stock-up); }
+.result-change.down { color: var(--stock-down); }
 .stock-change.flat { color: var(--text-sub); background: var(--bg-elevated); }
 
 .stock-targets {
