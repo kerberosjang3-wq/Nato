@@ -526,6 +526,7 @@ html, body {
 }
 .portfolio-total-label { font-size: 11px; font-weight: 700; color: var(--text-sub); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px; }
 .portfolio-summary-block + .portfolio-summary-block { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+.portfolio-currency-label { font-size: 11px; font-weight: 700; color: var(--primary); margin-bottom: 4px; letter-spacing: 0.5px; }
 .portfolio-total-value { font-size: 24px; font-weight: 800; color: var(--text); margin-bottom: 12px; font-variant-numeric: tabular-nums; }
 
 .portfolio-stats-row { display: flex; gap: 8px; }

@@ -674,15 +674,20 @@ function renderPortfolioSummary() {
     }
   }
 
+  const numCurrencies = Object.keys(groups).length;
+  const currencyNames = { KRW: '원화', USD: '달러', JPY: '엔화' };
+
   const rows = Object.entries(groups).map(([currency, g]) => {
-    if (!g.hasPrices) return '';
-    const gain = g.current - g.invested;
-    const gainPct = g.invested > 0 ? (gain / g.invested) * 100 : 0;
-    const gainClass = gain >= 0 ? 'up' : 'down';
-    const gainSign = gain >= 0 ? '+' : '';
+    const gain = g.hasPrices ? g.current - g.invested : null;
+    const gainPct = (gain !== null && g.invested > 0) ? (gain / g.invested) * 100 : null;
+    const gainClass = gain !== null ? (gain >= 0 ? 'up' : 'down') : '';
+    const gainSign = gain !== null && gain >= 0 ? '+' : '';
+    const currencyLabel = numCurrencies > 1
+      ? `<div class="portfolio-currency-label">${currencyNames[currency] || currency}</div>` : '';
     return `
     <div class="portfolio-summary-block">
-      <div class="portfolio-total-value">${formatPrice(g.current, currency)}</div>
+      ${currencyLabel}
+      <div class="portfolio-total-value">${g.hasPrices ? formatPrice(g.current, currency) : '—'}</div>
       <div class="portfolio-stats-row">
         <div class="portfolio-stat">
           <div class="portfolio-stat-label">투자금액</div>
@@ -690,17 +695,16 @@ function renderPortfolioSummary() {
         </div>
         <div class="portfolio-stat">
           <div class="portfolio-stat-label">평가손익</div>
-          <div class="portfolio-stat-value ${gainClass}">${gainSign}${formatPrice(Math.abs(gain), currency)}</div>
+          <div class="portfolio-stat-value ${gainClass}">${gain !== null ? `${gainSign}${formatPrice(Math.abs(gain), currency)}` : '—'}</div>
         </div>
         <div class="portfolio-stat">
           <div class="portfolio-stat-label">수익률</div>
-          <div class="portfolio-stat-value ${gainClass}">${gainSign}${gainPct.toFixed(2)}%</div>
+          <div class="portfolio-stat-value ${gainClass}">${gainPct !== null ? `${gainSign}${gainPct.toFixed(2)}%` : '—'}</div>
         </div>
       </div>
     </div>`;
   }).join('');
 
-  if (!rows.trim()) return '';
   return `<div class="portfolio-summary"><div class="portfolio-total-label">총 평가금액</div>${rows}</div>`;
 }
 
@@ -916,7 +920,15 @@ function switchTab(tab) {
   if (tab === 'home') renderHome();
   if (tab === 'search') { setTimeout(() => document.getElementById('search-input')?.focus(), 100); }
   if (tab === 'settings') renderSettings();
-  if (tab === 'portfolio') { renderPortfolioHoldings(); renderPortfolioSearch(); }
+  if (tab === 'portfolio') {
+    renderPortfolioHoldings();
+    renderPortfolioSearch();
+    if (Object.keys(state.portfolio).length) {
+      loadPortfolioPrices().then(() => {
+        if (state.currentTab === 'portfolio') renderPortfolioHoldings();
+      });
+    }
+  }
 }
 
 // ── Theme ──────────────────────────────────────────────────────────────────
@@ -951,9 +963,14 @@ let autoRefreshTimer;
 function startAutoRefresh() {
   clearInterval(autoRefreshTimer);
   autoRefreshTimer = setInterval(async () => {
-    if (document.visibilityState === 'visible' && Object.keys(state.watchlist).length) {
+    if (document.visibilityState !== 'visible') return;
+    if (Object.keys(state.watchlist).length) {
       await loadPrices();
       if (state.currentTab === 'home') renderHome();
+    }
+    if (state.currentTab === 'portfolio' && Object.keys(state.portfolio).length) {
+      await loadPortfolioPrices();
+      renderPortfolioHoldings();
     }
   }, 60000); // refresh every minute when visible
 }
