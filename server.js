@@ -423,25 +423,37 @@ function searchKrStocks(q) {
 
 const SEARCH_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
 
+function parseNaverItems(items, isKosdaq) {
+  return (items || []).map(item => ({
+    symbol: item[1] + (isKosdaq ? '.KQ' : '.KS'),
+    shortname: item[0],
+    longname: item[0],
+    exchange: isKosdaq ? 'KOQ' : 'KSC',
+    quoteType: 'EQUITY',
+  })).filter(s => s.shortname && s.symbol.length > 3);
+}
+
 async function searchNaverFinance(q) {
-  const r = await fetch(
-    `https://ac.finance.naver.com/ac?q=${encodeURIComponent(q)}&q_enc=UTF-8&target=stock`,
-    { headers: { 'User-Agent': SEARCH_UA, 'Referer': 'https://finance.naver.com/' }, timeout: 5000 }
-  );
-  if (!r.ok) throw new Error(`Naver ${r.status}`);
-  const { items = [] } = await r.json();
-  return items.slice(0, 10).map(item => {
-    const name = item[0];
-    const code = item[1];
-    const isKosdaq = String(item[4]) === '2';
-    return {
-      symbol: code + (isKosdaq ? '.KQ' : '.KS'),
-      shortname: name,
-      longname: name,
-      exchange: isKosdaq ? 'KOQ' : 'KSC',
-      quoteType: 'EQUITY',
-    };
-  }).filter(s => s.shortname);
+  const opts = { headers: { 'User-Agent': SEARCH_UA, 'Referer': 'https://finance.naver.com/' }, timeout: 5000 };
+  const enc = encodeURIComponent(q);
+  // KOSPI(stock)와 KOSDAQ(cosd) 병렬 검색
+  const [kospiRes, kosdaqRes] = await Promise.all([
+    fetch(`https://ac.finance.naver.com/ac?q=${enc}&q_enc=UTF-8&target=stock`, opts),
+    fetch(`https://ac.finance.naver.com/ac?q=${enc}&q_enc=UTF-8&target=cosd`, opts),
+  ]);
+  const kospiItems  = kospiRes.ok  ? (await kospiRes.json()).items  || [] : [];
+  const kosdaqItems = kosdaqRes.ok ? (await kosdaqRes.json()).items || [] : [];
+
+  const kospiResults  = parseNaverItems(kospiItems,  false);
+  const kosdaqResults = parseNaverItems(kosdaqItems, true);
+
+  // 합치고 중복 제거 후 최대 10개
+  const seen = new Set();
+  return [...kospiResults, ...kosdaqResults].filter(s => {
+    if (seen.has(s.symbol)) return false;
+    seen.add(s.symbol);
+    return true;
+  }).slice(0, 10);
 }
 
 app.get('/api/search', async (req, res) => {
