@@ -68,6 +68,7 @@ const state = {
   portfolioSearching: false,
   portfolioFetchingPrices: false,
   fxRates: {},
+  fxRatesUpdatedAt: null,
   watchlistSearchResults: [],
   watchlistSearchQ: '',
   watchlistSearching: false,
@@ -175,6 +176,7 @@ async function fetchFxRates() {
       if (q.symbol === 'JPYKRW=X') state.fxRates.JPY = q.regularMarketPrice;
       if (q.symbol === 'EURKRW=X') state.fxRates.EUR = q.regularMarketPrice;
     });
+    state.fxRatesUpdatedAt = Date.now();
   } catch (_) {}
 }
 
@@ -711,6 +713,12 @@ function renderPortfolioSummary() {
     const gainPct = gain !== null && g.invested > 0 ? (gain / g.invested) * 100 : null;
     const gc = gain !== null ? (gain >= 0 ? 'gain-up' : 'gain-down') : '';
     const gs = gain !== null && gain >= 0 ? '+' : '';
+    const rate = currency !== 'KRW' ? state.fxRates[currency] : null;
+    const krwGainSingle = rate && gain !== null ? gain * rate : null;
+    const krwGainClass = krwGainSingle !== null ? (krwGainSingle >= 0 ? 'gain-up' : 'gain-down') : '';
+    const krwLine = rate && g.hasPrices
+      ? `<div class="psummary-krw-line">≈ ${formatPrice(g.current * rate, 'KRW')}${krwGainSingle !== null ? ` <span class="${krwGainClass}">(${krwGainSingle >= 0 ? '+' : ''}${formatPrice(Math.abs(krwGainSingle), 'KRW')})</span>` : ''}</div>`
+      : '';
     headerHtml = `
       <div class="psummary-header">
         <span class="psummary-label">총 평가금액</span>
@@ -720,7 +728,8 @@ function renderPortfolioSummary() {
         <span>투자 <b>${formatPrice(g.invested, currency)}</b></span>
         <span class="${gc}">손익 <b>${gain !== null ? `${gs}${formatPrice(Math.abs(gain), currency)}` : '—'}</b></span>
         <span class="${gc}"><b>${gainPct !== null ? `${gs}${gainPct.toFixed(1)}%` : '—'}</b></span>
-      </div>`;
+      </div>
+      ${krwLine}`;
   } else {
     const gc = krwGain !== null ? (krwGain >= 0 ? 'gain-up' : 'gain-down') : '';
     const gs = krwGain !== null && krwGain >= 0 ? '+' : '';
@@ -754,7 +763,29 @@ function renderPortfolioSummary() {
     </div>`;
   }).join('') : '';
 
-  return `<div class="portfolio-summary">${headerHtml}${currencyRows ? `<div class="psummary-rows">${currencyRows}</div>` : ''}</div>`;
+  const foreignCurrencies = Object.keys(groups).filter(c => c !== 'KRW');
+  let fxFooter = '';
+  if (foreignCurrencies.length > 0) {
+    const rateStrs = foreignCurrencies
+      .filter(c => state.fxRates[c])
+      .map(c => `${currencyNames[c] || c} ₩${Math.round(state.fxRates[c]).toLocaleString('ko-KR')}`);
+    const ts = state.fxRatesUpdatedAt;
+    const timeStr = ts ? (() => {
+      const diff = Date.now() - ts;
+      if (diff < 60000) return '방금 갱신';
+      const d = new Date(ts);
+      return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')} 기준`;
+    })() : '';
+    if (rateStrs.length) {
+      fxFooter = `
+      <div class="psummary-fx-footer">
+        <span class="psummary-fx-rates"><i class="ph ph-currency-circle-dollar"></i> ${rateStrs.join(' · ')}</span>
+        ${timeStr ? `<span class="psummary-fx-time">${timeStr}</span>` : ''}
+      </div>`;
+    }
+  }
+
+  return `<div class="portfolio-summary">${headerHtml}${currencyRows ? `<div class="psummary-rows">${currencyRows}</div>` : ''}${fxFooter}</div>`;
 }
 
 function renderPortfolioCard(item) {
