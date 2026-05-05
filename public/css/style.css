@@ -626,6 +626,41 @@ html, body {
 }
 .port-stat.gain-up .port-stat-value { color: var(--stock-up); }
 .port-stat.gain-down .port-stat-value { color: var(--stock-down); }
+
+/* 포트폴리오 카드 접기/펼치기 */
+.port-collapse-row {
+  display: flex; align-items: center; gap: 6px;
+  margin-top: 6px; padding-top: 6px;
+  border-top: 1px solid var(--border);
+}
+.port-collapse-gain {
+  font-size: 13px; font-weight: 700;
+  font-variant-numeric: tabular-nums; flex: 1;
+  color: var(--text-sub);
+}
+.port-collapse-pct {
+  font-size: 13px; font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-sub);
+}
+.port-collapse-gain.gain-up, .port-collapse-pct.gain-up { color: var(--stock-up); }
+.port-collapse-gain.gain-down, .port-collapse-pct.gain-down { color: var(--stock-down); }
+.port-caret {
+  font-size: 13px; color: var(--text-sub);
+  transition: transform 0.25s ease;
+  flex-shrink: 0; margin-left: 2px;
+}
+.stock-card.expanded .port-caret { transform: rotate(180deg); }
+.port-expand-body {
+  max-height: 0; overflow: hidden;
+  transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease;
+  opacity: 0;
+}
+.stock-card.expanded .port-expand-body {
+  max-height: 200px; opacity: 1;
+}
+.port-expand-body .port-stats { margin-top: 6px; }
+.port-expand-body .port-stat-krw { margin-top: 4px; }
 .port-stat-krw {
   margin-top: 4px;
   background: var(--bg-elevated);

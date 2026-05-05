@@ -69,6 +69,7 @@ const state = {
   portfolioFetchingPrices: false,
   fxRates: {},
   fxRatesUpdatedAt: null,
+  expandedPortfolioCards: new Set(),
   watchlistSearchResults: [],
   watchlistSearchQ: '',
   watchlistSearching: false,
@@ -807,8 +808,12 @@ function renderPortfolioCard(item) {
         <span class="port-stat-krw-val">${formatPrice(currentValKrw, 'KRW')}<span class="${gainKrw !== null ? (gainKrw >= 0 ? 'gain-up' : 'gain-down') : ''}"> (${gainKrw !== null ? (gainKrw >= 0 ? '+' : '') + formatPrice(Math.abs(gainKrw), 'KRW') : '—'})</span></span>
       </div>` : '';
 
+  const isExpanded = state.expandedPortfolioCards.has(item.symbol);
+  const gainStr = gain !== null ? `${gainSign}${formatPrice(Math.abs(gain), currency)}` : '—';
+  const pctStr = gainPct !== null ? `${gainSign}${gainPct.toFixed(2)}%` : '—';
+
   return `
-  <div class="stock-card" data-symbol="${item.symbol}" data-portfolio="1" onclick="handlePortfolioCardTap('${item.symbol}')">
+  <div class="stock-card${isExpanded ? ' expanded' : ''}" data-symbol="${item.symbol}" data-portfolio="1" onclick="handlePortfolioCardTap('${item.symbol}')">
     <div class="stock-card-main">
       <div class="stock-card-top">
         <div>
@@ -820,25 +825,32 @@ function renderPortfolioCard(item) {
           <div class="stock-change ${getChangeClass(pct)}">${getChangeStr(pct)}</div>
         </div>
       </div>
-      <div class="port-stats">
-        <div class="port-stat">
-          <span class="port-stat-label">매수가</span>
-          <span class="port-stat-value">${formatPrice(item.buyPrice, currency)}</span>
-        </div>
-        <div class="port-stat">
-          <span class="port-stat-label">투자금액</span>
-          <span class="port-stat-value">${formatPrice(invested, currency)}</span>
-        </div>
-        <div class="port-stat">
-          <span class="port-stat-label">평가금액</span>
-          <span class="port-stat-value">${currentVal !== null ? formatPrice(currentVal, currency) : '—'}</span>
-        </div>
-        <div class="port-stat ${gainClass}">
-          <span class="port-stat-label">수익률</span>
-          <span class="port-stat-value">${gainPct !== null ? `${gainSign}${gainPct.toFixed(2)}%` : '—'}</span>
-        </div>
+      <div class="port-collapse-row">
+        <span class="port-collapse-gain ${gainClass}">${gainStr}</span>
+        <span class="port-collapse-pct ${gainClass}">${pctStr}</span>
+        <i class="ph ph-caret-down port-caret"></i>
       </div>
-      ${krwRow}
+      <div class="port-expand-body">
+        <div class="port-stats">
+          <div class="port-stat">
+            <span class="port-stat-label">매수가</span>
+            <span class="port-stat-value">${formatPrice(item.buyPrice, currency)}</span>
+          </div>
+          <div class="port-stat">
+            <span class="port-stat-label">투자금액</span>
+            <span class="port-stat-value">${formatPrice(invested, currency)}</span>
+          </div>
+          <div class="port-stat">
+            <span class="port-stat-label">평가금액</span>
+            <span class="port-stat-value">${currentVal !== null ? formatPrice(currentVal, currency) : '—'}</span>
+          </div>
+          <div class="port-stat ${gainClass}">
+            <span class="port-stat-label">수익률</span>
+            <span class="port-stat-value">${gainPct !== null ? `${gainSign}${gainPct.toFixed(2)}%` : '—'}</span>
+          </div>
+        </div>
+        ${krwRow}
+      </div>
     </div>
     <div class="card-actions">
       <button class="card-btn edit" onclick="openPortfolioEditModal(event,'${item.symbol}')"><i class="ph ph-pencil-simple"></i></button>
@@ -854,6 +866,10 @@ function handlePortfolioCardTap(symbol) {
   if (card.classList.contains('swiped')) {
     card.classList.remove('swiped');
     if (currentSwipedCard === card) currentSwipedCard = null;
+  } else {
+    const expanded = card.classList.toggle('expanded');
+    if (expanded) state.expandedPortfolioCards.add(symbol);
+    else state.expandedPortfolioCards.delete(symbol);
   }
 }
 
