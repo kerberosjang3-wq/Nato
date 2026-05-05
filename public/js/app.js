@@ -804,7 +804,10 @@ function renderPortfolioSummary() {
   return `
   <div class="portfolio-summary${isExpanded ? ' expanded' : ''}" onclick="togglePortfolioSummary()">
     <div class="psummary-header">
-      <span class="psummary-label">${totalLabel}</span>
+      <div class="psummary-label-group">
+        <span class="psummary-label">${totalLabel}</span>
+        <span class="psummary-count-badge">${items.length}종목</span>
+      </div>
       <span class="psummary-total">${totalDisplay}</span>
     </div>
     <div class="psummary-collapse-row">
@@ -855,6 +858,7 @@ function renderPortfolioCard(item) {
         </div>
       </div>
       <div class="port-collapse-row">
+        <span class="port-collapse-label">손익</span>
         <span class="port-collapse-gain ${gainClass}">${gainStr}</span>
         <span class="port-collapse-pct ${gainClass}">${pctStr}</span>
         <i class="ph ph-caret-down port-caret"></i>
@@ -981,7 +985,7 @@ function renderPortfolioHoldings() {
     return gainPct(b) - gainPct(a);
   });
   const cards = sorted.map(item => renderPortfolioCard(item)).join('');
-  wrap.innerHTML = `${summary}<div class="section-title" style="margin-top:0">보유 종목</div>${cards}`;
+  wrap.innerHTML = `${summary}${cards}`;
 }
 
 // ── Portfolio Search ───────────────────────────────────────────────────────

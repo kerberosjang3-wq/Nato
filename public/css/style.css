@@ -105,14 +105,13 @@ html, body {
 .header-actions { display: flex; gap: 10px; align-items: center; }
 
 .icon-btn {
-  width: 40px; height: 40px;
-  border: none; background: var(--bg-elevated);
-  border-radius: 12px; cursor: pointer; color: var(--text);
+  width: 34px; height: 34px;
+  border: none; background: transparent;
+  border-radius: 10px; cursor: pointer; color: var(--text-sub);
   display: flex; align-items: center; justify-content: center;
-  font-size: 20px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 1px solid var(--border);
+  font-size: 18px; transition: all 0.2s ease;
 }
-.icon-btn:active { transform: scale(0.92); background: var(--border); }
+.icon-btn:active { transform: scale(0.90); color: var(--primary); }
 .icon-btn i { transition: transform 0.3s ease; }
 .icon-btn:hover i { color: var(--primary); }
 
@@ -194,6 +193,7 @@ html, body {
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: 14px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
   transition: border-color 0.3s, box-shadow 0.3s;
   overflow: hidden;
   user-select: none;
@@ -227,13 +227,12 @@ html, body {
 .stock-price-wrap { text-align: right; }
 .stock-price { font-size: 14px; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
 .stock-change {
-  font-size: 10px; font-weight: 700; margin-top: 1px;
+  font-size: 11px; font-weight: 700; margin-top: 2px;
   display: inline-flex; align-items: center; gap: 2px;
-  padding: 2px 5px; border-radius: 5px;
 }
-.stock-change.up { color: var(--stock-up); background: rgba(255,82,82,0.12); }
-.stock-change.down { color: var(--stock-down); background: rgba(62,123,250,0.12); }
-.stock-change.flat { color: var(--text-sub); background: var(--bg-elevated); }
+.stock-change.up { color: var(--stock-up); }
+.stock-change.down { color: var(--stock-down); }
+.stock-change.flat { color: var(--text-sub); }
 
 .stock-targets { display: flex; gap: 5px; margin-bottom: 1px; }
 .target-badge {
@@ -549,15 +548,16 @@ html, body {
 .search-field-btn .spinning { color: var(--primary); }
 
 .portfolio-summary {
-  background: var(--bg-card);
-  border: 1px solid var(--glass-border);
+  background: linear-gradient(135deg, rgba(62,123,250,0.1) 0%, var(--bg-card) 55%);
+  border: 1px solid rgba(62,123,250,0.25);
   border-radius: var(--radius-md);
-  padding: 11px 14px 11px 18px;
+  padding: 12px 14px 12px 18px;
   margin-bottom: 12px;
   position: relative;
   overflow: hidden;
   cursor: pointer;
   user-select: none;
+  box-shadow: 0 2px 12px rgba(62,123,250,0.1);
 }
 .portfolio-summary::before {
   content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 100%;
@@ -595,7 +595,9 @@ html, body {
 .psummary-expand-body .psummary-fx-footer { margin-top: 8px; padding-top: 7px; border-top: 1px solid var(--border); }
 .psummary-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 3px; }
 .psummary-label { font-size: 10px; font-weight: 700; color: var(--text-sub); text-transform: uppercase; letter-spacing: 0.7px; }
-.psummary-total { font-size: 20px; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
+.psummary-total { font-size: 24px; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
+.psummary-label-group { display: flex; align-items: center; gap: 6px; }
+.psummary-count-badge { font-size: 10px; font-weight: 700; color: var(--primary); background: rgba(62,123,250,0.12); border-radius: 6px; padding: 1px 6px; }
 .psummary-inline { display: flex; gap: 10px; font-size: 11px; color: var(--text-sub); flex-wrap: wrap; }
 .psummary-inline b { color: var(--text); font-variant-numeric: tabular-nums; }
 .psummary-inline .gain-up b { color: var(--stock-up); }
@@ -620,7 +622,7 @@ html, body {
 .psummary-fx-rates i { font-size: 12px; color: var(--primary); }
 .psummary-fx-time { opacity: 0.65; font-size: 10px; }
 
-#portfolio-holdings .stock-card { margin-bottom: 8px; }
+#portfolio-holdings .stock-card { margin-bottom: 10px; }
 
 /* 포트폴리오 카드 2×2 스탯 그리드 */
 .port-stats {
@@ -661,16 +663,20 @@ html, body {
 /* 포트폴리오 카드 접기/펼치기 */
 .port-collapse-row {
   display: flex; align-items: center; gap: 6px;
-  margin-top: 6px; padding-top: 6px;
+  margin-top: 7px; padding-top: 7px;
   border-top: 1px solid var(--border);
 }
+.port-collapse-label {
+  font-size: 10px; font-weight: 700; color: var(--text-sub);
+  flex-shrink: 0;
+}
 .port-collapse-gain {
-  font-size: 13px; font-weight: 700;
+  font-size: 13px; font-weight: 800;
   font-variant-numeric: tabular-nums; flex: 1;
   color: var(--text-sub);
 }
 .port-collapse-pct {
-  font-size: 13px; font-weight: 700;
+  font-size: 13px; font-weight: 800;
   font-variant-numeric: tabular-nums;
   color: var(--text-sub);
 }
