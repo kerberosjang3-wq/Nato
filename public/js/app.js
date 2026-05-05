@@ -70,6 +70,7 @@ const state = {
   fxRates: {},
   fxRatesUpdatedAt: null,
   expandedPortfolioCards: new Set(),
+  summaryExpanded: false,
   watchlistSearchResults: [],
   watchlistSearchQ: '',
   watchlistSearching: false,
@@ -705,86 +706,114 @@ function renderPortfolioSummary() {
   const krwGain = fxOk && anyPrices ? krwCurrent - krwInvested : null;
   const krwGainPct = krwGain !== null && krwInvested > 0 ? (krwGain / krwInvested) * 100 : null;
 
-  let headerHtml;
+  // 헤더 (총 평가금액 + 현재가)
+  let totalDisplay, totalLabel;
+  if (numCurrencies === 1) {
+    const [currency, g] = Object.entries(groups)[0];
+    totalDisplay = g.hasPrices ? formatPrice(g.current, currency) : '—';
+    totalLabel = '총 평가금액';
+  } else {
+    totalDisplay = fxOk && anyPrices ? formatPrice(krwCurrent, 'KRW') : '—';
+    totalLabel = '총 평가금액 (원화 환산)';
+  }
+
+  // 접힌 행 (손익 + 수익률)
+  let cgain, cgainPct, ccurrency;
+  if (numCurrencies === 1) {
+    const [currency, g] = Object.entries(groups)[0];
+    cgain = g.hasPrices ? g.current - g.invested : null;
+    cgainPct = cgain !== null && g.invested > 0 ? (cgain / g.invested) * 100 : null;
+    ccurrency = currency;
+  } else {
+    cgain = krwGain; cgainPct = krwGainPct; ccurrency = 'KRW';
+  }
+  const cgc = cgain !== null ? (cgain >= 0 ? 'gain-up' : 'gain-down') : '';
+  const cgs = cgain !== null && cgain >= 0 ? '+' : '';
+  const cgainStr = cgain !== null ? `${cgs}${formatPrice(Math.abs(cgain), ccurrency)}` : '—';
+  const cpctStr = cgainPct !== null ? `${cgs}${cgainPct.toFixed(1)}%` : '—';
+
+  // 펼친 내용 (상세 통계)
+  let expandContent = '';
   if (numCurrencies === 1) {
     const [currency, g] = Object.entries(groups)[0];
     const gain = g.hasPrices ? g.current - g.invested : null;
     const gainPct = gain !== null && g.invested > 0 ? (gain / g.invested) * 100 : null;
     const gc = gain !== null ? (gain >= 0 ? 'gain-up' : 'gain-down') : '';
     const gs = gain !== null && gain >= 0 ? '+' : '';
-    const rate = currency !== 'KRW' ? state.fxRates[currency] : null;
-    const krwGainSingle = rate && gain !== null ? gain * rate : null;
-    const krwGainClass = krwGainSingle !== null ? (krwGainSingle >= 0 ? 'gain-up' : 'gain-down') : '';
-    const krwLine = rate && g.hasPrices
-      ? `<div class="psummary-krw-line">≈ ${formatPrice(g.current * rate, 'KRW')}${krwGainSingle !== null ? ` <span class="${krwGainClass}">(${krwGainSingle >= 0 ? '+' : ''}${formatPrice(Math.abs(krwGainSingle), 'KRW')})</span>` : ''}</div>`
-      : '';
-    headerHtml = `
-      <div class="psummary-header">
-        <span class="psummary-label">총 평가금액</span>
-        <span class="psummary-total">${g.hasPrices ? formatPrice(g.current, currency) : '—'}</span>
-      </div>
+    expandContent += `
       <div class="psummary-inline">
         <span>투자 <b>${formatPrice(g.invested, currency)}</b></span>
         <span class="${gc}">손익 <b>${gain !== null ? `${gs}${formatPrice(Math.abs(gain), currency)}` : '—'}</b></span>
         <span class="${gc}"><b>${gainPct !== null ? `${gs}${gainPct.toFixed(1)}%` : '—'}</b></span>
-      </div>
-      ${krwLine}`;
+      </div>`;
+    const rate = currency !== 'KRW' ? state.fxRates[currency] : null;
+    if (rate && g.hasPrices) {
+      const kgain = gain !== null ? gain * rate : null;
+      const kgc = kgain !== null ? (kgain >= 0 ? 'gain-up' : 'gain-down') : '';
+      expandContent += `<div class="psummary-krw-line">≈ ${formatPrice(g.current * rate, 'KRW')}${kgain !== null ? ` <span class="${kgc}">(${kgain >= 0 ? '+' : ''}${formatPrice(Math.abs(kgain), 'KRW')})</span>` : ''}</div>`;
+    }
   } else {
     const gc = krwGain !== null ? (krwGain >= 0 ? 'gain-up' : 'gain-down') : '';
     const gs = krwGain !== null && krwGain >= 0 ? '+' : '';
-    headerHtml = `
-      <div class="psummary-header">
-        <span class="psummary-label">총 평가금액 (원화 환산)</span>
-        <span class="psummary-total">${fxOk && anyPrices ? formatPrice(krwCurrent, 'KRW') : '—'}</span>
-      </div>
+    expandContent += `
       <div class="psummary-inline">
         <span>투자 <b>${fxOk && krwInvested ? formatPrice(krwInvested, 'KRW') : '—'}</b></span>
         <span class="${gc}">손익 <b>${krwGain !== null ? `${gs}${formatPrice(Math.abs(krwGain), 'KRW')}` : '—'}</b></span>
         <span class="${gc}"><b>${krwGainPct !== null ? `${gs}${krwGainPct.toFixed(1)}%` : '—'}</b></span>
       </div>`;
+    const currencyRows = Object.entries(groups).map(([currency, g]) => {
+      const gain = g.hasPrices ? g.current - g.invested : null;
+      const gainPct = gain !== null && g.invested > 0 ? (gain / g.invested) * 100 : null;
+      const gc2 = gain !== null ? (gain >= 0 ? 'gain-up' : 'gain-down') : '';
+      const gs2 = gain !== null && gain >= 0 ? '+' : '';
+      const rate = state.fxRates[currency];
+      const krwEq = rate && g.hasPrices ? `<span class="psummary-krw-eq">≈ ${formatPrice(g.current * rate, 'KRW')}</span>` : '';
+      return `
+      <div class="psummary-row">
+        <span class="psummary-cname">${currencyNames[currency] || currency}</span>
+        <span class="psummary-cval">${g.hasPrices ? formatPrice(g.current, currency) : '—'}</span>
+        <span class="psummary-gain ${gc2}">${gain !== null ? `${gs2}${formatPrice(Math.abs(gain), currency)}` : ''}</span>
+        <span class="psummary-pct ${gc2}">${gainPct !== null ? `(${gs2}${gainPct.toFixed(1)}%)` : ''}</span>
+        ${currency !== 'KRW' ? krwEq : ''}
+      </div>`;
+    }).join('');
+    expandContent += `<div class="psummary-rows">${currencyRows}</div>`;
   }
 
-  const currencyRows = numCurrencies > 1 ? Object.entries(groups).map(([currency, g]) => {
-    const gain = g.hasPrices ? g.current - g.invested : null;
-    const gainPct = gain !== null && g.invested > 0 ? (gain / g.invested) * 100 : null;
-    const gc = gain !== null ? (gain >= 0 ? 'gain-up' : 'gain-down') : '';
-    const gs = gain !== null && gain >= 0 ? '+' : '';
-    const rate = state.fxRates[currency];
-    const krwEq = rate && g.hasPrices
-      ? `<span class="psummary-krw-eq">≈ ${formatPrice(g.current * rate, 'KRW')}</span>` : '';
-    return `
-    <div class="psummary-row">
-      <span class="psummary-cname">${currencyNames[currency] || currency}</span>
-      <span class="psummary-cval">${g.hasPrices ? formatPrice(g.current, currency) : '—'}</span>
-      <span class="psummary-gain ${gc}">${gain !== null ? `${gs}${formatPrice(Math.abs(gain), currency)}` : ''}</span>
-      <span class="psummary-pct ${gc}">${gainPct !== null ? `(${gs}${gainPct.toFixed(1)}%)` : ''}</span>
-      ${currency !== 'KRW' ? krwEq : ''}
-    </div>`;
-  }).join('') : '';
-
   const foreignCurrencies = Object.keys(groups).filter(c => c !== 'KRW');
-  let fxFooter = '';
   if (foreignCurrencies.length > 0) {
-    const rateStrs = foreignCurrencies
-      .filter(c => state.fxRates[c])
+    const rateStrs = foreignCurrencies.filter(c => state.fxRates[c])
       .map(c => `${currencyNames[c] || c} ₩${Math.round(state.fxRates[c]).toLocaleString('ko-KR')}`);
-    const ts = state.fxRatesUpdatedAt;
-    const timeStr = ts ? (() => {
-      const diff = Date.now() - ts;
-      if (diff < 60000) return '방금 갱신';
-      const d = new Date(ts);
-      return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')} 기준`;
-    })() : '';
     if (rateStrs.length) {
-      fxFooter = `
-      <div class="psummary-fx-footer">
-        <span class="psummary-fx-rates"><i class="ph ph-currency-circle-dollar"></i> ${rateStrs.join(' · ')}</span>
-        ${timeStr ? `<span class="psummary-fx-time">${timeStr}</span>` : ''}
-      </div>`;
+      const ts = state.fxRatesUpdatedAt;
+      const timeStr = ts ? (() => {
+        const diff = Date.now() - ts;
+        if (diff < 60000) return '방금 갱신';
+        const d = new Date(ts);
+        return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')} 기준`;
+      })() : '';
+      expandContent += `
+        <div class="psummary-fx-footer">
+          <span class="psummary-fx-rates"><i class="ph ph-currency-circle-dollar"></i> ${rateStrs.join(' · ')}</span>
+          ${timeStr ? `<span class="psummary-fx-time">${timeStr}</span>` : ''}
+        </div>`;
     }
   }
 
-  return `<div class="portfolio-summary">${headerHtml}${currencyRows ? `<div class="psummary-rows">${currencyRows}</div>` : ''}${fxFooter}</div>`;
+  const isExpanded = state.summaryExpanded;
+  return `
+  <div class="portfolio-summary${isExpanded ? ' expanded' : ''}" onclick="togglePortfolioSummary()">
+    <div class="psummary-header">
+      <span class="psummary-label">${totalLabel}</span>
+      <span class="psummary-total">${totalDisplay}</span>
+    </div>
+    <div class="psummary-collapse-row">
+      <span class="psummary-cgain ${cgc}">${cgainStr}</span>
+      <span class="psummary-cpct ${cgc}">${cpctStr}</span>
+      <i class="ph ph-caret-down psummary-caret"></i>
+    </div>
+    <div class="psummary-expand-body">${expandContent}</div>
+  </div>`;
 }
 
 function renderPortfolioCard(item) {
@@ -871,6 +900,12 @@ function handlePortfolioCardTap(symbol) {
     if (expanded) state.expandedPortfolioCards.add(symbol);
     else state.expandedPortfolioCards.delete(symbol);
   }
+}
+
+function togglePortfolioSummary() {
+  state.summaryExpanded = !state.summaryExpanded;
+  const el = document.querySelector('.portfolio-summary');
+  if (el) el.classList.toggle('expanded', state.summaryExpanded);
 }
 
 function openPortfolioEditModal(event, symbol) {

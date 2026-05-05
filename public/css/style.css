@@ -556,11 +556,43 @@ html, body {
   margin-bottom: 12px;
   position: relative;
   overflow: hidden;
+  cursor: pointer;
+  user-select: none;
 }
 .portfolio-summary::before {
   content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 100%;
   background: linear-gradient(180deg, var(--primary), var(--success));
 }
+.psummary-collapse-row {
+  display: flex; align-items: center; gap: 6px;
+  margin-top: 5px; padding-top: 5px;
+  border-top: 1px solid var(--border);
+}
+.psummary-cgain {
+  font-size: 14px; font-weight: 800;
+  font-variant-numeric: tabular-nums; flex: 1; color: var(--text-sub);
+}
+.psummary-cpct {
+  font-size: 14px; font-weight: 800;
+  font-variant-numeric: tabular-nums; color: var(--text-sub);
+}
+.psummary-cgain.gain-up, .psummary-cpct.gain-up { color: var(--stock-up); }
+.psummary-cgain.gain-down, .psummary-cpct.gain-down { color: var(--stock-down); }
+.psummary-caret {
+  font-size: 13px; color: var(--text-sub);
+  transition: transform 0.28s ease; flex-shrink: 0;
+}
+.portfolio-summary.expanded .psummary-caret { transform: rotate(180deg); }
+.psummary-expand-body {
+  max-height: 0; overflow: hidden;
+  transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease;
+  opacity: 0;
+}
+.portfolio-summary.expanded .psummary-expand-body { max-height: 320px; opacity: 1; }
+.psummary-expand-body .psummary-inline { margin-top: 8px; }
+.psummary-expand-body .psummary-rows { margin-top: 7px; padding-top: 7px; border-top: 1px solid var(--border); }
+.psummary-expand-body .psummary-krw-line { margin-top: 5px; }
+.psummary-expand-body .psummary-fx-footer { margin-top: 8px; padding-top: 7px; border-top: 1px solid var(--border); }
 .psummary-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 3px; }
 .psummary-label { font-size: 10px; font-weight: 700; color: var(--text-sub); text-transform: uppercase; letter-spacing: 0.7px; }
 .psummary-total { font-size: 20px; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
@@ -582,7 +614,6 @@ html, body {
 .psummary-krw-line .gain-down { color: var(--stock-down); }
 .psummary-fx-footer {
   display: flex; justify-content: space-between; align-items: center;
-  margin-top: 8px; padding-top: 7px; border-top: 1px solid var(--border);
   font-size: 10px; color: var(--text-sub);
 }
 .psummary-fx-rates { display: flex; align-items: center; gap: 4px; font-variant-numeric: tabular-nums; font-weight: 600; }
