@@ -170,13 +170,11 @@ async function loadPortfolioPrices() {
 
 async function fetchFxRates() {
   try {
-    const data = await apiFetch('/api/quote?symbols=USDKRW%3DX%2CJPYKRW%3DX%2CEURKRW%3DX');
-    (data.quoteResponse?.result || []).forEach(q => {
-      if (q.symbol === 'USDKRW=X') state.fxRates.USD = q.regularMarketPrice;
-      if (q.symbol === 'JPYKRW=X') state.fxRates.JPY = q.regularMarketPrice;
-      if (q.symbol === 'EURKRW=X') state.fxRates.EUR = q.regularMarketPrice;
-    });
-    state.fxRatesUpdatedAt = Date.now();
+    const data = await apiFetch('/api/fxrates');
+    if (data.rates && Object.keys(data.rates).length) {
+      Object.assign(state.fxRates, data.rates);
+      state.fxRatesUpdatedAt = Date.now();
+    }
   } catch (_) {}
 }
 
