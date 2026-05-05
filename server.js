@@ -320,6 +320,43 @@ app.get('/api/cron', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+app.get('/api/fxrates', async (req, res) => {
+  const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+  const FX_SYMBOLS = ['USDKRW=X', 'JPYKRW=X', 'EURKRW=X'];
+
+  const extractRates = (results) => {
+    const rates = {};
+    (results || []).forEach(q => {
+      if (q.symbol === 'USDKRW=X' && q.regularMarketPrice) rates.USD = q.regularMarketPrice;
+      if (q.symbol === 'JPYKRW=X' && q.regularMarketPrice) rates.JPY = q.regularMarketPrice;
+      if (q.symbol === 'EURKRW=X' && q.regularMarketPrice) rates.EUR = q.regularMarketPrice;
+    });
+    return rates;
+  };
+
+  // 1차: 크럼 없이 시도 (외환 심볼은 인증 없이도 동작하는 경우가 많음)
+  try {
+    const r = await _fetch(
+      `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${FX_SYMBOLS.map(encodeURIComponent).join(',')}&fields=regularMarketPrice`,
+      { headers: { 'User-Agent': UA }, timeout: 8000 }
+    );
+    if (r.ok) {
+      const data = await r.json();
+      const rates = extractRates(data.quoteResponse?.result);
+      if (Object.keys(rates).length >= 1) return res.json({ rates, source: 'yahoo-direct' });
+    }
+  } catch (_) {}
+
+  // 2차: 크럼 인증 방식으로 폴백
+  try {
+    const results = await fetchQuotesBatch(FX_SYMBOLS);
+    const rates = extractRates(results);
+    if (Object.keys(rates).length >= 1) return res.json({ rates, source: 'yahoo-crumb' });
+  } catch (_) {}
+
+  res.status(502).json({ error: 'exchange rate fetch failed' });
+});
+
 app.get('/api/health', (req, res) => res.json({ status: 'ok', env: process.env.VERCEL ? 'vercel' : 'local' }));
 
 // Root route (Fallback)
