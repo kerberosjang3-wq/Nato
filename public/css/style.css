@@ -511,35 +511,35 @@ html, body {
 
 /* ── Portfolio ── */
 #screen-portfolio { padding-top: 16px; }
-.portfolio-search-wrap { position: sticky; top: 0; background: var(--bg); padding: 0 0 12px; z-index: 5; }
+.portfolio-search-wrap { position: sticky; top: 0; background: var(--bg); padding: 0 0 10px; z-index: 5; }
 .search-field {
   display: flex; align-items: center; gap: 2px;
   background: var(--bg-card);
   border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 0 10px 0 16px;
-  height: 46px;
+  border-radius: 11px;
+  padding: 0 8px 0 13px;
+  height: 38px;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 .search-field:focus-within {
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px var(--primary-glow);
+  box-shadow: 0 0 0 2px var(--primary-glow);
 }
 .search-field .search-input {
   flex: 1; min-width: 0;
-  font-size: 15px; font-weight: 400;
+  font-size: 13px; font-weight: 400;
 }
 .search-field-clear {
-  background: none; border: none; padding: 4px;
-  cursor: pointer; color: var(--text-sub); font-size: 18px;
+  background: none; border: none; padding: 3px;
+  cursor: pointer; color: var(--text-sub); font-size: 16px;
   display: none; align-items: center; flex-shrink: 0;
   opacity: 0.65; transition: opacity 0.15s;
 }
 .search-field-clear.visible { display: flex; }
 .search-field-clear:active { opacity: 1; }
 .search-field-btn {
-  background: none; border: none; padding: 6px 4px;
-  cursor: pointer; color: var(--text-sub); font-size: 20px;
+  background: none; border: none; padding: 4px 3px;
+  cursor: pointer; color: var(--text-sub); font-size: 17px;
   display: flex; align-items: center; flex-shrink: 0;
   transition: color 0.2s;
 }

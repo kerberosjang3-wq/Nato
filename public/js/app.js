@@ -970,7 +970,17 @@ function renderPortfolioHoldings() {
   }
 
   const summary = renderPortfolioSummary();
-  const cards = items.map(item => renderPortfolioCard(item)).join('');
+  const sorted = [...items].sort((a, b) => {
+    const gainPct = item => {
+      const q = state.portfolioPrices[item.symbol];
+      const price = q?.regularMarketPrice;
+      if (!price || !item.buyPrice || !item.qty) return -Infinity;
+      const invested = item.buyPrice * item.qty;
+      return invested > 0 ? (price * item.qty - invested) / invested : -Infinity;
+    };
+    return gainPct(b) - gainPct(a);
+  });
+  const cards = sorted.map(item => renderPortfolioCard(item)).join('');
   wrap.innerHTML = `${summary}<div class="section-title" style="margin-top:0">보유 종목</div>${cards}`;
 }
 
