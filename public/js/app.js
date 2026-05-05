@@ -67,6 +67,10 @@ const state = {
   portfolioSearchQ: '',
   portfolioSearching: false,
   portfolioFetchingPrices: false,
+  watchlistSearchResults: [],
+  watchlistSearchQ: '',
+  watchlistSearching: false,
+  watchlistFetchingPrices: false,
 };
 
 // ── API ────────────────────────────────────────────────────────────────────
@@ -369,7 +373,7 @@ function renderHome() {
         <div class="empty-icon"><i class="ph ph-trend-up"></i></div>
         <div class="empty-title">관심 종목이 없습니다</div>
         <div class="empty-sub">검색에서 종목을 추가하면<br>여기에 표시됩니다</div>
-        <button class="btn-primary" onclick="switchTab('search')">종목 검색하기</button>
+        <button class="btn-primary" onclick="document.getElementById('home-search-input')?.focus()">종목 검색하기</button>
       </div>`;
     return;
   }
@@ -544,7 +548,7 @@ async function saveModal() {
   closeModal();
   await loadPrices();
   renderHome();
-  renderSearchResults();
+  renderWatchlistSearch();
   if (state.currentTab === 'settings') renderSettings();
   showToast(existing ? '✅ 종목이 수정되었습니다' : '✅ 종목이 추가되었습니다');
 }
@@ -733,22 +737,22 @@ function renderPortfolioCard(item) {
           <div class="stock-change ${getChangeClass(pct)}">${getChangeStr(pct)}</div>
         </div>
       </div>
-      <div class="stock-targets">
-        <div class="target-badge">
-          <div class="target-badge-label">매수가</div>
-          <div class="target-badge-value">${formatPrice(item.buyPrice, currency)}</div>
+      <div class="port-stats">
+        <div class="port-stat">
+          <span class="port-stat-label">매수가</span>
+          <span class="port-stat-value">${formatPrice(item.buyPrice, currency)}</span>
         </div>
-        <div class="target-badge">
-          <div class="target-badge-label">투자금액</div>
-          <div class="target-badge-value">${formatPrice(invested, currency)}</div>
+        <div class="port-stat">
+          <span class="port-stat-label">투자금액</span>
+          <span class="port-stat-value">${formatPrice(invested, currency)}</span>
         </div>
-        <div class="target-badge">
-          <div class="target-badge-label">평가금액</div>
-          <div class="target-badge-value">${currentVal !== null ? formatPrice(currentVal, currency) : '—'}</div>
+        <div class="port-stat">
+          <span class="port-stat-label">평가금액</span>
+          <span class="port-stat-value">${currentVal !== null ? formatPrice(currentVal, currency) : '—'}</span>
         </div>
-        <div class="target-badge ${gainClass}">
-          <div class="target-badge-label">수익률</div>
-          <div class="target-badge-value">${gainPct !== null ? `${gainSign}${gainPct.toFixed(2)}%` : '—'}</div>
+        <div class="port-stat ${gainClass}">
+          <span class="port-stat-label">수익률</span>
+          <span class="port-stat-value">${gainPct !== null ? `${gainSign}${gainPct.toFixed(2)}%` : '—'}</span>
         </div>
       </div>
     </div>
@@ -839,11 +843,22 @@ function renderPortfolioHoldings() {
 }
 
 // ── Portfolio Search ───────────────────────────────────────────────────────
+function setPortfolioSearchBtnLoading(loading) {
+  const icon = document.querySelector('#portfolio-search-btn i');
+  if (!icon) return;
+  if (loading) {
+    icon.className = 'ph ph-circle-notch spinning';
+  } else {
+    icon.className = 'ph ph-magnifying-glass';
+  }
+}
+
 let portfolioSearchTimer;
 async function doPortfolioSearch(q) {
   clearTimeout(portfolioSearchTimer);
-  if (!q.trim()) { state.portfolioSearchResults = []; renderPortfolioSearch(); return; }
+  if (!q.trim()) { state.portfolioSearchResults = []; renderPortfolioSearch(); setPortfolioSearchBtnLoading(false); return; }
   state.portfolioSearching = true;
+  setPortfolioSearchBtnLoading(true);
   renderPortfolioSearch();
   portfolioSearchTimer = setTimeout(async () => {
     try {
@@ -868,6 +883,84 @@ async function doPortfolioSearch(q) {
       state.portfolioFetchingPrices = false;
       renderPortfolioSearch();
     }
+    setPortfolioSearchBtnLoading(false);
+  }, 400);
+}
+
+// ── Watchlist Inline Search ────────────────────────────────────────────────
+function setWatchlistSearchBtnLoading(loading) {
+  const icon = document.querySelector('#home-search-btn i');
+  if (!icon) return;
+  icon.className = loading ? 'ph ph-circle-notch spinning' : 'ph ph-magnifying-glass';
+}
+
+function renderWatchlistSearch() {
+  const wrap = document.getElementById('home-search-results');
+  if (!wrap) return;
+  if (state.watchlistSearching) {
+    wrap.innerHTML = [1, 2, 3].map(() => `<div class="skeleton" style="height:72px;border-radius:12px;margin-bottom:8px"></div>`).join('');
+    return;
+  }
+  if (!state.watchlistSearchQ) { wrap.innerHTML = ''; return; }
+  if (!state.watchlistSearchResults.length) {
+    wrap.innerHTML = `<div class="search-hint"><div class="hint-icon"><i class="ph ph-smiley-blank"></i></div><div>검색 결과가 없습니다</div></div>`;
+    return;
+  }
+  wrap.innerHTML = state.watchlistSearchResults.slice(0, 10).map(r => {
+    const q = r.quote;
+    const price = q?.regularMarketPrice;
+    const pct = q?.regularMarketChangePercent;
+    const currency = q?.currency || 'USD';
+    const cls = getChangeClass(pct);
+    const added = !!state.watchlist[r.symbol];
+    const name = (r.longname || r.shortname || r.symbol).replace(/'/g, '');
+    return `
+    <div class="result-item ${added ? 'added' : ''}" onclick="openAddModal('${r.symbol}','${name}','${currency}')">
+      <div class="result-info">
+        <div class="result-name">${r.longname || r.shortname || r.symbol}</div>
+        <div class="result-meta"><span class="result-exchange">${r.exchange || ''}</span> <span>${r.symbol}</span></div>
+      </div>
+      <div class="result-right">
+        <div class="result-price">${price ? formatPrice(price, currency) : (state.watchlistFetchingPrices ? '<span style="font-size:11px;color:var(--primary)">로딩중...</span>' : '—')}</div>
+        <div class="result-change ${cls}">${getChangeStr(pct)}</div>
+      </div>
+      <button class="add-btn ${added ? 'added' : ''}" onclick="event.stopPropagation();openAddModal('${r.symbol}','${name}','${currency}')">
+        ${added ? '<i class="ph ph-check"></i>' : '<i class="ph ph-plus"></i>'}
+      </button>
+    </div>`;
+  }).join('');
+}
+
+let watchlistSearchTimer;
+async function doWatchlistSearch(q) {
+  clearTimeout(watchlistSearchTimer);
+  if (!q.trim()) { state.watchlistSearchResults = []; renderWatchlistSearch(); setWatchlistSearchBtnLoading(false); return; }
+  state.watchlistSearching = true;
+  setWatchlistSearchBtnLoading(true);
+  renderWatchlistSearch();
+  watchlistSearchTimer = setTimeout(async () => {
+    try {
+      const data = await apiFetch(`/api/search?q=${encodeURIComponent(q)}`);
+      state.watchlistSearchResults = (data.quotes || []).filter(r => r.quoteType === 'EQUITY' || r.quoteType === 'ETF');
+      state.watchlistSearching = false;
+    } catch {
+      state.watchlistSearchResults = [];
+      state.watchlistSearching = false;
+    }
+    renderWatchlistSearch();
+    if (state.watchlistSearchResults.length > 0) {
+      state.watchlistFetchingPrices = true;
+      try {
+        const syms = state.watchlistSearchResults.slice(0, 10).map(r => encodeURIComponent(r.symbol)).join(',');
+        const pd = await apiFetch(`/api/quote?symbols=${syms}`);
+        const priceMap = {};
+        (pd.quoteResponse?.result || []).forEach(p => { if (p.symbol) priceMap[p.symbol.toUpperCase()] = p; });
+        state.watchlistSearchResults = state.watchlistSearchResults.map(r => ({ ...r, quote: priceMap[r.symbol.toUpperCase()] }));
+      } catch {}
+      state.watchlistFetchingPrices = false;
+      renderWatchlistSearch();
+    }
+    setWatchlistSearchBtnLoading(false);
   }, 400);
 }
 
@@ -944,8 +1037,7 @@ function switchTab(tab) {
   document.getElementById(`screen-${tab}`)?.classList.add('active');
   document.getElementById(`tab-${tab}`)?.classList.add('active');
 
-  if (tab === 'home') renderHome();
-  if (tab === 'search') { setTimeout(() => document.getElementById('search-input')?.focus(), 100); }
+  if (tab === 'home') { renderHome(); renderWatchlistSearch(); }
   if (tab === 'settings') renderSettings();
   if (tab === 'portfolio') {
     renderPortfolioHoldings();
@@ -1017,25 +1109,38 @@ async function installApp() {
 // ── Event Listeners ────────────────────────────────────────────────────────
 function setupEventListeners() {
   // Tab navigation
-  ['home', 'search', 'portfolio', 'settings'].forEach(tab => {
+  ['home', 'portfolio', 'settings'].forEach(tab => {
     const btn = document.getElementById(`tab-${tab}`);
     if (btn) btn.onclick = () => switchTab(tab);
   });
 
-  // Search
-  const searchInput = document.getElementById('search-input');
-  const searchClear = document.getElementById('search-clear');
-  searchInput?.addEventListener('input', e => {
+  // Watchlist inline search
+  const homeSearchInput = document.getElementById('home-search-input');
+  const homeSearchClear = document.getElementById('home-search-clear');
+  homeSearchInput?.addEventListener('input', e => {
     const v = e.target.value;
-    searchClear.classList.toggle('visible', !!v);
-    doSearch(v);
+    state.watchlistSearchQ = v;
+    homeSearchClear?.classList.toggle('visible', !!v);
+    if (!v) { state.watchlistSearchResults = []; renderWatchlistSearch(); setWatchlistSearchBtnLoading(false); return; }
+    doWatchlistSearch(v);
   });
-  searchClear?.addEventListener('click', () => {
-    searchInput.value = '';
-    searchClear.classList.remove('visible');
-    state.searchResults = [];
-    renderSearchResults();
-    searchInput.focus();
+  homeSearchClear?.addEventListener('click', () => {
+    if (homeSearchInput) homeSearchInput.value = '';
+    homeSearchClear.classList.remove('visible');
+    state.watchlistSearchResults = [];
+    state.watchlistSearchQ = '';
+    setWatchlistSearchBtnLoading(false);
+    renderWatchlistSearch();
+    homeSearchInput?.focus();
+  });
+  document.getElementById('home-search-btn')?.addEventListener('click', () => {
+    const q = homeSearchInput?.value || '';
+    if (q.trim()) {
+      clearTimeout(watchlistSearchTimer);
+      doWatchlistSearch(q);
+    } else {
+      homeSearchInput?.focus();
+    }
   });
 
   // Modal
@@ -1060,8 +1165,19 @@ function setupEventListeners() {
     portfolioSearchClear.classList.remove('visible');
     state.portfolioSearchResults = [];
     state.portfolioSearchQ = '';
+    setPortfolioSearchBtnLoading(false);
     renderPortfolioSearch();
     portfolioSearchInput?.focus();
+  });
+
+  document.getElementById('portfolio-search-btn')?.addEventListener('click', () => {
+    const q = portfolioSearchInput?.value || '';
+    if (q.trim()) {
+      clearTimeout(portfolioSearchTimer);
+      doPortfolioSearch(q);
+    } else {
+      portfolioSearchInput?.focus();
+    }
   });
 
   // Portfolio modal

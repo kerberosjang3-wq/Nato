@@ -511,7 +511,28 @@ html, body {
 
 /* ── Portfolio ── */
 #screen-portfolio { padding-top: 16px; }
-.portfolio-search-wrap { position: sticky; top: 0; background: var(--bg); padding: 0 0 14px; z-index: 5; }
+.portfolio-search-wrap { position: sticky; top: 0; background: var(--bg); padding: 0 0 12px; z-index: 5; }
+.port-search-row { display: flex; gap: 8px; align-items: center; }
+.port-search-box {
+  flex: 1;
+  height: 40px !important;
+  border-radius: 11px !important;
+  padding: 0 10px !important;
+  font-size: 13px;
+}
+.port-search-box .search-input { font-size: 13px; }
+.port-search-btn {
+  width: 40px; height: 40px; flex-shrink: 0;
+  border-radius: 11px; border: none;
+  background: var(--primary); color: white;
+  font-size: 17px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 8px var(--primary-glow);
+}
+.port-search-btn:active { transform: scale(0.9); }
+.port-search-btn i { transition: none; }
 
 .portfolio-summary {
   background: var(--bg-card);
@@ -542,3 +563,39 @@ html, body {
 .portfolio-stat-value.down { color: var(--stock-down); }
 
 #portfolio-holdings .stock-card { margin-bottom: 8px; }
+
+/* 포트폴리오 카드 2×2 스탯 그리드 */
+.port-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+}
+.port-stat {
+  background: var(--bg-elevated);
+  border-radius: 7px;
+  padding: 5px 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.port-stat-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-sub);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.port-stat-value {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.port-stat.gain-up .port-stat-value { color: var(--stock-up); }
+.port-stat.gain-down .port-stat-value { color: var(--stock-down); }

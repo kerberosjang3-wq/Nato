@@ -74,22 +74,23 @@
         </div>
       </div>
 
-      <!-- Stock list -->
-      <div id="home-list" class="stock-list"></div>
-    </section>
-
-    <!-- Search Screen -->
-    <section class="screen" id="screen-search">
-      <div class="search-wrap">
-        <div class="search-box">
-          <i class="ph ph-magnifying-glass search-icon"></i>
-          <input type="search" class="search-input" id="search-input"
-            placeholder="종목명 또는 티커 입력 (예: 삼성전자, AAPL)"
-            autocomplete="off" autocorrect="off" spellcheck="false">
-          <button class="search-clear" id="search-clear"><i class="ph ph-x-circle"></i></button>
+      <!-- Inline search -->
+      <div class="portfolio-search-wrap">
+        <div class="port-search-row">
+          <div class="search-box port-search-box">
+            <input type="search" class="search-input" id="home-search-input"
+              placeholder="관심 종목 검색하여 추가..." autocomplete="off" autocorrect="off" spellcheck="false">
+            <button class="search-clear" id="home-search-clear"><i class="ph ph-x-circle"></i></button>
+          </div>
+          <button class="port-search-btn" id="home-search-btn">
+            <i class="ph ph-magnifying-glass"></i>
+          </button>
         </div>
       </div>
-      <div id="search-results"></div>
+      <div id="home-search-results"></div>
+
+      <!-- Stock list -->
+      <div id="home-list" class="stock-list"></div>
     </section>
 
     <!-- Settings Screen -->
@@ -100,11 +101,15 @@
     <!-- Portfolio Screen -->
     <section class="screen active" id="screen-portfolio">
       <div class="portfolio-search-wrap">
-        <div class="search-box">
-          <i class="ph ph-magnifying-glass search-icon"></i>
-          <input type="search" class="search-input" id="portfolio-search-input"
-            placeholder="종목 검색하여 추가..." autocomplete="off" autocorrect="off" spellcheck="false">
-          <button class="search-clear" id="portfolio-search-clear"><i class="ph ph-x-circle"></i></button>
+        <div class="port-search-row">
+          <div class="search-box port-search-box">
+            <input type="search" class="search-input" id="portfolio-search-input"
+              placeholder="종목 검색하여 추가..." autocomplete="off" autocorrect="off" spellcheck="false">
+            <button class="search-clear" id="portfolio-search-clear"><i class="ph ph-x-circle"></i></button>
+          </div>
+          <button class="port-search-btn" id="portfolio-search-btn">
+            <i class="ph ph-magnifying-glass"></i>
+          </button>
         </div>
       </div>
       <div id="portfolio-search-results"></div>
@@ -115,9 +120,6 @@
   <nav class="tab-bar">
     <button class="tab-btn active" id="tab-portfolio">
       <i class="ph-fill ph-wallet tab-icon"></i>
-    </button>
-    <button class="tab-btn" id="tab-search">
-      <i class="ph ph-magnifying-glass tab-icon"></i>
     </button>
     <button class="tab-btn" id="tab-home">
       <i class="ph ph-chart-line-up tab-icon"></i>
