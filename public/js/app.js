@@ -1137,7 +1137,7 @@ async function init() {
     state.loading = false;
     renderHome();
 
-    switchTab('home');
+    switchTab('portfolio');
     setupSwipeEvents();
     startAutoRefresh();
 
