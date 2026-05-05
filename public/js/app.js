@@ -67,6 +67,7 @@ const state = {
   portfolioSearchQ: '',
   portfolioSearching: false,
   portfolioFetchingPrices: false,
+  fxRates: {},
   watchlistSearchResults: [],
   watchlistSearchQ: '',
   watchlistSearching: false,
@@ -164,6 +165,17 @@ async function loadPortfolioPrices() {
     const cached = localStorage.getItem('portfolioPrices');
     if (cached) state.portfolioPrices = JSON.parse(cached);
   }
+}
+
+async function fetchFxRates() {
+  try {
+    const data = await apiFetch('/api/quote?symbols=USDKRW%3DX%2CJPYKRW%3DX%2CEURKRW%3DX');
+    (data.quoteResponse?.result || []).forEach(q => {
+      if (q.symbol === 'USDKRW=X') state.fxRates.USD = q.regularMarketPrice;
+      if (q.symbol === 'JPYKRW=X') state.fxRates.JPY = q.regularMarketPrice;
+      if (q.symbol === 'EURKRW=X') state.fxRates.EUR = q.regularMarketPrice;
+    });
+  } catch (_) {}
 }
 
 async function savePortfolioItem(symbol, name, buyPrice, qty, currency) {
@@ -678,38 +690,71 @@ function renderPortfolioSummary() {
     }
   }
 
+  const currencyNames = { KRW: '원화', USD: '달러', JPY: '엔화', EUR: '유로', GBP: '파운드' };
   const numCurrencies = Object.keys(groups).length;
-  const currencyNames = { KRW: '원화', USD: '달러', JPY: '엔화' };
 
-  const rows = Object.entries(groups).map(([currency, g]) => {
+  // KRW 환산 합계
+  let krwCurrent = 0, krwInvested = 0, fxOk = true, anyPrices = false;
+  for (const [currency, g] of Object.entries(groups)) {
+    const rate = currency === 'KRW' ? 1 : (state.fxRates[currency] || null);
+    if (!rate) { fxOk = false; break; }
+    krwInvested += g.invested * rate;
+    if (g.hasPrices) { krwCurrent += g.current * rate; anyPrices = true; }
+  }
+  const krwGain = fxOk && anyPrices ? krwCurrent - krwInvested : null;
+  const krwGainPct = krwGain !== null && krwInvested > 0 ? (krwGain / krwInvested) * 100 : null;
+
+  let headerHtml;
+  if (numCurrencies === 1) {
+    const [currency, g] = Object.entries(groups)[0];
     const gain = g.hasPrices ? g.current - g.invested : null;
-    const gainPct = (gain !== null && g.invested > 0) ? (gain / g.invested) * 100 : null;
-    const gainClass = gain !== null ? (gain >= 0 ? 'up' : 'down') : '';
-    const gainSign = gain !== null && gain >= 0 ? '+' : '';
-    const currencyLabel = numCurrencies > 1
-      ? `<div class="portfolio-currency-label">${currencyNames[currency] || currency}</div>` : '';
-    return `
-    <div class="portfolio-summary-block">
-      ${currencyLabel}
-      <div class="portfolio-total-value">${g.hasPrices ? formatPrice(g.current, currency) : '—'}</div>
-      <div class="portfolio-stats-row">
-        <div class="portfolio-stat">
-          <div class="portfolio-stat-label">투자금액</div>
-          <div class="portfolio-stat-value">${formatPrice(g.invested, currency)}</div>
-        </div>
-        <div class="portfolio-stat">
-          <div class="portfolio-stat-label">평가손익</div>
-          <div class="portfolio-stat-value ${gainClass}">${gain !== null ? `${gainSign}${formatPrice(Math.abs(gain), currency)}` : '—'}</div>
-        </div>
-        <div class="portfolio-stat">
-          <div class="portfolio-stat-label">수익률</div>
-          <div class="portfolio-stat-value ${gainClass}">${gainPct !== null ? `${gainSign}${gainPct.toFixed(2)}%` : '—'}</div>
-        </div>
+    const gainPct = gain !== null && g.invested > 0 ? (gain / g.invested) * 100 : null;
+    const gc = gain !== null ? (gain >= 0 ? 'gain-up' : 'gain-down') : '';
+    const gs = gain !== null && gain >= 0 ? '+' : '';
+    headerHtml = `
+      <div class="psummary-header">
+        <span class="psummary-label">총 평가금액</span>
+        <span class="psummary-total">${g.hasPrices ? formatPrice(g.current, currency) : '—'}</span>
       </div>
-    </div>`;
-  }).join('');
+      <div class="psummary-inline">
+        <span>투자 <b>${formatPrice(g.invested, currency)}</b></span>
+        <span class="${gc}">손익 <b>${gain !== null ? `${gs}${formatPrice(Math.abs(gain), currency)}` : '—'}</b></span>
+        <span class="${gc}"><b>${gainPct !== null ? `${gs}${gainPct.toFixed(1)}%` : '—'}</b></span>
+      </div>`;
+  } else {
+    const gc = krwGain !== null ? (krwGain >= 0 ? 'gain-up' : 'gain-down') : '';
+    const gs = krwGain !== null && krwGain >= 0 ? '+' : '';
+    headerHtml = `
+      <div class="psummary-header">
+        <span class="psummary-label">총 평가금액 (원화 환산)</span>
+        <span class="psummary-total">${fxOk && anyPrices ? formatPrice(krwCurrent, 'KRW') : '—'}</span>
+      </div>
+      <div class="psummary-inline">
+        <span>투자 <b>${fxOk && krwInvested ? formatPrice(krwInvested, 'KRW') : '—'}</b></span>
+        <span class="${gc}">손익 <b>${krwGain !== null ? `${gs}${formatPrice(Math.abs(krwGain), 'KRW')}` : '—'}</b></span>
+        <span class="${gc}"><b>${krwGainPct !== null ? `${gs}${krwGainPct.toFixed(1)}%` : '—'}</b></span>
+      </div>`;
+  }
 
-  return `<div class="portfolio-summary"><div class="portfolio-total-label">총 평가금액</div>${rows}</div>`;
+  const currencyRows = numCurrencies > 1 ? Object.entries(groups).map(([currency, g]) => {
+    const gain = g.hasPrices ? g.current - g.invested : null;
+    const gainPct = gain !== null && g.invested > 0 ? (gain / g.invested) * 100 : null;
+    const gc = gain !== null ? (gain >= 0 ? 'gain-up' : 'gain-down') : '';
+    const gs = gain !== null && gain >= 0 ? '+' : '';
+    const rate = state.fxRates[currency];
+    const krwEq = rate && g.hasPrices
+      ? `<span class="psummary-krw-eq">≈ ${formatPrice(g.current * rate, 'KRW')}</span>` : '';
+    return `
+    <div class="psummary-row">
+      <span class="psummary-cname">${currencyNames[currency] || currency}</span>
+      <span class="psummary-cval">${g.hasPrices ? formatPrice(g.current, currency) : '—'}</span>
+      <span class="psummary-gain ${gc}">${gain !== null ? `${gs}${formatPrice(Math.abs(gain), currency)}` : ''}</span>
+      <span class="psummary-pct ${gc}">${gainPct !== null ? `(${gs}${gainPct.toFixed(1)}%)` : ''}</span>
+      ${currency !== 'KRW' ? krwEq : ''}
+    </div>`;
+  }).join('') : '';
+
+  return `<div class="portfolio-summary">${headerHtml}${currencyRows ? `<div class="psummary-rows">${currencyRows}</div>` : ''}</div>`;
 }
 
 function renderPortfolioCard(item) {
@@ -723,6 +768,15 @@ function renderPortfolioCard(item) {
   const gainPct = gain !== null && invested > 0 ? (gain / invested) * 100 : null;
   const gainClass = gain !== null ? (gain >= 0 ? 'gain-up' : 'gain-down') : '';
   const gainSign = gain !== null && gain >= 0 ? '+' : '';
+
+  const fxRate = currency !== 'KRW' ? (state.fxRates[currency] || null) : null;
+  const currentValKrw = fxRate && currentVal !== null ? currentVal * fxRate : null;
+  const gainKrw = fxRate && gain !== null ? gain * fxRate : null;
+  const krwRow = currentValKrw !== null ? `
+      <div class="port-stat-krw">
+        <span class="port-stat-krw-label">원화 환산</span>
+        <span class="port-stat-krw-val">${formatPrice(currentValKrw, 'KRW')}<span class="${gainKrw !== null ? (gainKrw >= 0 ? 'gain-up' : 'gain-down') : ''}"> (${gainKrw !== null ? (gainKrw >= 0 ? '+' : '') + formatPrice(Math.abs(gainKrw), 'KRW') : '—'})</span></span>
+      </div>` : '';
 
   return `
   <div class="stock-card" data-symbol="${item.symbol}" data-portfolio="1" onclick="handlePortfolioCardTap('${item.symbol}')">
@@ -755,6 +809,7 @@ function renderPortfolioCard(item) {
           <span class="port-stat-value">${gainPct !== null ? `${gainSign}${gainPct.toFixed(2)}%` : '—'}</span>
         </div>
       </div>
+      ${krwRow}
     </div>
     <div class="card-actions">
       <button class="card-btn edit" onclick="openPortfolioEditModal(event,'${item.symbol}')"><i class="ph ph-pencil-simple"></i></button>
@@ -770,9 +825,6 @@ function handlePortfolioCardTap(symbol) {
   if (card.classList.contains('swiped')) {
     card.classList.remove('swiped');
     if (currentSwipedCard === card) currentSwipedCard = null;
-  } else {
-    const item = state.portfolio[symbol];
-    if (item) openPortfolioModal(item.symbol, item.name, item.currency);
   }
 }
 
@@ -1043,9 +1095,11 @@ function switchTab(tab) {
     renderPortfolioHoldings();
     renderPortfolioSearch();
     if (Object.keys(state.portfolio).length) {
-      loadPortfolioPrices().then(() => {
+      Promise.all([loadPortfolioPrices(), fetchFxRates()]).then(() => {
         if (state.currentTab === 'portfolio') renderPortfolioHoldings();
       });
+    } else {
+      fetchFxRates();
     }
   }
 }
@@ -1088,7 +1142,7 @@ function startAutoRefresh() {
       if (state.currentTab === 'home') renderHome();
     }
     if (state.currentTab === 'portfolio' && Object.keys(state.portfolio).length) {
-      await loadPortfolioPrices();
+      await Promise.all([loadPortfolioPrices(), fetchFxRates()]);
       renderPortfolioHoldings();
     }
   }, 60000); // refresh every minute when visible
@@ -1250,6 +1304,7 @@ async function init() {
     await loadPrices();
     await loadPortfolio();
     await loadPortfolioPrices();
+    await fetchFxRates();
     state.loading = false;
     renderHome();
 

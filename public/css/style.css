@@ -538,29 +538,31 @@ html, body {
   background: var(--bg-card);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
-  padding: 16px;
-  margin-bottom: 16px;
+  padding: 11px 14px 11px 18px;
+  margin-bottom: 12px;
   position: relative;
   overflow: hidden;
 }
 .portfolio-summary::before {
-  content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%;
+  content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 100%;
   background: linear-gradient(180deg, var(--primary), var(--success));
 }
-.portfolio-total-label { font-size: 11px; font-weight: 700; color: var(--text-sub); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px; }
-.portfolio-summary-block + .portfolio-summary-block { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
-.portfolio-currency-label { font-size: 11px; font-weight: 700; color: var(--primary); margin-bottom: 4px; letter-spacing: 0.5px; }
-.portfolio-total-value { font-size: 24px; font-weight: 800; color: var(--text); margin-bottom: 12px; font-variant-numeric: tabular-nums; }
-
-.portfolio-stats-row { display: flex; gap: 8px; }
-.portfolio-stat {
-  flex: 1; background: var(--bg-elevated); border-radius: 8px; padding: 8px;
-  text-align: center;
-}
-.portfolio-stat-label { font-size: 10px; color: var(--text-sub); font-weight: 600; margin-bottom: 3px; }
-.portfolio-stat-value { font-size: 13px; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
-.portfolio-stat-value.up { color: var(--stock-up); }
-.portfolio-stat-value.down { color: var(--stock-down); }
+.psummary-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 3px; }
+.psummary-label { font-size: 10px; font-weight: 700; color: var(--text-sub); text-transform: uppercase; letter-spacing: 0.7px; }
+.psummary-total { font-size: 20px; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
+.psummary-inline { display: flex; gap: 10px; font-size: 11px; color: var(--text-sub); flex-wrap: wrap; }
+.psummary-inline b { color: var(--text); font-variant-numeric: tabular-nums; }
+.psummary-inline .gain-up b { color: var(--stock-up); }
+.psummary-inline .gain-down b { color: var(--stock-down); }
+.psummary-rows { margin-top: 7px; padding-top: 7px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 3px; }
+.psummary-row { display: flex; align-items: center; gap: 5px; font-size: 11px; flex-wrap: wrap; }
+.psummary-cname { font-size: 10px; font-weight: 700; color: var(--primary); min-width: 26px; }
+.psummary-cval { font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; flex: 1; min-width: 0; }
+.psummary-gain { font-weight: 700; font-variant-numeric: tabular-nums; color: var(--text); }
+.psummary-pct { font-weight: 600; color: var(--text-sub); }
+.psummary-gain.gain-up, .psummary-pct.gain-up { color: var(--stock-up); }
+.psummary-gain.gain-down, .psummary-pct.gain-down { color: var(--stock-down); }
+.psummary-krw-eq { font-size: 10px; color: var(--text-sub); margin-left: auto; font-variant-numeric: tabular-nums; }
 
 #portfolio-holdings .stock-card { margin-bottom: 8px; }
 
@@ -599,3 +601,17 @@ html, body {
 }
 .port-stat.gain-up .port-stat-value { color: var(--stock-up); }
 .port-stat.gain-down .port-stat-value { color: var(--stock-down); }
+.port-stat-krw {
+  margin-top: 4px;
+  background: var(--bg-elevated);
+  border-radius: 7px;
+  padding: 4px 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+}
+.port-stat-krw-label { font-size: 10px; font-weight: 700; color: var(--primary); flex-shrink: 0; }
+.port-stat-krw-val { font-size: 11px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; text-align: right; }
+.port-stat-krw-val .gain-up { color: var(--stock-up); }
+.port-stat-krw-val .gain-down { color: var(--stock-down); }
