@@ -122,7 +122,7 @@ async function fetchQuotesBatch(symbols) {
   const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
   const { crumb, cookie } = await getYahooCrumb();
   const r = await _fetch(
-    `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${symbols.map(encodeURIComponent).join(',')}&crumb=${encodeURIComponent(crumb)}&fields=regularMarketPrice,shortName,currency,regularMarketChangePercent`,
+    `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${symbols.map(encodeURIComponent).join(',')}&crumb=${encodeURIComponent(crumb)}&fields=regularMarketPrice,shortName,longName,currency,regularMarketChangePercent&lang=ko-KR&region=KR`,
     { headers: { 'User-Agent': UA, 'Cookie': cookie }, timeout: 10000 }
   );
   if (!r.ok) throw new Error(`Yahoo Finance ${r.status}`);
@@ -315,7 +315,9 @@ app.get('/api/quote', async (req, res) => {
   try {
     const result = await fetchQuotesBatch(req.query.symbols.split(','));
     const enriched = result.map(q => {
-      const korName = KR_STOCKS_MAP.get(q.symbol);
+      // Yahoo Finance가 한글명을 반환하면 우선 사용, 없으면 로컬 KR_STOCKS_MAP 폴백
+      const yahooKorName = /[가-힣]/.test(q.shortName) ? q.shortName : (/[가-힣]/.test(q.longName) ? q.longName : null);
+      const korName = yahooKorName || KR_STOCKS_MAP.get(q.symbol) || null;
       return korName ? { ...q, korName } : q;
     });
     res.json({ quoteResponse: { result: enriched } });
