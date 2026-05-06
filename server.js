@@ -6,7 +6,7 @@ const nodeFetch = require('node-fetch');
 const _fetch = typeof fetch !== 'undefined' ? fetch : nodeFetch;
 
 if (!process.env.VERCEL) {
-  try { require('dotenv').config({ path: '.env.local' }); } catch {}
+  try { require('dotenv').config({ path: '.env.local' }); } catch { }
 }
 
 const express = require('express');
@@ -60,7 +60,7 @@ async function getStore() {
   if (!_fileCache) {
     try {
       _fileCache = fs.existsSync(DATA_FILE) ? JSON.parse(fs.readFileSync(DATA_FILE, 'utf8')) : null;
-    } catch (e) {}
+    } catch (e) { }
     if (!_fileCache) _fileCache = { watchlists: {}, subscriptions: {}, portfolios: {} };
   }
   if (!_fileCache.portfolios) _fileCache.portfolios = {};
@@ -69,11 +69,11 @@ async function getStore() {
 
 async function saveStore(data) {
   if (process.env.UPSTASH_REDIS_REST_URL) {
-    try { await redisCmd('SET', 'stock-alarm-v1', JSON.stringify(data)); } catch (e) {}
+    try { await redisCmd('SET', 'stock-alarm-v1', JSON.stringify(data)); } catch (e) { }
     return;
   }
   _fileCache = data;
-  try { fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2)); } catch (_) {}
+  try { fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2)); } catch (_) { }
 }
 
 // ── VAPID ──────────────────────────────────────────────────────────────────
@@ -86,7 +86,7 @@ if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
       vapidKeys = JSON.parse(fs.readFileSync(VAPID_FILE, 'utf8'));
     } else {
       vapidKeys = webpush.generateVAPIDKeys();
-      try { fs.writeFileSync(VAPID_FILE, JSON.stringify(vapidKeys)); } catch (_) {}
+      try { fs.writeFileSync(VAPID_FILE, JSON.stringify(vapidKeys)); } catch (_) { }
     }
   } catch (e) {
     vapidKeys = webpush.generateVAPIDKeys();
@@ -99,10 +99,10 @@ if (vapidKeys?.publicKey && vapidKeys?.privateKey) {
 
 // ── Push Helpers ───────────────────────────────────────────────────────────
 async function sendPush(subscription, payload) {
-  try { 
-    await webpush.sendNotification(subscription, JSON.stringify(payload)); 
-    return 'ok'; 
-  } catch (e) { 
+  try {
+    await webpush.sendNotification(subscription, JSON.stringify(payload));
+    return 'ok';
+  } catch (e) {
     if (e.statusCode === 410 || e.statusCode === 404) return 'expired';
     return 'error';
   }
@@ -284,31 +284,99 @@ app.delete('/api/portfolio/:symbol', async (req, res) => {
 let KR_STOCKS = [];
 let KR_STOCKS_MAP = new Map();
 try {
-  if (fs.existsSync(KR_STOCKS_FILE)) {
-    KR_STOCKS = JSON.parse(fs.readFileSync(KR_STOCKS_FILE, 'utf8')).map(s => ({
+  const krData = require('./kr-stocks.json');
+  KR_STOCKS = krData.map(s => {
+    let exchange = 'KSC';
+    if (s.s.endsWith('.KQ')) exchange = 'KOQ';
+    else if (!s.s.includes('.')) exchange = 'NMS';
+    
+    return {
       symbol: s.s, shortname: s.n, longname: s.n,
-      exchange: s.s.endsWith('.KQ') ? 'KOQ' : 'KSC',
+      exchange,
       quoteType: 'EQUITY'
-    }));
-    KR_STOCKS.forEach(s => KR_STOCKS_MAP.set(s.symbol, s.shortname));
-  }
-} catch (_) {}
+    };
+  });
+  KR_STOCKS.forEach(s => KR_STOCKS_MAP.set(s.symbol, s.shortname));
+} catch (e) {
+  console.error('Failed to load kr-stocks.json:', e);
+}
 
 app.get('/api/search', async (req, res) => {
   const { q } = req.query;
   if (!q) return res.json({ quotes: [] });
-  if (/[\uAC00-\uD7A3]/.test(q)) {
-    return res.json({ quotes: KR_STOCKS.filter(s => s.shortname.includes(q) || s.symbol.includes(q.toUpperCase())).slice(0, 10) });
-  }
+
+  let results = [];
+  const resultsSet = new Set();
+  
+  // 1. Google Finance Autocomplete API (실제 사이트 검색 로직)
   try {
-    const r = await _fetch(`https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(q)}&quotesCount=10&lang=ko-KR&region=KR`, { timeout: 5000 });
-    const data = await r.json();
-    const quotes = (data.quotes || []).map(quote => {
-      const krName = KR_STOCKS_MAP.get(quote.symbol);
-      return krName ? { ...quote, shortname: krName, longname: krName } : quote;
+    const gfRes = await _fetch(`https://www.google.com/complete/search?client=finance-immersive&q=${encodeURIComponent(q)}`, { timeout: 5000 });
+    const gfText = await gfRes.text();
+    const match = gfText.match(/window\.google\.ac\.h\((.*)\)/);
+    if (match) {
+      const data = JSON.parse(match[1]);
+      if (data[1] && Array.isArray(data[1])) {
+        data[1].forEach(item => {
+          if (item[3] && item[3].t && item[3].x) {
+            const t = item[3].t;
+            const x = item[3].x;
+            const c = item[3].c;
+            
+            // Yahoo Finance symbol 변환
+            let symbol = t;
+            if (x === 'KRX') {
+              const krLocal = KR_STOCKS.find(s => s.symbol.startsWith(t));
+              if (krLocal) symbol = krLocal.symbol;
+              else symbol = t + '.KS';
+            } else if (x === 'KOSDAQ') {
+              symbol = t + '.KQ';
+            }
+            
+            if (!resultsSet.has(symbol)) {
+              results.push({
+                symbol,
+                shortname: c || t,
+                longname: c || t,
+                exchange: x === 'KRX' || x === 'KOSDAQ' ? (symbol.endsWith('.KQ') ? 'KOQ' : 'KSC') : x,
+                quoteType: 'EQUITY'
+              });
+              resultsSet.add(symbol);
+            }
+          }
+        });
+      }
+    }
+  } catch (e) {
+    console.warn('Google Finance search failed:', e.message);
+  }
+
+  // 2. 만약 한국어 검색인데 결과가 없거나 적으면 로컬 하드코딩 데이터 추가 검색 (Fallback)
+  if (/[\uAC00-\uD7A3]/.test(q) && results.length < 5) {
+    const localMatches = KR_STOCKS.filter(s => s.shortname.includes(q) || s.symbol.includes(q.toUpperCase()));
+    localMatches.forEach(lm => {
+      if (!resultsSet.has(lm.symbol)) {
+        results.push(lm);
+        resultsSet.add(lm.symbol);
+      }
     });
-    res.json({ ...data, quotes });
-  } catch (_) { res.json({ quotes: [] }); }
+  }
+
+  // 3. 만약 영어 검색이거나 부족하면 Yahoo Finance Search도 병행
+  if (!/[\uAC00-\uD7A3]/.test(q) || results.length === 0) {
+    try {
+      const r = await _fetch(`https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(q)}&quotesCount=10&lang=ko-KR&region=KR`, { timeout: 5000 });
+      const data = await r.json();
+      (data.quotes || []).forEach(quote => {
+        if (!resultsSet.has(quote.symbol)) {
+          const krName = KR_STOCKS_MAP.get(quote.symbol);
+          results.push(krName ? { ...quote, shortname: krName, longname: krName } : quote);
+          resultsSet.add(quote.symbol);
+        }
+      });
+    } catch (_) {}
+  }
+
+  res.json({ quotes: results.slice(0, 10) });
 });
 
 app.get('/api/quote', async (req, res) => {
@@ -358,14 +426,14 @@ app.get('/api/fxrates', async (req, res) => {
       const rates = extractRates(data.quoteResponse?.result);
       if (Object.keys(rates).length >= 1) return res.json({ rates, source: 'yahoo-direct' });
     }
-  } catch (_) {}
+  } catch (_) { }
 
   // 2차: 크럼 인증 방식으로 폴백
   try {
     const results = await fetchQuotesBatch(FX_SYMBOLS);
     const rates = extractRates(results);
     if (Object.keys(rates).length >= 1) return res.json({ rates, source: 'yahoo-crumb' });
-  } catch (_) {}
+  } catch (_) { }
 
   res.status(502).json({ error: 'exchange rate fetch failed' });
 });
@@ -383,10 +451,10 @@ module.exports = app;
 if (require.main === module) {
   const PORT = process.env.PORT || 3000;
   app.listen(PORT, () => console.log(`🚀 http://localhost:${PORT}`));
-  
+
   // 로컬 가격 체크 (2분)
   try {
     const cron = require('node-cron');
     cron.schedule('*/2 * * * *', () => checkPrices().catch(console.error));
-  } catch {}
+  } catch { }
 }
