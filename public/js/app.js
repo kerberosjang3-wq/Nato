@@ -348,7 +348,7 @@ function renderStockCard(item) {
       ${badge}
       <div class="stock-card-top">
         <div>
-          <div class="stock-name">${item.name || item.symbol}</div>
+          <div class="stock-name">${q?.korName || item.name || item.symbol}</div>
           <div class="stock-symbol">${item.symbol}</div>
         </div>
         <div class="stock-price-wrap">
@@ -853,7 +853,7 @@ function renderPortfolioCard(item) {
     <div class="stock-card-main">
       <div class="stock-card-top">
         <div>
-          <div class="stock-name">${item.name || item.symbol}</div>
+          <div class="stock-name">${q?.korName || item.name || item.symbol}</div>
           <div class="stock-symbol">${item.symbol} · ${item.qty}주</div>
         </div>
         <div class="stock-price-wrap">
@@ -959,7 +959,7 @@ function renderDetailPanel(symbol) {
       </div>
     </div>` : '';
 
-  const name = item.name || item.symbol;
+  const name = q?.korName || item.name || item.symbol;
   detail.innerHTML = `
   <div class="ls-detail-content">
     <div class="ls-detail-header">

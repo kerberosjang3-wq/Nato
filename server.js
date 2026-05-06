@@ -282,6 +282,7 @@ app.delete('/api/portfolio/:symbol', async (req, res) => {
 
 // 한국 종목 데이터 로드
 let KR_STOCKS = [];
+let KR_STOCKS_MAP = new Map();
 try {
   if (fs.existsSync(KR_STOCKS_FILE)) {
     KR_STOCKS = JSON.parse(fs.readFileSync(KR_STOCKS_FILE, 'utf8')).map(s => ({
@@ -289,6 +290,7 @@ try {
       exchange: s.s.endsWith('.KQ') ? 'KOQ' : 'KSC',
       quoteType: 'EQUITY'
     }));
+    KR_STOCKS.forEach(s => KR_STOCKS_MAP.set(s.symbol, s.shortname));
   }
 } catch (_) {}
 
@@ -299,15 +301,24 @@ app.get('/api/search', async (req, res) => {
     return res.json({ quotes: KR_STOCKS.filter(s => s.shortname.includes(q) || s.symbol.includes(q.toUpperCase())).slice(0, 10) });
   }
   try {
-    const r = await _fetch(`https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(q)}&quotesCount=10`, { timeout: 5000 });
-    res.json(await r.json());
+    const r = await _fetch(`https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(q)}&quotesCount=10&lang=ko-KR&region=KR`, { timeout: 5000 });
+    const data = await r.json();
+    const quotes = (data.quotes || []).map(quote => {
+      const krName = KR_STOCKS_MAP.get(quote.symbol);
+      return krName ? { ...quote, shortname: krName, longname: krName } : quote;
+    });
+    res.json({ ...data, quotes });
   } catch (_) { res.json({ quotes: [] }); }
 });
 
 app.get('/api/quote', async (req, res) => {
   try {
     const result = await fetchQuotesBatch(req.query.symbols.split(','));
-    res.json({ quoteResponse: { result } });
+    const enriched = result.map(q => {
+      const korName = KR_STOCKS_MAP.get(q.symbol);
+      return korName ? { ...q, korName } : q;
+    });
+    res.json({ quoteResponse: { result: enriched } });
   } catch (e) { res.status(502).json({ error: e.message }); }
 });
 
