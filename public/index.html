@@ -96,16 +96,24 @@
 
     <!-- Portfolio Screen -->
     <section class="screen active" id="screen-portfolio">
-      <div class="portfolio-search-wrap">
-        <div class="search-field">
-          <input type="search" class="search-input" id="portfolio-search-input"
-            placeholder="종목 검색하여 추가..." autocomplete="off" autocorrect="off" spellcheck="false">
-          <button class="search-field-clear" id="portfolio-search-clear"><i class="ph ph-x-circle"></i></button>
-          <button class="search-field-btn" id="portfolio-search-btn"><i class="ph ph-magnifying-glass"></i></button>
+      <div class="portfolio-left">
+        <div class="portfolio-search-wrap">
+          <div class="search-field">
+            <input type="search" class="search-input" id="portfolio-search-input"
+              placeholder="종목 검색하여 추가..." autocomplete="off" autocorrect="off" spellcheck="false">
+            <button class="search-field-clear" id="portfolio-search-clear"><i class="ph ph-x-circle"></i></button>
+            <button class="search-field-btn" id="portfolio-search-btn"><i class="ph ph-magnifying-glass"></i></button>
+          </div>
+        </div>
+        <div id="portfolio-search-results"></div>
+        <div id="portfolio-holdings"></div>
+      </div>
+      <div id="ls-detail" class="ls-detail-panel">
+        <div class="ls-detail-empty">
+          <i class="ph ph-chart-line-up"></i>
+          <span>종목을 선택하면<br>상세 정보가 표시됩니다</span>
         </div>
       </div>
-      <div id="portfolio-search-results"></div>
-      <div id="portfolio-holdings"></div>
     </section>
   </main>
 

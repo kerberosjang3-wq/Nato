@@ -44,6 +44,10 @@ function timeAgo(ts) {
   return `${Math.floor(sec / 3600)}시간 전`;
 }
 
+function isLandscape() {
+  return window.matchMedia('(orientation: landscape)').matches;
+}
+
 // ── State ──────────────────────────────────────────────────────────────────
 const state = {
   clientId: localStorage.getItem('clientId') || (() => { const id = uid(); localStorage.setItem('clientId', id); return id; })(),
@@ -899,6 +903,10 @@ function handlePortfolioCardTap(symbol) {
   if (card.classList.contains('swiped')) {
     card.classList.remove('swiped');
     if (currentSwipedCard === card) currentSwipedCard = null;
+    return;
+  }
+  if (isLandscape()) {
+    renderDetailPanel(symbol);
   } else {
     const expanded = card.classList.toggle('expanded');
     if (expanded) state.expandedPortfolioCards.add(symbol);
@@ -910,6 +918,97 @@ function togglePortfolioSummary() {
   state.summaryExpanded = !state.summaryExpanded;
   const el = document.querySelector('.portfolio-summary');
   if (el) el.classList.toggle('expanded', state.summaryExpanded);
+}
+
+// ── Landscape Detail Panel ─────────────────────────────────────────────────
+function clearDetailPanel() {
+  const detail = document.getElementById('ls-detail');
+  if (!detail) return;
+  detail.innerHTML = '<div class="ls-detail-empty"><i class="ph ph-chart-line-up"></i><span>종목을 선택하면<br>상세 정보가 표시됩니다</span></div>';
+  document.querySelectorAll('#portfolio-holdings .stock-card').forEach(c => c.classList.remove('ls-selected'));
+}
+
+function renderDetailPanel(symbol) {
+  const detail = document.getElementById('ls-detail');
+  if (!detail) return;
+
+  const item = state.portfolio[symbol];
+  if (!item) { clearDetailPanel(); return; }
+
+  const q = state.portfolioPrices[symbol];
+  const currentPrice = q?.regularMarketPrice;
+  const pct = q?.regularMarketChangePercent;
+  const currency = q?.currency || item.currency || 'USD';
+  const invested = (item.buyPrice || 0) * (item.qty || 0);
+  const currentVal = currentPrice ? currentPrice * item.qty : null;
+  const gain = currentVal !== null ? currentVal - invested : null;
+  const gainPct = gain !== null && invested > 0 ? (gain / invested) * 100 : null;
+  const gainClass = gain !== null ? (gain >= 0 ? 'gain-up' : 'gain-down') : '';
+  const gainSign = gain !== null && gain >= 0 ? '+' : '';
+
+  const fxRate = currency !== 'KRW' ? (state.fxRates[currency] || null) : null;
+  const currentValKrw = fxRate && currentVal !== null ? currentVal * fxRate : null;
+  const gainKrw = fxRate && gain !== null ? gain * fxRate : null;
+
+  const krwBlock = currentValKrw !== null ? `
+    <div class="ls-detail-krw">
+      <div class="ls-detail-krw-label">원화 환산 (KRW)</div>
+      <div class="ls-detail-krw-vals">
+        <span>${formatPrice(currentValKrw, 'KRW')}</span>
+        ${gainKrw !== null ? `<span class="${gainKrw >= 0 ? 'gain-up' : 'gain-down'}">${gainKrw >= 0 ? '+' : ''}${formatPrice(Math.abs(gainKrw), 'KRW')}</span>` : ''}
+      </div>
+    </div>` : '';
+
+  const name = item.name || item.symbol;
+  detail.innerHTML = `
+  <div class="ls-detail-content">
+    <div class="ls-detail-header">
+      <div>
+        <div class="ls-detail-name">${name}</div>
+        <div class="ls-detail-symbol">${item.symbol} · ${item.qty}주</div>
+      </div>
+      <div class="ls-detail-price-wrap">
+        <div class="ls-detail-price">${currentPrice ? formatPrice(currentPrice, currency) : '—'}</div>
+        <div class="stock-change ${getChangeClass(pct)}">${getChangeStr(pct)}</div>
+      </div>
+    </div>
+    <div class="ls-detail-divider"></div>
+    <div class="ls-detail-stats">
+      <div class="ls-detail-stat">
+        <span class="ls-detail-stat-label">매수가</span>
+        <span class="ls-detail-stat-value">${formatPrice(item.buyPrice, currency)}</span>
+      </div>
+      <div class="ls-detail-stat">
+        <span class="ls-detail-stat-label">보유 수량</span>
+        <span class="ls-detail-stat-value">${item.qty}주</span>
+      </div>
+      <div class="ls-detail-stat">
+        <span class="ls-detail-stat-label">투자금액</span>
+        <span class="ls-detail-stat-value">${formatPrice(invested, currency)}</span>
+      </div>
+      <div class="ls-detail-stat">
+        <span class="ls-detail-stat-label">평가금액</span>
+        <span class="ls-detail-stat-value">${currentVal !== null ? formatPrice(currentVal, currency) : '—'}</span>
+      </div>
+      <div class="ls-detail-stat ${gainClass}">
+        <span class="ls-detail-stat-label">손익</span>
+        <span class="ls-detail-stat-value">${gain !== null ? `${gainSign}${formatPrice(Math.abs(gain), currency)}` : '—'}</span>
+      </div>
+      <div class="ls-detail-stat ${gainClass}">
+        <span class="ls-detail-stat-label">수익률</span>
+        <span class="ls-detail-stat-value">${gainPct !== null ? `${gainSign}${gainPct.toFixed(2)}%` : '—'}</span>
+      </div>
+    </div>
+    ${krwBlock}
+    <div class="ls-detail-actions">
+      <button class="btn-cancel" style="flex:1" onclick="openPortfolioEditModal(event,'${symbol}')">수정</button>
+      <button class="ls-detail-del" onclick="confirmDeletePortfolio(event,'${symbol}')">삭제</button>
+    </div>
+  </div>`;
+
+  document.querySelectorAll('#portfolio-holdings .stock-card').forEach(c => c.classList.remove('ls-selected'));
+  const card = document.querySelector(`.stock-card[data-symbol="${symbol}"][data-portfolio="1"]`);
+  if (card) card.classList.add('ls-selected');
 }
 
 function openPortfolioEditModal(event, symbol) {
@@ -1159,6 +1258,7 @@ async function savePortfolioModal() {
   await loadPortfolioPrices();
   renderPortfolioHoldings();
   renderPortfolioSearch();
+  if (isLandscape()) renderDetailPanel(symbol);
   showToast(existing ? '✅ 수정되었습니다' : '✅ 추가되었습니다');
 }
 
@@ -1168,6 +1268,7 @@ async function confirmDeletePortfolio(event, symbol) {
   try {
     await deletePortfolioItem(symbol);
     renderPortfolioHoldings();
+    if (isLandscape()) clearDetailPanel();
     showToast('종목이 삭제되었습니다');
   } catch {
     showToast('삭제 중 오류가 발생했습니다');
@@ -1370,6 +1471,17 @@ function setupEventListeners() {
   // Visibility change for refresh
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') refreshPrices();
+  });
+
+  // Orientation change — re-render active screen to apply landscape/portrait logic
+  window.addEventListener('orientationchange', () => {
+    setTimeout(() => {
+      if (state.currentTab === 'portfolio') {
+        renderPortfolioHoldings();
+        if (!isLandscape()) clearDetailPanel();
+      }
+      if (state.currentTab === 'home') renderHome();
+    }, 300);
   });
 }
 

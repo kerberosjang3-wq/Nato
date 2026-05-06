@@ -712,3 +712,243 @@ html, body {
 .port-stat-krw-val { font-size: 11px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; text-align: right; }
 .port-stat-krw-val .gain-up { color: var(--stock-up); }
 .port-stat-krw-val .gain-down { color: var(--stock-down); }
+
+/* ── ls-detail hidden in portrait ── */
+.ls-detail-panel { display: none; }
+
+/* ══════════════════════════════════════════════════════
+   LANDSCAPE MODE
+   ══════════════════════════════════════════════════════ */
+@media (orientation: landscape) {
+
+  /* ① Sidebar navigation */
+  #app {
+    max-width: 100%;
+    border: none !important;
+    box-shadow: none !important;
+    display: grid;
+    grid-template-columns: 56px 1fr;
+    grid-template-rows: auto 1fr;
+  }
+
+  .tab-bar {
+    grid-column: 1;
+    grid-row: 1 / 3;
+    width: 56px;
+    height: auto;
+    position: relative;
+    bottom: auto;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    border-top: none;
+    border-bottom: none;
+    border-right: 1px solid var(--glass-border);
+    padding: env(safe-area-inset-top, 8px) 0 env(safe-area-inset-bottom, 8px) env(safe-area-inset-left, 0px);
+  }
+
+  .tab-btn {
+    flex: 0 0 auto;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    padding: 0;
+  }
+
+  .tab-btn .tab-icon { font-size: 20px; }
+
+  /* ③ Compact header */
+  .header {
+    grid-column: 2;
+    grid-row: 1;
+    height: 44px;
+    padding: 0 16px;
+    padding-right: calc(16px + env(safe-area-inset-right, 0px));
+    align-items: center;
+  }
+
+  .header-logo { height: 22px; }
+
+  /* Main — overflow hidden, each screen manages its own scroll */
+  .main {
+    grid-column: 2;
+    grid-row: 2;
+    overflow: hidden;
+  }
+
+  .screen {
+    min-height: 0;
+    padding-bottom: 16px;
+    padding-right: calc(20px + env(safe-area-inset-right, 0px));
+  }
+
+  /* Home & Settings: scroll within screen */
+  #screen-home.active,
+  #screen-settings.active {
+    display: block;
+    overflow-y: auto;
+    height: 100%;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* ② 2-column card grid for watchlist */
+  #home-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  /* ④ Summary card compact */
+  .psummary-total { font-size: 20px; }
+
+  /* ⑤ Portfolio split panel */
+  #screen-portfolio.active {
+    display: flex;
+    flex-direction: row;
+    gap: 12px;
+    padding: 12px 16px;
+    padding-right: calc(16px + env(safe-area-inset-right, 0px));
+    height: 100%;
+    overflow: hidden;
+    align-items: stretch;
+  }
+
+  .portfolio-left {
+    flex: 0 0 260px;
+    min-width: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    background: var(--bg);
+  }
+
+  /* ⑥ Right detail panel */
+  .ls-detail-panel {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .ls-detail-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: 10px;
+    color: var(--text-sub);
+    font-size: 13px;
+    text-align: center;
+    padding: 24px;
+    line-height: 1.6;
+  }
+
+  .ls-detail-empty i { font-size: 44px; opacity: 0.35; }
+
+  .ls-detail-content {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 100%;
+  }
+
+  .ls-detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .ls-detail-name { font-size: 15px; font-weight: 800; color: var(--text); line-height: 1.3; }
+  .ls-detail-symbol { font-size: 11px; color: var(--text-sub); margin-top: 3px; }
+  .ls-detail-price-wrap { text-align: right; flex-shrink: 0; }
+  .ls-detail-price {
+    font-size: 18px; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums;
+  }
+
+  .ls-detail-divider { height: 1px; background: var(--border); }
+
+  .ls-detail-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+
+  .ls-detail-stat {
+    background: var(--bg-elevated);
+    border-radius: 8px;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .ls-detail-stat-label {
+    font-size: 9px; font-weight: 700; color: var(--text-sub);
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+
+  .ls-detail-stat-value {
+    font-size: 13px; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums;
+  }
+
+  .ls-detail-stat.gain-up .ls-detail-stat-value { color: var(--stock-up); }
+  .ls-detail-stat.gain-down .ls-detail-stat-value { color: var(--stock-down); }
+
+  .ls-detail-krw {
+    background: var(--bg-elevated);
+    border-radius: 8px;
+    padding: 8px 10px;
+  }
+
+  .ls-detail-krw-label {
+    font-size: 9px; font-weight: 700; color: var(--primary);
+    text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;
+  }
+
+  .ls-detail-krw-vals {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 13px; font-weight: 700; color: var(--text);
+    font-variant-numeric: tabular-nums; gap: 6px;
+  }
+
+  .ls-detail-krw-vals .gain-up { color: var(--stock-up); }
+  .ls-detail-krw-vals .gain-down { color: var(--stock-down); }
+
+  .ls-detail-actions {
+    display: flex; gap: 8px; margin-top: auto; padding-top: 4px;
+  }
+
+  .ls-detail-actions .btn-cancel,
+  .ls-detail-actions .btn-save { padding: 12px 16px; font-size: 14px; }
+
+  .ls-detail-del {
+    flex: 1;
+    background: rgba(255, 82, 82, 0.12);
+    color: var(--danger);
+    border: 1px solid rgba(255, 82, 82, 0.25);
+    border-radius: 16px;
+    padding: 12px 16px;
+    font-size: 14px; font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  /* Selected card highlight */
+  .stock-card.ls-selected {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px var(--primary-glow), 0 2px 10px rgba(0,0,0,0.2);
+  }
+
+  /* ⑥ Toast re-centers for sidebar offset */
+  .toast {
+    left: calc(56px + (100vw - 56px) / 2);
+  }
+}
