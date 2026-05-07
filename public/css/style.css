@@ -221,7 +221,9 @@ html, body {
 .stock-card.target-reached { background: linear-gradient(135deg, var(--bg-card), rgba(0, 208, 132, 0.05)); border-color: var(--success); }
 
 .stock-card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1px; }
-.stock-name { font-size: 13px; font-weight: 700; color: var(--text); letter-spacing: -0.01em; }
+.stock-card-left { display: flex; align-items: center; gap: 8px; overflow: hidden; }
+.stock-card-left > div { overflow: hidden; }
+.stock-name { font-size: 13px; font-weight: 700; color: var(--text); letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .stock-symbol { font-size: 10px; font-weight: 600; color: var(--text-sub); margin-top: 1px; text-transform: uppercase; }
 
 .stock-price-wrap { text-align: right; }
@@ -422,6 +424,20 @@ html, body {
 }
 .search-clear:hover { color: var(--text); }
 .search-clear.visible { display: flex; align-items: center; }
+
+.stock-logo {
+  flex-shrink: 0; width: 40px; height: 40px; border-radius: 10px;
+  overflow: hidden; background: white; border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center; position: relative;
+}
+.stock-logo img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.stock-logo-fallback {
+  width: 100%; height: 100%; display: none;
+  align-items: center; justify-content: center;
+  font-size: 16px; font-weight: 800; color: white;
+}
+.stock-card .stock-logo { width: 32px; height: 32px; border-radius: 8px; }
+.stock-card .stock-logo-fallback { font-size: 13px; }
 
 .result-item {
   display: flex; align-items: center; gap: 12px;
