@@ -350,15 +350,27 @@ app.get('/api/search', async (req, res) => {
     console.warn('Google Finance search failed:', e.message);
   }
 
-  // 2. 만약 한국어 검색인데 결과가 없거나 적으면 로컬 하드코딩 데이터 추가 검색 (Fallback)
-  if (/[\uAC00-\uD7A3]/.test(q) && results.length < 5) {
-    const localMatches = KR_STOCKS.filter(s => s.shortname.includes(q) || s.symbol.includes(q.toUpperCase()));
-    localMatches.forEach(lm => {
-      if (!resultsSet.has(lm.symbol)) {
-        results.push(lm);
-        resultsSet.add(lm.symbol);
-      }
-    });
+  // 2. 한국어 검색이고 결과가 부족하면 Naver Stock Autocomplete API로 검색
+  if (/[가-힣]/.test(q) && results.length < 5) {
+    try {
+      const naverRes = await _fetch(
+        `https://ac.stock.naver.com/ac?q=${encodeURIComponent(q)}&target=stock%2Cipo%2Cindex`,
+        { timeout: 5000, headers: { Referer: 'https://finance.naver.com/' } }
+      );
+      const naverData = await naverRes.json();
+      (naverData?.items || []).forEach(item => {
+        if (item.nationCode !== 'KOR' || !item.code?.match(/^\d{6}$/)) return;
+        const isKosdaq = item.typeCode === 'KOSDAQ';
+        const symbol = item.code + (isKosdaq ? '.KQ' : '.KS');
+        const exchange = isKosdaq ? 'KOQ' : 'KSC';
+        if (!resultsSet.has(symbol)) {
+          results.push({ symbol, shortname: item.name, longname: item.name, exchange, quoteType: 'EQUITY' });
+          resultsSet.add(symbol);
+        }
+      });
+    } catch (e) {
+      console.warn('Naver stock search failed:', e.message);
+    }
   }
 
   // 3. 만약 영어 검색이거나 부족하면 Yahoo Finance Search도 병행
