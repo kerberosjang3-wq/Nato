@@ -309,6 +309,7 @@ app.get('/api/search', async (req, res) => {
   const resultsSet = new Set();
   
   // 1. Google Finance Autocomplete API (실제 사이트 검색 로직)
+  const PRIMARY_EXCHANGES = new Set(['NASDAQ','NYSE','NYSEARCA','AMEX','OTC','KRX','KOSDAQ']);
   try {
     const gfRes = await _fetch(`https://www.google.com/complete/search?client=finance-immersive&q=${encodeURIComponent(q)}`, { timeout: 5000 });
     const gfText = await gfRes.text();
@@ -321,7 +322,9 @@ app.get('/api/search', async (req, res) => {
             const t = item[3].t;
             const x = item[3].x;
             const c = item[3].c;
-            
+
+            if (!PRIMARY_EXCHANGES.has(x)) return;
+
             // Yahoo Finance symbol 변환
             let symbol = t;
             if (x === 'KRX') {
@@ -331,7 +334,7 @@ app.get('/api/search', async (req, res) => {
             } else if (x === 'KOSDAQ') {
               symbol = t + '.KQ';
             }
-            
+
             if (!resultsSet.has(symbol)) {
               results.push({
                 symbol,
