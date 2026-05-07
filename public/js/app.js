@@ -865,9 +865,12 @@ function renderPortfolioCard(item) {
   <div class="stock-card${isExpanded ? ' expanded' : ''}" data-symbol="${item.symbol}" data-portfolio="1" onclick="handlePortfolioCardTap('${item.symbol}')">
     <div class="stock-card-main">
       <div class="stock-card-top">
-        <div>
-          <div class="stock-name">${q?.korName || item.name || item.symbol}</div>
-          <div class="stock-symbol">${item.symbol} · ${item.qty}주</div>
+        <div class="stock-card-left">
+          ${stockLogoHtml(item.symbol, q?.korName || item.name)}
+          <div>
+            <div class="stock-name">${q?.korName || item.name || item.symbol}</div>
+            <div class="stock-symbol">${item.symbol} · ${item.qty}주</div>
+          </div>
         </div>
         <div class="stock-price-wrap">
           <div class="stock-price">${currentPrice ? formatPrice(currentPrice, currency) : '—'}</div>
