@@ -2,5 +2,10 @@
   "version": 2,
   "rewrites": [
     { "source": "/api/:path*", "destination": "/api/index" }
-  ]
+  ],
+  "functions": {
+    "api/index.js": {
+      "includeFiles": "kr-stocks.json"
+    }
+  }
 }
