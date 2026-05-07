@@ -436,8 +436,8 @@ html, body {
   align-items: center; justify-content: center;
   font-size: 16px; font-weight: 800; color: white;
 }
-.stock-card .stock-logo { width: 32px; height: 32px; border-radius: 8px; }
-.stock-card .stock-logo-fallback { font-size: 13px; }
+.stock-card .stock-logo { width: 24px; height: 24px; border-radius: 6px; }
+.stock-card .stock-logo-fallback { font-size: 11px; }
 
 .result-item {
   display: flex; align-items: center; gap: 12px;
