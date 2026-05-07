@@ -362,10 +362,18 @@ app.get('/api/search', async (req, res) => {
       );
       const naverData = await naverRes.json();
       (naverData?.items || []).forEach(item => {
-        if (item.nationCode !== 'KOR' || !item.code?.match(/^\d{6}$/)) return;
-        const isKosdaq = item.typeCode === 'KOSDAQ';
-        const symbol = item.code + (isKosdaq ? '.KQ' : '.KS');
-        const exchange = isKosdaq ? 'KOQ' : 'KSC';
+        if (!item.code || !item.typeCode) return;
+        let symbol, exchange;
+        if (item.nationCode === 'KOR' && /^\d{6}$/.test(item.code)) {
+          const isKosdaq = item.typeCode === 'KOSDAQ';
+          symbol = item.code + (isKosdaq ? '.KQ' : '.KS');
+          exchange = isKosdaq ? 'KOQ' : 'KSC';
+        } else if (PRIMARY_EXCHANGES.has(item.typeCode)) {
+          symbol = item.code;
+          exchange = item.typeCode;
+        } else {
+          return;
+        }
         if (!resultsSet.has(symbol)) {
           results.push({ symbol, shortname: item.name, longname: item.name, exchange, quoteType: 'EQUITY' });
           resultsSet.add(symbol);
