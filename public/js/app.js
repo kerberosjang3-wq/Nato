@@ -1106,7 +1106,7 @@ function openPortfolioEditModal(event, symbol) {
 }
 
 function renderPortfolioSearch() {
-  const wrap = document.getElementById('portfolio-search-results');
+  const wrap = document.getElementById('home-search-results');
   if (!wrap) return;
 
   if (state.portfolioSearching) {
@@ -1155,7 +1155,7 @@ function renderPortfolioHoldings() {
       <div class="empty">
         <div class="empty-icon"><i class="ph ph-wallet"></i></div>
         <div class="empty-title">보유 종목이 없습니다</div>
-        <div class="empty-sub">위에서 종목을 검색하여<br>내 주식을 추가하세요</div>
+        <div class="empty-sub">상단 검색창에서 종목을 검색하여<br>내 주식을 추가하세요</div>
       </div>`;
     return;
   }
@@ -1177,13 +1177,9 @@ function renderPortfolioHoldings() {
 
 // ── Portfolio Search ───────────────────────────────────────────────────────
 function setPortfolioSearchBtnLoading(loading) {
-  const icon = document.querySelector('#portfolio-search-btn i');
+  const icon = document.querySelector('.header-search-icon');
   if (!icon) return;
-  if (loading) {
-    icon.className = 'ph ph-circle-notch spinning';
-  } else {
-    icon.className = 'ph ph-magnifying-glass';
-  }
+  icon.className = loading ? 'ph ph-circle-notch spinning header-search-icon' : 'ph ph-magnifying-glass header-search-icon';
 }
 
 let portfolioSearchTimer;
@@ -1364,6 +1360,26 @@ async function confirmDeletePortfolio(event, symbol) {
   }
 }
 
+// ── Search bar sync ────────────────────────────────────────────────────────
+function syncSearchBar(tab) {
+  const input = document.getElementById('home-search-input');
+  const clear = document.getElementById('home-search-clear');
+  const resultsEl = document.getElementById('home-search-results');
+  if (!input) return;
+  input.value = '';
+  clear?.classList.remove('visible');
+  if (resultsEl) resultsEl.innerHTML = '';
+  if (tab === 'portfolio') {
+    input.placeholder = '종목 검색하여 추가...';
+    state.portfolioSearchQ = '';
+    state.portfolioSearchResults = [];
+  } else {
+    input.placeholder = '전기차를 검색해보세요';
+    state.watchlistSearchQ = '';
+    state.watchlistSearchResults = [];
+  }
+}
+
 // ── Tabs ───────────────────────────────────────────────────────────────────
 function switchTab(tab) {
   if (currentSwipedCard) { currentSwipedCard.classList.remove('swiped'); currentSwipedCard = null; }
@@ -1371,6 +1387,7 @@ function switchTab(tab) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.getElementById(`screen-${tab}`)?.classList.add('active');
+  syncSearchBar(tab);
   // Highlight the matching bottom-nav tab (settings maps to 'more')
   const navTab = tab === 'settings' ? 'more' : tab;
   document.getElementById(`tab-${navTab}`)?.classList.add('active');
@@ -1454,33 +1471,37 @@ function setupEventListeners() {
     if (btn) btn.onclick = () => switchTab(tab);
   });
 
-  // Watchlist inline search
+  // Unified header search — routes to watchlist or portfolio depending on active tab
   const homeSearchInput = document.getElementById('home-search-input');
   const homeSearchClear = document.getElementById('home-search-clear');
   homeSearchInput?.addEventListener('input', e => {
     const v = e.target.value;
-    state.watchlistSearchQ = v;
     homeSearchClear?.classList.toggle('visible', !!v);
-    if (!v) { state.watchlistSearchResults = []; renderWatchlistSearch(); setWatchlistSearchBtnLoading(false); return; }
-    doWatchlistSearch(v);
+    if (state.currentTab === 'portfolio') {
+      state.portfolioSearchQ = v;
+      if (!v) { state.portfolioSearchResults = []; renderPortfolioSearch(); setPortfolioSearchBtnLoading(false); return; }
+      doPortfolioSearch(v);
+    } else {
+      state.watchlistSearchQ = v;
+      if (!v) { state.watchlistSearchResults = []; renderWatchlistSearch(); setWatchlistSearchBtnLoading(false); return; }
+      doWatchlistSearch(v);
+    }
   });
   homeSearchClear?.addEventListener('click', () => {
     if (homeSearchInput) homeSearchInput.value = '';
     homeSearchClear.classList.remove('visible');
-    state.watchlistSearchResults = [];
-    state.watchlistSearchQ = '';
-    setWatchlistSearchBtnLoading(false);
-    renderWatchlistSearch();
-    homeSearchInput?.focus();
-  });
-  document.getElementById('home-search-btn')?.addEventListener('click', () => {
-    const q = homeSearchInput?.value || '';
-    if (q.trim()) {
-      clearTimeout(watchlistSearchTimer);
-      doWatchlistSearch(q);
+    if (state.currentTab === 'portfolio') {
+      state.portfolioSearchResults = [];
+      state.portfolioSearchQ = '';
+      setPortfolioSearchBtnLoading(false);
+      renderPortfolioSearch();
     } else {
-      homeSearchInput?.focus();
+      state.watchlistSearchResults = [];
+      state.watchlistSearchQ = '';
+      setWatchlistSearchBtnLoading(false);
+      renderWatchlistSearch();
     }
+    homeSearchInput?.focus();
   });
 
   // Modal
@@ -1490,35 +1511,6 @@ function setupEventListeners() {
   document.getElementById('modal-cancel')?.addEventListener('click', closeModal);
   document.getElementById('modal-save')?.addEventListener('click', saveModal);
 
-  // Portfolio search
-  const portfolioSearchInput = document.getElementById('portfolio-search-input');
-  const portfolioSearchClear = document.getElementById('portfolio-search-clear');
-  portfolioSearchInput?.addEventListener('input', e => {
-    const v = e.target.value;
-    state.portfolioSearchQ = v;
-    portfolioSearchClear?.classList.toggle('visible', !!v);
-    if (!v) { state.portfolioSearchResults = []; renderPortfolioSearch(); return; }
-    doPortfolioSearch(v);
-  });
-  portfolioSearchClear?.addEventListener('click', () => {
-    if (portfolioSearchInput) portfolioSearchInput.value = '';
-    portfolioSearchClear.classList.remove('visible');
-    state.portfolioSearchResults = [];
-    state.portfolioSearchQ = '';
-    setPortfolioSearchBtnLoading(false);
-    renderPortfolioSearch();
-    portfolioSearchInput?.focus();
-  });
-
-  document.getElementById('portfolio-search-btn')?.addEventListener('click', () => {
-    const q = portfolioSearchInput?.value || '';
-    if (q.trim()) {
-      clearTimeout(portfolioSearchTimer);
-      doPortfolioSearch(q);
-    } else {
-      portfolioSearchInput?.focus();
-    }
-  });
 
   // Portfolio modal
   document.getElementById('portfolio-modal-overlay')?.addEventListener('click', e => {
