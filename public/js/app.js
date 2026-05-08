@@ -1177,9 +1177,9 @@ function renderPortfolioHoldings() {
 
 // ── Portfolio Search ───────────────────────────────────────────────────────
 function setPortfolioSearchBtnLoading(loading) {
-  const icon = document.querySelector('.header-search-icon');
+  const icon = document.querySelector('#home-search-btn i');
   if (!icon) return;
-  icon.className = loading ? 'ph ph-circle-notch spinning header-search-icon' : 'ph ph-magnifying-glass header-search-icon';
+  icon.className = loading ? 'ph ph-circle-notch spinning' : 'ph ph-magnifying-glass';
 }
 
 let portfolioSearchTimer;
@@ -1503,6 +1503,16 @@ function setupEventListeners() {
     }
     homeSearchInput?.focus();
   });
+
+  const triggerSearch = () => {
+    const v = homeSearchInput?.value || '';
+    if (!v.trim()) return;
+    if (state.currentTab === 'portfolio') doPortfolioSearch(v);
+    else doWatchlistSearch(v);
+  };
+
+  document.getElementById('home-search-btn')?.addEventListener('click', triggerSearch);
+  homeSearchInput?.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); triggerSearch(); } });
 
   // Modal
   document.getElementById('modal-overlay')?.addEventListener('click', e => {

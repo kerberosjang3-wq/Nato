@@ -105,11 +105,21 @@ html, body {
   padding: 8px 14px;
 }
 
-.header-search-icon {
-  color: var(--text-sub);
-  font-size: 15px;
+.header-search-btn {
   flex-shrink: 0;
+  background: var(--primary);
+  border: none;
+  color: white;
+  font-size: 15px;
+  width: 32px; height: 32px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity 0.15s;
 }
+.header-search-btn:active { opacity: 0.75; }
+.header-search-btn .spinning { animation: spin 0.8s linear infinite; }
 
 .header-search-input {
   flex: 1;
