@@ -905,21 +905,25 @@ function renderPortfolioCard(item) {
   const changeClass = getChangeClass(pct);
   const dirClass = changeClass === 'up' ? 'dir-up' : changeClass === 'down' ? 'dir-down' : 'dir-flat';
 
-  const volStr = formatVolume(volume);
-  const changeSign = change > 0 ? '+' : '';
-  const changeAmtStr = change != null ? `${changeSign}${formatPrice(change, currency)}` : '';
-  const pctDisplayStr = pct != null ? `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%` : '';
+  // Absolute change amount (no sign — direction shown by color + triangle)
+  const absChangeStr = change != null ? formatPrice(Math.abs(change), currency) : '';
+  // Triangle + absolute pct
+  const triangle = pct != null ? (pct > 0 ? '▲' : pct < 0 ? '▼' : '—') : '';
+  const absPctStr = pct != null ? `${triangle} ${Math.abs(pct).toFixed(2)}%` : '';
+  // Volume with comma only (no M/K abbreviation)
+  const volNum = volume ? volume.toLocaleString('ko-KR') : '';
 
-  // 정규장 line shown only during pre/post market
+  // 정규장 line — only during pre/post market
   let regularLine = '';
   if ((isPost || isPre) && q?.regularMarketPrice) {
     const regPct = q.regularMarketChangePercent;
-    const regPctStr = regPct != null ? `(${regPct >= 0 ? '+' : ''}${regPct.toFixed(2)}%)` : '';
+    const regSign = regPct != null ? (regPct >= 0 ? '+' : '') : '';
+    const regPctStr = regPct != null ? `(${regSign}${regPct.toFixed(2)}%)` : '';
     regularLine = `
-      <div class="mts-regular-row">
+      <div class="port-regular-row">
         <span class="mts-regular-label">정규장</span>
-        <span class="mts-regular-price">${formatPrice(q.regularMarketPrice, currency)}</span>
-        <span class="mts-regular-chg ${getChangeClass(regPct)}">${regPctStr}</span>
+        <span class="port-regular-price">${formatPrice(q.regularMarketPrice, currency)}</span>
+        <span class="port-regular-chg ${getChangeClass(regPct)}">${regPctStr}</span>
       </div>`;
   }
 
@@ -928,22 +932,21 @@ function renderPortfolioCard(item) {
   return `
   <div class="${cardClass}" data-symbol="${item.symbol}" data-portfolio="1" onclick="handlePortfolioCardTap('${item.symbol}')">
     <div class="stock-card-main">
-      <div class="mts-row">
-        <div class="mts-info">
-          <div class="mts-name-row">
-            ${!isKorean ? '<span class="mts-delay">지연</span>' : ''}
-            <span class="stock-name">${q?.korName || item.name || item.symbol}</span>
-          </div>
-          <div class="mts-meta">${item.symbol} · ${item.qty}주</div>
+      <div class="port-row">
+        <!-- Left: delay badge + stock name -->
+        <div class="port-info">
+          <div class="port-delay-row">${!isKorean ? '<span class="mts-delay">지연</span>' : ''}</div>
+          <div class="port-name">${q?.korName || item.name || item.symbol}</div>
         </div>
-        <div class="mts-price-col">
-          <div class="mts-price-top-row">
-            <div class="stock-price ${changeClass}">${currentPrice ? formatPrice(currentPrice, currency) : '—'}</div>
-            <div class="mts-change-amt ${changeClass}">${changeAmtStr}</div>
+        <!-- Right: price data -->
+        <div class="port-price-col">
+          <div class="port-line1">
+            <span class="port-price ${changeClass}">${currentPrice ? formatPrice(currentPrice, currency) : '—'}</span>
+            <span class="port-chg-abs ${changeClass}">${absChangeStr}</span>
           </div>
-          <div class="mts-change-row">
-            ${volStr ? `<span class="mts-vol">${volStr}</span>` : ''}
-            <span class="${changeClass}">${pctDisplayStr}</span>
+          <div class="port-line2">
+            ${volNum ? `<span class="port-vol">${volNum}</span>` : ''}
+            <span class="port-tri-pct ${changeClass}">${absPctStr}</span>
           </div>
           ${regularLine}
         </div>

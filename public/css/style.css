@@ -371,7 +371,7 @@ html, body {
 }
 
 .stock-card-main {
-  padding: 10px 16px;
+  padding: 0;
   display: flex;
   flex-direction: column;
   gap: 0;
@@ -379,6 +379,8 @@ html, body {
   position: relative;
   z-index: 2;
 }
+/* Watchlist cards keep their row padding via mts-row */
+.mts-row { padding: 10px 16px; }
 
 .stock-card.swiped .stock-card-main {
   transform: translateX(-90px);
@@ -418,34 +420,91 @@ html, body {
 }
 .mts-order-btn:active { background: var(--primary); color: white; }
 
-/* Price + change-amount on same row (portfolio cards) */
+/* ── Portfolio card (MTS screenshot style) ── */
+.port-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px;
+}
+
+/* Left info column: delay badge stacked above name */
+.port-info {
+  flex: 1; min-width: 0;
+  display: flex; flex-direction: column; gap: 3px;
+}
+.port-delay-row { min-height: 16px; display: flex; align-items: center; }
+.port-name {
+  font-size: 14px; font-weight: 700; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* Right price column */
+.port-price-col {
+  flex-shrink: 0; display: flex; flex-direction: column;
+  align-items: flex-end; gap: 3px;
+}
+.port-line1 {
+  display: flex; align-items: baseline;
+  justify-content: flex-end; gap: 10px;
+}
+.port-price {
+  font-size: 17px; font-weight: 800;
+  font-variant-numeric: tabular-nums; color: var(--text);
+}
+.port-price.up   { color: var(--stock-up); }
+.port-price.down { color: var(--stock-down); }
+.port-chg-abs {
+  font-size: 12px; font-weight: 700;
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.port-chg-abs.up   { color: var(--stock-up); }
+.port-chg-abs.down { color: var(--stock-down); }
+.port-chg-abs.flat { color: var(--text-sub); }
+.port-line2 {
+  display: flex; align-items: center;
+  justify-content: flex-end; gap: 6px;
+}
+.port-vol {
+  font-size: 10px; color: var(--text-sub);
+  font-variant-numeric: tabular-nums;
+}
+.port-tri-pct {
+  font-size: 11px; font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.port-tri-pct.up   { color: var(--stock-up); }
+.port-tri-pct.down { color: var(--stock-down); }
+.port-tri-pct.flat { color: var(--text-sub); }
+
+/* 정규장 row (pre/post market) */
+.port-regular-row {
+  display: flex; align-items: center;
+  justify-content: flex-end; gap: 5px; margin-top: 1px;
+}
+.port-regular-price {
+  font-size: 10px; color: var(--text-sub);
+  font-variant-numeric: tabular-nums;
+}
+.port-regular-chg { font-size: 10px; font-variant-numeric: tabular-nums; }
+.port-regular-chg.up   { color: var(--stock-up); }
+.port-regular-chg.down { color: var(--stock-down); }
+.port-regular-chg.flat { color: var(--text-sub); }
+
+/* Keep old classes for watchlist cards */
 .mts-price-top-row {
   display: flex; align-items: baseline;
   justify-content: flex-end; gap: 8px;
 }
-.mts-change-amt {
-  font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
+.mts-change-amt { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .mts-change-amt.up   { color: var(--stock-up); }
 .mts-change-amt.down { color: var(--stock-down); }
 .mts-change-amt.flat { color: var(--text-sub); }
 .mts-vol { color: var(--text-sub); font-size: 10px; }
 
-/* 정규장 line (pre/post market) */
-.mts-regular-row {
-  display: flex; align-items: center; justify-content: flex-end;
-  gap: 5px; margin-top: 2px;
-}
+/* 정규장 label (shared) */
 .mts-regular-label {
   font-size: 9px; font-weight: 700; color: var(--text-sub);
   background: var(--bg-elevated); border-radius: 3px; padding: 1px 4px;
 }
-.mts-regular-price { font-size: 10px; color: var(--text-sub); font-variant-numeric: tabular-nums; }
-.mts-regular-chg { font-size: 10px; font-variant-numeric: tabular-nums; }
-.mts-regular-chg.up   { color: var(--stock-up); }
-.mts-regular-chg.down { color: var(--stock-down); }
-.mts-regular-chg.flat { color: var(--text-sub); }
 
 .stock-card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1px; }
 .stock-card-left { display: flex; align-items: center; gap: 8px; overflow: hidden; }
@@ -913,7 +972,7 @@ html, body {
 /* 포트폴리오 카드 접기/펼치기 */
 .port-collapse-row {
   display: flex; align-items: center; gap: 6px;
-  margin-top: 7px; padding-top: 7px;
+  padding: 6px 14px 6px;
   border-top: 1px solid var(--border);
 }
 .port-collapse-label {
