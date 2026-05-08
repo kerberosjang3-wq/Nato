@@ -867,10 +867,21 @@ function renderPortfolioSummary() {
 
 function renderPortfolioCard(item) {
   const q = state.portfolioPrices[item.symbol];
-  const currentPrice = q?.regularMarketPrice;
-  const pct = q?.regularMarketChangePercent;
   const currency = q?.currency || item.currency || 'USD';
   const invested = (item.buyPrice || 0) * (item.qty || 0);
+
+  // Extended-hours price: use post/pre market price when available
+  const isPost = q?.marketState === 'POST' && q?.postMarketPrice;
+  const isPre  = q?.marketState === 'PRE'  && q?.preMarketPrice;
+  const displayPrice  = isPost ? q.postMarketPrice  : isPre ? q.preMarketPrice  : q?.regularMarketPrice;
+  const displayChange = isPost ? q.postMarketChange  : isPre ? q.preMarketChange  : q?.regularMarketChange;
+  const displayPct    = isPost ? q.postMarketChangePercent : isPre ? q.preMarketChangePercent : q?.regularMarketChangePercent;
+
+  const currentPrice = displayPrice;
+  const pct = displayPct;
+  const change = displayChange;
+  const volume = q?.regularMarketVolume;
+
   const currentVal = currentPrice ? currentPrice * item.qty : null;
   const gain = currentVal !== null ? currentVal - invested : null;
   const gainPct = gain !== null && invested > 0 ? (gain / invested) * 100 : null;
@@ -890,20 +901,51 @@ function renderPortfolioCard(item) {
   const gainStr = gain !== null ? `${gainSign}${formatPrice(Math.abs(gain), currency)}` : '—';
   const pctStr = gainPct !== null ? `${gainSign}${gainPct.toFixed(2)}%` : '—';
 
+  const isKorean = /\.(KS|KQ)$/.test(item.symbol);
+  const changeClass = getChangeClass(pct);
+  const dirClass = changeClass === 'up' ? 'dir-up' : changeClass === 'down' ? 'dir-down' : 'dir-flat';
+
+  const volStr = formatVolume(volume);
+  const changeSign = change > 0 ? '+' : '';
+  const changeAmtStr = change != null ? `${changeSign}${formatPrice(change, currency)}` : '';
+  const pctDisplayStr = pct != null ? `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%` : '';
+
+  // 정규장 line shown only during pre/post market
+  let regularLine = '';
+  if ((isPost || isPre) && q?.regularMarketPrice) {
+    const regPct = q.regularMarketChangePercent;
+    const regPctStr = regPct != null ? `(${regPct >= 0 ? '+' : ''}${regPct.toFixed(2)}%)` : '';
+    regularLine = `
+      <div class="mts-regular-row">
+        <span class="mts-regular-label">정규장</span>
+        <span class="mts-regular-price">${formatPrice(q.regularMarketPrice, currency)}</span>
+        <span class="mts-regular-chg ${getChangeClass(regPct)}">${regPctStr}</span>
+      </div>`;
+  }
+
+  const cardClass = ['stock-card', dirClass, isExpanded ? 'expanded' : ''].filter(Boolean).join(' ');
+
   return `
-  <div class="stock-card${isExpanded ? ' expanded' : ''}" data-symbol="${item.symbol}" data-portfolio="1" onclick="handlePortfolioCardTap('${item.symbol}')">
+  <div class="${cardClass}" data-symbol="${item.symbol}" data-portfolio="1" onclick="handlePortfolioCardTap('${item.symbol}')">
     <div class="stock-card-main">
-      <div class="stock-card-top">
-        <div class="stock-card-left">
-          ${stockLogoHtml(item.symbol, q?.korName || item.name)}
-          <div>
-            <div class="stock-name">${q?.korName || item.name || item.symbol}</div>
-            <div class="stock-symbol">${item.symbol} · ${item.qty}주</div>
+      <div class="mts-row">
+        <div class="mts-info">
+          <div class="mts-name-row">
+            ${!isKorean ? '<span class="mts-delay">지연</span>' : ''}
+            <span class="stock-name">${q?.korName || item.name || item.symbol}</span>
           </div>
+          <div class="mts-meta">${item.symbol} · ${item.qty}주</div>
         </div>
-        <div class="stock-price-wrap">
-          <div class="stock-price">${currentPrice ? formatPrice(currentPrice, currency) : '—'}</div>
-          <div class="stock-change ${getChangeClass(pct)}">${getChangeStr(pct)}</div>
+        <div class="mts-price-col">
+          <div class="mts-price-top-row">
+            <div class="stock-price ${changeClass}">${currentPrice ? formatPrice(currentPrice, currency) : '—'}</div>
+            <div class="mts-change-amt ${changeClass}">${changeAmtStr}</div>
+          </div>
+          <div class="mts-change-row">
+            ${volStr ? `<span class="mts-vol">${volStr}</span>` : ''}
+            <span class="${changeClass}">${pctDisplayStr}</span>
+          </div>
+          ${regularLine}
         </div>
       </div>
       <div class="port-collapse-row">
@@ -1329,8 +1371,8 @@ function switchTab(tab) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.getElementById(`screen-${tab}`)?.classList.add('active');
-  // Highlight the matching bottom-nav tab (portfolio/settings map to 'more')
-  const navTab = ['portfolio', 'settings'].includes(tab) ? 'more' : tab;
+  // Highlight the matching bottom-nav tab (settings maps to 'more')
+  const navTab = tab === 'settings' ? 'more' : tab;
   document.getElementById(`tab-${navTab}`)?.classList.add('active');
 
   if (tab === 'home') { renderHome(); renderWatchlistSearch(); }
@@ -1407,7 +1449,7 @@ async function installApp() {
 // ── Event Listeners ────────────────────────────────────────────────────────
 function setupEventListeners() {
   // Tab navigation
-  ['home', 'market', 'news', 'community', 'more'].forEach(tab => {
+  ['portfolio', 'home', 'market', 'news', 'more'].forEach(tab => {
     const btn = document.getElementById(`tab-${tab}`);
     if (btn) btn.onclick = () => switchTab(tab);
   });
@@ -1563,7 +1605,7 @@ async function init() {
     state.loading = false;
     renderHome();
 
-    switchTab('home');
+    switchTab('portfolio');
     setupSwipeEvents();
     startAutoRefresh();
 

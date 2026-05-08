@@ -56,7 +56,7 @@
   <main class="main">
 
     <!-- 관심종목 -->
-    <section class="screen active" id="screen-home">
+    <section class="screen" id="screen-home">
 
       <!-- Banners -->
       <div class="banner-area">
@@ -160,7 +160,7 @@
     </section>
 
     <!-- 보유종목 (accessible from 더보기) -->
-    <section class="screen" id="screen-portfolio">
+    <section class="screen active" id="screen-portfolio">
       <div class="portfolio-left">
         <button class="back-btn" onclick="switchTab('more')">
           <i class="ph ph-arrow-left"></i> 더보기
@@ -196,7 +196,11 @@
 
   <!-- ── Bottom Navigation ── -->
   <nav class="tab-bar">
-    <button class="tab-btn active" id="tab-home">
+    <button class="tab-btn active" id="tab-portfolio">
+      <i class="ph-fill ph-wallet tab-icon"></i>
+      <span class="tab-label">보유종목</span>
+    </button>
+    <button class="tab-btn" id="tab-home">
       <i class="ph-fill ph-star tab-icon"></i>
       <span class="tab-label">관심종목</span>
     </button>
@@ -207,10 +211,6 @@
     <button class="tab-btn" id="tab-news">
       <i class="ph ph-newspaper tab-icon"></i>
       <span class="tab-label">뉴스룸</span>
-    </button>
-    <button class="tab-btn" id="tab-community">
-      <i class="ph ph-chats tab-icon"></i>
-      <span class="tab-label">커뮤니티</span>
     </button>
     <button class="tab-btn" id="tab-more">
       <i class="ph ph-dots-three-outline tab-icon"></i>
