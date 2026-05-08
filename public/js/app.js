@@ -334,16 +334,29 @@ function getChangeStr(pct) {
   return `${icon} ${Math.abs(pct).toFixed(2)}%`;
 }
 
+function formatVolume(vol) {
+  if (!vol) return '';
+  if (vol >= 1e9) return (vol / 1e9).toFixed(1) + 'B';
+  if (vol >= 1e6) return (vol / 1e6).toFixed(1) + 'M';
+  if (vol >= 1e3) return (vol / 1e3).toFixed(0) + 'K';
+  return vol.toLocaleString();
+}
+
 
 function renderStockCard(item) {
-  if (!item || !item.symbol) return ''; // Safety check
+  if (!item || !item.symbol) return '';
   const q = state.prices[item.symbol];
   const price = q?.regularMarketPrice;
   const pct = q?.regularMarketChangePercent;
+  const change = q?.regularMarketChange;
+  const volume = q?.regularMarketVolume;
   const currency = q?.currency || item.currency || 'USD';
 
   const atAlert = item.alertPrice && price && price <= item.alertPrice;
   const atTarget = item.targetPrice && price && price >= item.targetPrice;
+
+  const isKorean = /\.(KS|KQ)$/.test(item.symbol);
+  const changeClass = getChangeClass(pct);
 
   let badge = '';
   if (atTarget) badge = `<div class="reached-badge target"><i class="ph-fill ph-target"></i> 목표가 도달</div>`;
@@ -351,33 +364,49 @@ function renderStockCard(item) {
 
   const cardClass = ['stock-card', atAlert ? 'alert-reached' : '', atTarget ? 'target-reached' : ''].filter(Boolean).join(' ');
 
+  const volStr = formatVolume(volume);
+  const metaStr = [item.symbol, volStr ? `거래량 ${volStr}` : ''].filter(Boolean).join(' · ');
+
+  const changeSign = change > 0 ? '+' : '';
+  const changeAmtStr = change != null ? `${changeSign}${formatPrice(change, currency)}` : '';
+  const pctDisplayStr = pct != null ? `(${pct > 0 ? '+' : ''}${pct.toFixed(2)}%)` : '';
+
+  const hasTargets = item.alertPrice || item.targetPrice;
+  const targetsHtml = hasTargets ? `
+    <div class="stock-targets">
+      <div class="target-badge alert ${!item.alertPrice ? 'unset' : ''}">
+        <div class="target-badge-label">관심가</div>
+        <div class="target-badge-value">${item.alertPrice ? formatPrice(item.alertPrice, currency) : '미설정'}</div>
+      </div>
+      <div class="target-badge goal ${!item.targetPrice ? 'unset' : ''}">
+        <div class="target-badge-label">목표가</div>
+        <div class="target-badge-value">${item.targetPrice ? formatPrice(item.targetPrice, currency) : '미설정'}</div>
+      </div>
+    </div>` : '';
+
   return `
   <div class="${cardClass}" data-symbol="${item.symbol}" onclick="handleCardTap('${item.symbol}')">
     <div class="stock-card-main">
       ${badge}
-      <div class="stock-card-top">
-        <div class="stock-card-left">
-          ${stockLogoHtml(item.symbol, q?.korName || item.name)}
-          <div>
-            <div class="stock-name">${q?.korName || item.name || item.symbol}</div>
-            <div class="stock-symbol">${item.symbol}</div>
+      <div class="mts-row">
+        ${stockLogoHtml(item.symbol, q?.korName || item.name)}
+        <div class="mts-info">
+          <div class="mts-name-row">
+            ${!isKorean ? '<span class="mts-delay">지연</span>' : ''}
+            <span class="stock-name">${q?.korName || item.name || item.symbol}</span>
+          </div>
+          <div class="mts-meta">${metaStr}</div>
+        </div>
+        <div class="mts-price-col">
+          <div class="stock-price">${price ? formatPrice(price, currency) : '—'}</div>
+          <div class="mts-change-row">
+            <span class="${changeClass}">${changeAmtStr}</span>
+            <span class="${changeClass}">${pctDisplayStr}</span>
           </div>
         </div>
-        <div class="stock-price-wrap">
-          <div class="stock-price">${price ? formatPrice(price, currency) : '—'}</div>
-          <div class="stock-change ${getChangeClass(pct)}">${getChangeStr(pct)}</div>
-        </div>
+        <button class="mts-order-btn" onclick="event.stopPropagation()">주문</button>
       </div>
-      <div class="stock-targets">
-        <div class="target-badge alert ${!item.alertPrice ? 'unset' : ''}">
-          <div class="target-badge-label">관심가</div>
-          <div class="target-badge-value">${item.alertPrice ? formatPrice(item.alertPrice, currency) : '미설정'}</div>
-        </div>
-        <div class="target-badge goal ${!item.targetPrice ? 'unset' : ''}">
-          <div class="target-badge-label">목표가</div>
-          <div class="target-badge-value">${item.targetPrice ? formatPrice(item.targetPrice, currency) : '미설정'}</div>
-        </div>
-      </div>
+      ${targetsHtml}
     </div>
     <div class="card-actions">
       <button class="card-btn edit" onclick="openEditModal(event,'${item.symbol}')"><i class="ph ph-pencil-simple"></i></button>
