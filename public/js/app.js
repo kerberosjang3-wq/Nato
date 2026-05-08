@@ -1329,7 +1329,9 @@ function switchTab(tab) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.getElementById(`screen-${tab}`)?.classList.add('active');
-  document.getElementById(`tab-${tab}`)?.classList.add('active');
+  // Highlight the matching bottom-nav tab (portfolio/settings map to 'more')
+  const navTab = ['portfolio', 'settings'].includes(tab) ? 'more' : tab;
+  document.getElementById(`tab-${navTab}`)?.classList.add('active');
 
   if (tab === 'home') { renderHome(); renderWatchlistSearch(); }
   if (tab === 'settings') renderSettings();
@@ -1405,7 +1407,7 @@ async function installApp() {
 // ── Event Listeners ────────────────────────────────────────────────────────
 function setupEventListeners() {
   // Tab navigation
-  ['home', 'portfolio', 'settings'].forEach(tab => {
+  ['home', 'market', 'news', 'community', 'more'].forEach(tab => {
     const btn = document.getElementById(`tab-${tab}`);
     if (btn) btn.onclick = () => switchTab(tab);
   });
@@ -1561,7 +1563,7 @@ async function init() {
     state.loading = false;
     renderHome();
 
-    switchTab('portfolio');
+    switchTab('home');
     setupSwipeEvents();
     startAutoRefresh();
 
