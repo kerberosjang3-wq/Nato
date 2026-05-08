@@ -399,11 +399,7 @@ html, body {
 .mts-row { display: flex; align-items: center; gap: 10px; }
 .mts-info { flex: 1; min-width: 0; overflow: hidden; }
 .mts-name-row { display: flex; align-items: center; gap: 5px; margin-bottom: 3px; }
-.mts-delay {
-  font-size: 9px; font-weight: 700; color: var(--text-sub);
-  background: var(--bg-elevated); border: 1px solid var(--border);
-  border-radius: 3px; padding: 1px 4px; flex-shrink: 0; letter-spacing: 0;
-}
+.mts-delay { display: none !important; }
 .mts-meta { font-size: 10px; color: var(--text-sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mts-price-col { text-align: right; flex-shrink: 0; }
 .mts-change-row {
@@ -431,7 +427,7 @@ html, body {
   flex: 1; min-width: 0;
   display: flex; flex-direction: column; gap: 3px;
 }
-.port-delay-row { min-height: 16px; display: flex; align-items: center; }
+.port-delay-row { display: none !important; }
 .port-name {
   font-size: 14px; font-weight: 700; color: var(--text);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
