@@ -355,7 +355,6 @@ function renderStockCard(item) {
   const atAlert = item.alertPrice && price && price <= item.alertPrice;
   const atTarget = item.targetPrice && price && price >= item.targetPrice;
 
-  const isKorean = /\.(KS|KQ)$/.test(item.symbol);
   const changeClass = getChangeClass(pct);
 
   let badge = '';
@@ -392,7 +391,6 @@ function renderStockCard(item) {
         ${stockLogoHtml(item.symbol, q?.korName || item.name)}
         <div class="mts-info">
           <div class="mts-name-row">
-            ${!isKorean ? '<span class="mts-delay">지연</span>' : ''}
             <span class="stock-name">${q?.korName || item.name || item.symbol}</span>
           </div>
           <div class="mts-meta">${metaStr}</div>
@@ -901,7 +899,6 @@ function renderPortfolioCard(item) {
   const gainStr = gain !== null ? `${gainSign}${formatPrice(Math.abs(gain), currency)}` : '—';
   const pctStr = gainPct !== null ? `${gainSign}${gainPct.toFixed(2)}%` : '—';
 
-  const isKorean = /\.(KS|KQ)$/.test(item.symbol);
   const changeClass = getChangeClass(pct);
   const dirClass = changeClass === 'up' ? 'dir-up' : changeClass === 'down' ? 'dir-down' : 'dir-flat';
 
@@ -933,10 +930,10 @@ function renderPortfolioCard(item) {
   <div class="${cardClass}" data-symbol="${item.symbol}" data-portfolio="1" onclick="handlePortfolioCardTap('${item.symbol}')">
     <div class="stock-card-main">
       <div class="port-row">
-        <!-- Left: delay badge + stock name -->
+        ${stockLogoHtml(item.symbol, q?.korName || item.name)}
         <div class="port-info">
-          <div class="port-delay-row">${!isKorean ? '<span class="mts-delay">지연</span>' : ''}</div>
           <div class="port-name">${q?.korName || item.name || item.symbol}</div>
+          <div class="port-qty">${item.symbol} · ${item.qty}주</div>
         </div>
         <!-- Right: price data -->
         <div class="port-price-col">

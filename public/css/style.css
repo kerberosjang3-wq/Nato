@@ -436,6 +436,7 @@ html, body {
   font-size: 14px; font-weight: 700; color: var(--text);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+.port-qty { font-size: 10px; color: var(--text-sub); margin-top: 1px; }
 
 /* Right price column */
 .port-price-col {
