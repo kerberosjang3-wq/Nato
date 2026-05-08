@@ -388,6 +388,11 @@ html, body {
 .stock-card.alert-reached { background: rgba(255, 171, 0, 0.05); border-left: 3px solid var(--warning); }
 .stock-card.target-reached { background: rgba(0, 208, 132, 0.05); border-left: 3px solid var(--success); }
 
+/* Directional left bar for portfolio cards */
+.stock-card.dir-up   { border-left: 3px solid var(--stock-up); }
+.stock-card.dir-down { border-left: 3px solid var(--stock-down); }
+.stock-card.dir-flat { border-left: 3px solid #444; }
+
 /* MTS flat-list row layout */
 .mts-row { display: flex; align-items: center; gap: 10px; }
 .mts-info { flex: 1; min-width: 0; overflow: hidden; }
@@ -413,6 +418,35 @@ html, body {
 }
 .mts-order-btn:active { background: var(--primary); color: white; }
 
+/* Price + change-amount on same row (portfolio cards) */
+.mts-price-top-row {
+  display: flex; align-items: baseline;
+  justify-content: flex-end; gap: 8px;
+}
+.mts-change-amt {
+  font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.mts-change-amt.up   { color: var(--stock-up); }
+.mts-change-amt.down { color: var(--stock-down); }
+.mts-change-amt.flat { color: var(--text-sub); }
+.mts-vol { color: var(--text-sub); font-size: 10px; }
+
+/* 정규장 line (pre/post market) */
+.mts-regular-row {
+  display: flex; align-items: center; justify-content: flex-end;
+  gap: 5px; margin-top: 2px;
+}
+.mts-regular-label {
+  font-size: 9px; font-weight: 700; color: var(--text-sub);
+  background: var(--bg-elevated); border-radius: 3px; padding: 1px 4px;
+}
+.mts-regular-price { font-size: 10px; color: var(--text-sub); font-variant-numeric: tabular-nums; }
+.mts-regular-chg { font-size: 10px; font-variant-numeric: tabular-nums; }
+.mts-regular-chg.up   { color: var(--stock-up); }
+.mts-regular-chg.down { color: var(--stock-down); }
+.mts-regular-chg.flat { color: var(--text-sub); }
+
 .stock-card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1px; }
 .stock-card-left { display: flex; align-items: center; gap: 8px; overflow: hidden; }
 .stock-card-left > div { overflow: hidden; }
@@ -421,6 +455,8 @@ html, body {
 
 .stock-price-wrap { text-align: right; }
 .stock-price { font-size: 15px; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; margin-bottom: 2px; }
+.stock-price.up   { color: var(--stock-up); }
+.stock-price.down { color: var(--stock-down); }
 .stock-change {
   font-size: 11px; font-weight: 700; margin-top: 2px;
   display: inline-flex; align-items: center; gap: 2px;
