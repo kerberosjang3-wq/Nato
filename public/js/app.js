@@ -895,13 +895,11 @@ function renderPortfolioCard(item) {
   // Extended-hours price: use post/pre market price when available
   const isPost = q?.marketState === 'POST' && q?.postMarketPrice;
   const isPre  = q?.marketState === 'PRE'  && q?.preMarketPrice;
-  const displayPrice  = isPost ? q.postMarketPrice  : isPre ? q.preMarketPrice  : q?.regularMarketPrice;
-  const displayChange = isPost ? q.postMarketChange  : isPre ? q.preMarketChange  : q?.regularMarketChange;
-  const displayPct    = isPost ? q.postMarketChangePercent : isPre ? q.preMarketChangePercent : q?.regularMarketChangePercent;
+  const displayPrice = isPost ? q.postMarketPrice  : isPre ? q.preMarketPrice  : q?.regularMarketPrice;
+  const displayPct   = isPost ? q.postMarketChangePercent : isPre ? q.preMarketChangePercent : q?.regularMarketChangePercent;
 
   const currentPrice = displayPrice;
   const pct = displayPct;
-  const change = displayChange;
   const volume = q?.regularMarketVolume;
 
   const currentVal = currentPrice ? currentPrice * item.qty : null;
@@ -926,8 +924,6 @@ function renderPortfolioCard(item) {
   const changeClass = getChangeClass(pct);
   const dirClass = changeClass === 'up' ? 'dir-up' : changeClass === 'down' ? 'dir-down' : 'dir-flat';
 
-  // Absolute change amount (no sign — direction shown by color + triangle)
-  const absChangeStr = change != null ? formatPrice(Math.abs(change), currency) : '';
   // Triangle + absolute pct
   const triangle = pct != null ? (pct > 0 ? '▲' : pct < 0 ? '▼' : '—') : '';
   const absPctStr = pct != null ? `${triangle} ${Math.abs(pct).toFixed(2)}%` : '';
@@ -966,10 +962,10 @@ function renderPortfolioCard(item) {
         <div class="port-price-col">
           <div class="port-line1">
             <span class="port-price ${changeClass}">${currentPrice ? formatPrice(currentPrice, currency) : '—'}</span>
-            <span class="port-chg-abs ${changeClass}">${absChangeStr}</span>
+            <span class="port-tri-pct ${changeClass}">${absPctStr}</span>
           </div>
           <div class="port-line2">
-            <span class="port-tri-pct ${changeClass}">${absPctStr}</span>
+            <span class="port-gain-inline ${gainClass}">${gain !== null ? `${gainSign}${formatPrice(Math.abs(gain), currency)}` : '—'}</span>
           </div>
         </div>
         <button class="port-dots-btn" onclick="event.stopPropagation();handlePortfolioCardTap('${item.symbol}')"><i class="ph ph-dots-three-vertical"></i></button>

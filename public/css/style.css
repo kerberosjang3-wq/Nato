@@ -617,6 +617,13 @@ html, body {
 .port-tri-pct.down { color: var(--stock-down); }
 .port-tri-pct.flat { color: var(--text-sub); }
 
+.port-gain-inline {
+  font-size: 10px; font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.port-gain-inline.gain-up   { color: var(--stock-up); }
+.port-gain-inline.gain-down { color: var(--stock-down); }
+
 /* ... 버튼 */
 .port-dots-btn {
   flex-shrink: 0;
