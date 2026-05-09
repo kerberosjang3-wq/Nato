@@ -1413,6 +1413,7 @@ html, body {
     flex: 0 0 260px;
     min-width: 0;
     overflow-y: auto;
+    overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
     background: var(--bg);
   }

@@ -1030,44 +1030,58 @@ function toTvSymbol(symbol) {
   return symbol.replace(/\.[A-Z]+$/i, '');
 }
 
+// tv.js는 최초 1회만 로드하고 이후 TradingView.widget() API를 직접 호출한다.
+// embed-widget 스크립트 동적 주입 방식은 document.currentScript 의존성으로
+// 모바일 브라우저에서 신뢰성이 낮다.
+let _tvLibLoaded = false;
+let _tvLibLoading = false;
+const _tvLibQueue = [];
+
+function _loadTvLib(cb) {
+  if (_tvLibLoaded) { cb(); return; }
+  _tvLibQueue.push(cb);
+  if (_tvLibLoading) return;
+  _tvLibLoading = true;
+  const s = document.createElement('script');
+  s.src = 'https://s3.tradingview.com/tv.js';
+  s.async = true;
+  s.onload = () => {
+    _tvLibLoaded = true;
+    _tvLibLoading = false;
+    _tvLibQueue.forEach(fn => fn());
+    _tvLibQueue.length = 0;
+  };
+  s.onerror = () => { _tvLibLoading = false; _tvLibQueue.length = 0; };
+  document.head.appendChild(s);
+}
+
 function renderTvChart(symbol, containerId) {
   const wrap = document.getElementById(containerId);
   if (!wrap) return;
   const tvSymbol = toTvSymbol(symbol);
   const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+  const widgetDivId = containerId + '-w';
 
-  const config = JSON.stringify({
-    autosize: true,
-    symbol: tvSymbol,
-    interval: 'D',
-    timezone: 'Asia/Seoul',
-    theme: isDark ? 'dark' : 'light',
-    style: '1',
-    locale: 'kr',
-    hide_top_toolbar: false,
-    hide_legend: true,
-    allow_symbol_change: false,
-    save_image: false,
-    calendar: false,
-    hide_volume: true,
-    support_host: 'https://www.tradingview.com',
+  wrap.innerHTML = '<div id="' + widgetDivId + '" style="width:100%;height:100%"></div>';
+
+  _loadTvLib(() => {
+    if (!document.getElementById(widgetDivId)) return;
+    new TradingView.widget({
+      autosize: true,
+      symbol: tvSymbol,
+      interval: 'D',
+      timezone: 'Asia/Seoul',
+      theme: isDark ? 'dark' : 'light',
+      style: '1',
+      locale: 'kr',
+      hide_top_toolbar: false,
+      hide_legend: true,
+      allow_symbol_change: false,
+      save_image: false,
+      hide_volume: true,
+      container_id: widgetDivId,
+    });
   });
-
-  // createContextualFragment lets the HTML parser create the <script> node,
-  // which preserves textContent correctly and re-executes on every stock switch.
-  // document.createElement + textContent is silently dropped by some browsers
-  // when the element also has a src attribute.
-  wrap.innerHTML = '';
-  const range = document.createRange();
-  range.selectNode(document.body);
-  wrap.appendChild(range.createContextualFragment(
-    '<div class="tradingview-widget-container" style="width:100%;height:100%">' +
-    '<div class="tradingview-widget-container__widget" style="width:100%;height:100%"></div>' +
-    '<script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js" async>' +
-    config +
-    '<\/script>' +
-    '</div>'
-  ));
 }
 
 function clearDetailPanel() {
