@@ -199,7 +199,8 @@ async function checkPrices() {
       const q = quotes[symbol];
       if (!q) continue;
       const price = q.regularMarketPrice;
-      const name = q.shortName || item.name || symbol;
+      const rawName = KR_STOCKS_MAP.get(symbol) || q.shortName || item.name || symbol;
+      const name = rawName.replace(/^\(주\)\s*/g, '').replace(/\s*주식회사\s*$/g, '').trim() || rawName;
       const currency = q.currency || item.currency || 'USD';
       const now = Date.now();
       const fmt = p => currency === 'KRW' ? `₩${p.toLocaleString('ko-KR')}` : `$${p.toFixed(2)}`;
@@ -541,7 +542,8 @@ app.get('/api/quote', async (req, res) => {
 
     const enriched = await Promise.all(yahooResult.map(async q => {
       // 한글명 보강
-      const yahooKorName = /[가-힣]/.test(q.shortName) ? q.shortName : (/[가-힣]/.test(q.longName) ? q.longName : null);
+      const rawKorName = /[가-힣]/.test(q.shortName) ? q.shortName : (/[가-힣]/.test(q.longName) ? q.longName : null);
+      const yahooKorName = rawKorName ? rawKorName.replace(/^\(주\)\s*/g, '').replace(/\s*주식회사\s*$/g, '').trim() || rawKorName : null;
       const korName = KR_STOCKS_MAP.get(q.symbol) || yahooKorName || US_NAMES.get(q.symbol) || null;
       let result = { ...q, ...(korName ? { korName } : {}) };
 
