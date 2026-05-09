@@ -998,6 +998,23 @@ html, body {
 
 #portfolio-holdings .stock-card { margin-bottom: 4px; }
 
+.portfolio-list-header {
+  display: flex; align-items: center; gap: 6px;
+  padding: 10px 14px 6px;
+  border-top: 2px solid var(--border);
+  margin-top: 2px;
+}
+.portfolio-list-label {
+  font-size: 11px; font-weight: 700;
+  color: var(--text-sub); letter-spacing: 0.4px;
+}
+.portfolio-list-count {
+  font-size: 10px; font-weight: 700;
+  color: var(--primary);
+  background: rgba(62,123,250,0.12);
+  border-radius: 5px; padding: 1px 5px;
+}
+
 /* 포트폴리오 카드 2×2 스탯 그리드 */
 .port-stats {
   display: grid;

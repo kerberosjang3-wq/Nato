@@ -1172,7 +1172,8 @@ function renderPortfolioHoldings() {
     return gainPct(b) - gainPct(a);
   });
   const cards = sorted.map(item => renderPortfolioCard(item)).join('');
-  wrap.innerHTML = `${summary}${cards}`;
+  const listHeader = items.length ? `<div class="portfolio-list-header"><span class="portfolio-list-label">보유종목</span><span class="portfolio-list-count">${items.length}개</span></div>` : '';
+  wrap.innerHTML = `${summary}${listHeader}${cards}`;
 }
 
 // ── Portfolio Search ───────────────────────────────────────────────────────
