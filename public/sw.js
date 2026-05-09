@@ -1,4 +1,4 @@
-const CACHE = 'stock-alert-v17';
+const CACHE = 'stock-alert-v18';
 const STATIC = ['/', '/css/style.css', '/js/app.js', '/manifest.json', '/icons/logo.png'];
 
 self.addEventListener('install', e => {
