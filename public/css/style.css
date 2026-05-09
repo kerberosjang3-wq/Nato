@@ -1067,6 +1067,38 @@ html, body {
   border-radius: 5px; padding: 1px 5px;
 }
 
+/* ── 국내/해외 섹션 헤더 ── */
+.portfolio-section-header {
+  display: flex; align-items: center; gap: 6px;
+  padding: 10px 14px 6px;
+  border-top: 2px solid var(--border);
+  margin-top: 2px;
+}
+.portfolio-section-header:first-of-type { border-top: none; margin-top: 0; }
+.portfolio-section-flag { font-size: 14px; line-height: 1; }
+.portfolio-section-label {
+  flex: 1;
+  font-size: 11px; font-weight: 700;
+  color: var(--text-sub); letter-spacing: 0.4px;
+}
+.portfolio-section-count {
+  font-size: 10px; font-weight: 700;
+  border-radius: 5px; padding: 1px 6px;
+}
+.portfolio-section-count.kr { color: #5b9bd5; background: rgba(91,155,213,0.14); }
+.portfolio-section-count.us { color: #4caf82; background: rgba(76,175,130,0.14); }
+
+/* ── 카드 내 마켓 배지 ── */
+.market-badge {
+  display: inline-flex; align-items: center;
+  font-size: 8px; font-weight: 800;
+  border-radius: 3px; padding: 1px 4px;
+  letter-spacing: 0.4px; flex-shrink: 0;
+  margin-right: 3px;
+}
+.market-badge-kr { color: #5b9bd5; background: rgba(91,155,213,0.15); }
+.market-badge-us { color: #4caf82; background: rgba(76,175,130,0.15); }
+
 /* 포트폴리오 카드 2×2 스탯 그리드 */
 .port-stats {
   display: grid;

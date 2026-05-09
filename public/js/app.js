@@ -921,6 +921,11 @@ function renderPortfolioCard(item) {
       </div>`;
   }
 
+  const isKR = currency === 'KRW';
+  const badgeLabel = isKR ? 'KR' : (currency === 'USD' ? 'US' : currency);
+  const badgeClass = isKR ? 'market-badge-kr' : 'market-badge-us';
+  const marketBadge = `<span class="market-badge ${badgeClass}">${badgeLabel}</span>`;
+
   const cardClass = ['stock-card', dirClass, isExpanded ? 'expanded' : ''].filter(Boolean).join(' ');
 
   return `
@@ -930,7 +935,7 @@ function renderPortfolioCard(item) {
         ${stockLogoHtml(item.symbol, q?.korName || item.name)}
         <div class="port-info">
           <div class="port-name">${q?.korName || item.name || item.symbol}</div>
-          <div class="port-qty-row"><span class="port-qty-num">${item.qty.toLocaleString('ko-KR')}주</span>${volNum ? `<span class="port-vol-sep"> · </span><span class="port-vol-left">${volNum}</span>` : ''}</div>
+          <div class="port-qty-row">${marketBadge}<span class="port-qty-num">${item.qty.toLocaleString('ko-KR')}주</span>${volNum ? `<span class="port-vol-sep"> · </span><span class="port-vol-left">${volNum}</span>` : ''}</div>
           ${regularLineLeft}
         </div>
         <div class="port-price-col">
@@ -1164,19 +1169,37 @@ function renderPortfolioHoldings() {
   }
 
   const summary = renderPortfolioSummary();
-  const sorted = [...items].sort((a, b) => {
-    const gainPct = item => {
-      const q = state.portfolioPrices[item.symbol];
-      const price = q?.regularMarketPrice;
-      if (!price || !item.buyPrice || !item.qty) return -Infinity;
-      const invested = item.buyPrice * item.qty;
-      return invested > 0 ? (price * item.qty - invested) / invested : -Infinity;
-    };
-    return gainPct(b) - gainPct(a);
-  });
-  const cards = sorted.map(item => renderPortfolioCard(item)).join('');
-  const listHeader = items.length ? `<div class="portfolio-list-header"><span class="portfolio-list-label">보유종목</span><span class="portfolio-list-count">${items.length}개</span></div>` : '';
-  wrap.innerHTML = `${summary}${listHeader}${cards}`;
+  const calcGainPct = item => {
+    const q = state.portfolioPrices[item.symbol];
+    const price = q?.regularMarketPrice;
+    if (!price || !item.buyPrice || !item.qty) return -Infinity;
+    const invested = item.buyPrice * item.qty;
+    return invested > 0 ? (price * item.qty - invested) / invested : -Infinity;
+  };
+  const sorted = [...items].sort((a, b) => calcGainPct(b) - calcGainPct(a));
+
+  const getItemCurrency = item => state.portfolioPrices[item.symbol]?.currency || item.currency || 'USD';
+  const domestic = sorted.filter(item => getItemCurrency(item) === 'KRW');
+  const foreign  = sorted.filter(item => getItemCurrency(item) !== 'KRW');
+
+  let html = summary;
+  if (domestic.length) {
+    html += `<div class="portfolio-section-header">
+      <span class="portfolio-section-flag">🇰🇷</span>
+      <span class="portfolio-section-label">국내주식</span>
+      <span class="portfolio-section-count kr">${domestic.length}종목</span>
+    </div>`;
+    html += domestic.map(item => renderPortfolioCard(item)).join('');
+  }
+  if (foreign.length) {
+    html += `<div class="portfolio-section-header">
+      <span class="portfolio-section-flag">🇺🇸</span>
+      <span class="portfolio-section-label">해외주식</span>
+      <span class="portfolio-section-count us">${foreign.length}종목</span>
+    </div>`;
+    html += foreign.map(item => renderPortfolioCard(item)).join('');
+  }
+  wrap.innerHTML = html;
 }
 
 // ── Portfolio Search ───────────────────────────────────────────────────────
