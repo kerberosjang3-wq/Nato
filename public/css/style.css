@@ -889,69 +889,120 @@ html, body {
 .search-field-btn i { transition: none; }
 .search-field-btn .spinning { color: var(--primary); }
 
-/* ── 포트폴리오 요약 (국내/해외 그룹) ── */
+/* ══ 포트폴리오 요약 카드 ══ */
 .portfolio-summary { margin-bottom: 4px; }
 
-.psummary-group-row {
-  display: flex; align-items: center; gap: 10px;
-  padding: 6px 12px 6px 10px;
+/* 상단 총합 카드 */
+.psummary-header-card {
+  padding: 12px 14px 10px;
   border-bottom: 1px solid var(--border);
+  background: linear-gradient(135deg, rgba(62,123,250,0.08) 0%, transparent 70%);
 }
-.psummary-flag {
-  font-size: 22px; flex-shrink: 0;
-  width: 36px; height: 36px;
-  display: flex; align-items: center; justify-content: center;
-  background: var(--bg-elevated); border-radius: 10px;
-  line-height: 1;
+.psummary-header-top {
+  display: flex; align-items: center; gap: 6px; margin-bottom: 4px;
 }
-.psummary-group-info { flex: 1; min-width: 0; }
-.psummary-group-label {
-  font-size: 10px; color: var(--text-sub); font-weight: 600; margin-bottom: 1px;
+.psummary-header-label {
+  font-size: 10px; font-weight: 700; color: var(--text-sub);
+  text-transform: uppercase; letter-spacing: 0.6px;
 }
-.psummary-count { font-size: 9px; color: var(--primary); font-weight: 700; margin-left: 4px; }
-.psummary-group-val { display: flex; align-items: baseline; gap: 6px; }
-.psummary-group-total {
-  font-size: 16px; font-weight: 800; color: var(--text);
+.psummary-header-badge {
+  font-size: 9px; font-weight: 700; color: var(--primary);
+  background: rgba(62,123,250,0.15); border-radius: 5px; padding: 1px 5px;
+}
+.psummary-header-amount {
+  font-size: 26px; font-weight: 800; color: var(--text);
+  font-variant-numeric: tabular-nums; line-height: 1.15;
+}
+.psummary-header-gain {
+  display: flex; align-items: center; gap: 6px;
+  margin-top: 2px; font-size: 12px; font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
-.psummary-group-pct {
-  font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums;
-  color: var(--text-sub);
+.psummary-header-gain .gain-up  { color: var(--stock-up); }
+.psummary-header-gain .gain-down { color: var(--stock-down); }
+.psummary-header-pct {
+  font-size: 13px; font-weight: 800;
 }
-.psummary-group-pct.gain-up  { color: var(--stock-up); }
-.psummary-group-pct.gain-down { color: var(--stock-down); }
+.psummary-header-pct.gain-up  { color: var(--stock-up); }
+.psummary-header-pct.gain-down { color: var(--stock-down); }
+
+/* 하단 국내/해외 2컬럼 */
+.psummary-cols {
+  display: flex; flex-direction: column;
+}
+.psummary-cols.two {
+  display: grid; grid-template-columns: 1fr 1fr;
+  border-bottom: 1px solid var(--border);
+}
+.psummary-col {
+  padding: 8px 10px 6px;
+  border-bottom: 1px solid var(--border);
+}
+.psummary-cols.two .psummary-col {
+  border-bottom: none;
+}
+.psummary-cols.two .psummary-col:first-child {
+  border-right: 1px solid var(--border);
+}
+
+.psummary-col-top {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 2px;
+}
+.psummary-col-flag-wrap {
+  display: flex; align-items: center; gap: 4px;
+}
+.psummary-col-flag { font-size: 14px; line-height: 1; }
+.psummary-col-label {
+  font-size: 10px; font-weight: 700; color: var(--text-sub);
+}
+.psummary-col-count {
+  font-size: 9px; color: var(--primary); font-weight: 700;
+}
+.psummary-col-amount {
+  font-size: 14px; font-weight: 800; color: var(--text);
+  font-variant-numeric: tabular-nums; line-height: 1.2;
+}
+.psummary-col-sub {
+  display: flex; align-items: center; gap: 4px;
+  margin-top: 1px; font-size: 10px; font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.psummary-col-gain.gain-up,  .psummary-col-pct.gain-up  { color: var(--stock-up); }
+.psummary-col-gain.gain-down, .psummary-col-pct.gain-down { color: var(--stock-down); }
+.psummary-col-gain { color: var(--text-sub); }
+.psummary-col-pct  { color: var(--text-sub); font-size: 11px; }
 
 /* 상세 펼침 패널 */
 .psummary-group-detail {
   max-height: 0; overflow: hidden;
-  transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease;
+  transition: max-height 0.35s cubic-bezier(0.4,0,0.2,1), opacity 0.25s ease;
   opacity: 0;
 }
-.psummary-group-detail.expanded { max-height: 320px; opacity: 1; }
+.psummary-group-detail.expanded { max-height: 400px; opacity: 1; }
 
 /* 상세 2×2 스탯 그리드 */
 .psummary-stats {
   display: grid; grid-template-columns: 1fr 1fr;
-  gap: 4px; padding: 8px 12px;
+  gap: 3px; padding: 6px 0 4px;
 }
 .psummary-stat {
-  background: var(--bg-elevated); border-radius: 7px;
-  padding: 5px 8px; display: flex; justify-content: space-between;
-  align-items: center; gap: 4px;
+  background: var(--bg-elevated); border-radius: 6px;
+  padding: 4px 7px; display: flex; flex-direction: column; gap: 1px;
 }
-.psummary-stat-label { font-size: 10px; font-weight: 600; color: var(--text-sub); flex-shrink: 0; }
+.psummary-stat-label { font-size: 9px; font-weight: 600; color: var(--text-sub); }
 .psummary-stat-val {
   font-size: 11px; font-weight: 800; color: var(--text);
-  font-variant-numeric: tabular-nums; text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 .psummary-stat-val.gain-up  { color: var(--stock-up); }
 .psummary-stat-val.gain-down { color: var(--stock-down); }
 
 /* 환율 행 */
 .psummary-krw-row {
-  font-size: 10px; color: var(--text-sub);
-  padding: 0 12px 8px; font-variant-numeric: tabular-nums;
-  display: flex; align-items: center; gap: 4px; flex-wrap: wrap;
+  font-size: 9px; color: var(--text-sub);
+  padding: 2px 0 4px; font-variant-numeric: tabular-nums;
+  display: flex; align-items: center; gap: 3px; flex-wrap: wrap;
 }
 .psummary-krw-row i { color: var(--primary); }
 .psummary-krw-row .gain-up  { color: var(--stock-up); }
