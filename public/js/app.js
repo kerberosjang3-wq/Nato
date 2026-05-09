@@ -1547,6 +1547,8 @@ async function loadNewsForStock(symbol, name) {
   state.newsLoaded = false;
   state.news = [];
   switchTab('news');
+  const newsList = document.getElementById('news-list');
+  if (newsList) newsList.scrollTop = 0;
   renderNews();
 
   try {
