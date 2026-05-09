@@ -3,19 +3,33 @@
   "short_name": "WillyStock",
   "description": "내보유종목, 관심종목 관리앱",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#09090D",
-  "theme_color": "#3E7BFA",
+  "display_override": ["standalone", "minimal-ui"],
+  "background_color": "#121212",
+  "theme_color": "#121212",
   "orientation": "portrait-primary",
   "lang": "ko",
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "/icons/logo.png",
-      "sizes": "192x192 512x512",
+      "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
-  "screenshots": [],
   "categories": ["finance"]
 }

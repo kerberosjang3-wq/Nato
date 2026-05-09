@@ -27,7 +27,7 @@
   --radius-lg: 24px;
   
   --header-h: clamp(56px, 10vh, 72px);
-  --tab-h: 44px;
+  --tab-h: clamp(49px, 12.5vw, 58px);
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
@@ -1190,6 +1190,75 @@ html, body {
 
 /* ── ls-detail hidden in portrait ── */
 .ls-detail-panel { display: none; }
+
+/* ── 소형 화면 (iPhone SE 등 ≤ 375px) ── */
+@media (max-width: 375px) {
+  .tab-icon  { font-size: 17px; }
+  .tab-label { font-size: 8px; }
+  .port-name { font-size: 11px; }
+  .psummary-header-amount { font-size: 22px; }
+  .more-menu-item { font-size: 14px; padding: 14px 16px; }
+  .modal { padding: 16px 14px; }
+  .form-input { font-size: 14px; }
+}
+
+/* ── iOS 설치 가이드 바텀시트 ── */
+.ios-install-guide {
+  position: fixed;
+  inset: 0;
+  z-index: 600;
+  display: flex;
+  align-items: flex-end;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: fadeIn 0.2s ease;
+}
+.ios-guide-sheet {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  background: var(--bg-card);
+  border-radius: 20px 20px 0 0;
+  border-top: 1px solid var(--glass-border);
+  padding: 8px 20px calc(24px + var(--safe-bottom));
+}
+.ios-guide-handle {
+  width: 36px; height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  margin: 0 auto 18px;
+}
+.ios-guide-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 20px;
+}
+.ios-guide-title { font-size: 17px; font-weight: 800; color: var(--text); }
+.ios-guide-close {
+  background: var(--bg-elevated); border: none;
+  color: var(--text-sub); font-size: 16px;
+  width: 30px; height: 30px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.ios-guide-steps { display: flex; flex-direction: column; gap: 18px; }
+.ios-guide-step { display: flex; align-items: flex-start; gap: 12px; }
+.ios-guide-num {
+  width: 26px; height: 26px; flex-shrink: 0;
+  background: var(--primary); color: white;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 800;
+}
+.ios-guide-text {
+  font-size: 14px; color: var(--text-sub);
+  line-height: 1.55; padding-top: 3px;
+}
+.ios-guide-text strong { color: var(--text); font-weight: 700; }
+.ios-guide-text .ios-share-icon {
+  display: inline-block; vertical-align: middle;
+  font-size: 17px; color: var(--primary); margin: 0 2px;
+}
 
 /* ══════════════════════════════════════════════════════
    LANDSCAPE MODE

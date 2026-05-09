@@ -319,8 +319,13 @@ function renderBanners() {
     notifBanner.classList.add('hidden');
   }
 
-  // Install banner
-  if (state.installPrompt && !state.installBannerClosed) {
+  // Install banner — Android: beforeinstallprompt / iOS: Safari share guide
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  const isStandalone = window.navigator.standalone === true ||
+    window.matchMedia('(display-mode: standalone)').matches;
+  const canShowInstall = !isStandalone && !state.installBannerClosed &&
+    (state.installPrompt || isIOS);
+  if (canShowInstall) {
     installBanner.classList.remove('hidden');
   } else {
     installBanner.classList.add('hidden');
@@ -1621,7 +1626,14 @@ function setupEventListeners() {
   }
 
   // Install banner
-  document.getElementById('install-btn')?.addEventListener('click', installApp);
+  document.getElementById('install-btn')?.addEventListener('click', () => {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    if (isIOS) {
+      document.getElementById('ios-install-guide')?.classList.remove('hidden');
+    } else {
+      installApp();
+    }
+  });
   const iClose = document.getElementById('install-close-btn');
   if (iClose) {
     iClose.onclick = (e) => {
@@ -1631,7 +1643,17 @@ function setupEventListeners() {
     };
   }
 
-  // PWA install prompt
+  // iOS guide close
+  document.getElementById('ios-guide-close')?.addEventListener('click', () => {
+    document.getElementById('ios-install-guide')?.classList.add('hidden');
+  });
+  document.getElementById('ios-install-guide')?.addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) {
+      e.currentTarget.classList.add('hidden');
+    }
+  });
+
+  // PWA install prompt (Android/Chrome)
   window.addEventListener('beforeinstallprompt', e => {
     e.preventDefault();
     state.installPrompt = e;
