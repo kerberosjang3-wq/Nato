@@ -1131,7 +1131,7 @@ function renderPortfolioCard(item) {
           <span class="port-gain-label">손익</span>
           <span class="port-gain-val ${gainClass}">${gainStr}</span>
           <span class="port-gain-pct ${gainClass}">${pctStr}</span>
-          <span class="port-gain-qty">${item.qty}주</span>
+          <span class="port-gain-qty">${item.qty.toLocaleString('ko-KR')}주</span>
         </div>
         <div class="port-stats">
           <div class="port-stat">
@@ -1303,7 +1303,7 @@ function renderDetailPanel(symbol) {
     <div class="ls-detail-header">
       <div>
         <div class="ls-detail-name">${name}</div>
-        <div class="ls-detail-symbol">${item.symbol} · ${item.qty}주</div>
+        <div class="ls-detail-symbol">${item.symbol} · ${item.qty.toLocaleString('ko-KR')}주</div>
       </div>
       <div class="ls-detail-price-wrap">
         <div class="ls-detail-price">${currentPrice ? formatPrice(currentPrice, currency) : '—'}</div>
@@ -1318,7 +1318,7 @@ function renderDetailPanel(symbol) {
       </div>
       <div class="ls-detail-stat">
         <span class="ls-detail-stat-label">보유 수량</span>
-        <span class="ls-detail-stat-value">${item.qty}주</span>
+        <span class="ls-detail-stat-value">${item.qty.toLocaleString('ko-KR')}주</span>
       </div>
       <div class="ls-detail-stat">
         <span class="ls-detail-stat-label">투자금액</span>
@@ -1693,8 +1693,8 @@ function openPortfolioModal(symbol, name, currency) {
   const buyInput = document.getElementById('portfolio-buy-price');
   const qtyInput = document.getElementById('portfolio-qty');
   const brokerSelect = document.getElementById('portfolio-broker');
-  buyInput.value = existing?.buyPrice || '';
-  qtyInput.value = existing?.qty || '';
+  buyInput.value = existing?.buyPrice ? existing.buyPrice.toLocaleString('ko-KR', { maximumFractionDigits: 6 }) : '';
+  qtyInput.value = existing?.qty ? existing.qty.toLocaleString('ko-KR', { maximumFractionDigits: 6 }) : '';
   if (!existing && price) buyInput.placeholder = formatPriceInputPlain(price, cur);
   if (brokerSelect) brokerSelect.value = existing?.broker || '';
 
@@ -2057,6 +2057,17 @@ function setupEventListeners() {
   });
   document.getElementById('portfolio-modal-cancel')?.addEventListener('click', closePortfolioModal);
   document.getElementById('portfolio-modal-save')?.addEventListener('click', savePortfolioModal);
+
+  const formatNumberInput = (e) => {
+    let val = e.target.value.replace(/[^0-9.]/g, '');
+    if (!val) { e.target.value = ''; return; }
+    let parts = val.split('.');
+    if (parts.length > 2) parts = [parts[0], parts.slice(1).join('')];
+    if (parts[0]) parts[0] = parseInt(parts[0], 10).toLocaleString('ko-KR');
+    e.target.value = parts.join('.');
+  };
+  document.getElementById('portfolio-buy-price')?.addEventListener('input', formatNumberInput);
+  document.getElementById('portfolio-qty')?.addEventListener('input', formatNumberInput);
 
   // Refresh
   document.getElementById('refresh-btn')?.addEventListener('click', refreshPrices);
