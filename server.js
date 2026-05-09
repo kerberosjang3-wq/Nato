@@ -338,6 +338,91 @@ try {
   console.error('Failed to load kr-stocks.json:', e);
 }
 
+// 주요 미국/해외 종목 한국어 표시명
+const US_NAMES = new Map([
+  // 빅테크
+  ['AAPL',   '애플'],
+  ['MSFT',   '마이크로소프트'],
+  ['GOOGL',  '알파벳 A'],
+  ['GOOG',   '알파벳 C'],
+  ['AMZN',   '아마존'],
+  ['META',   '메타'],
+  ['NVDA',   '엔비디아'],
+  ['TSLA',   '테슬라'],
+  ['AVGO',   '브로드컴'],
+  ['ORCL',   '오라클'],
+  ['CRM',    '세일즈포스'],
+  ['ADBE',   '어도비'],
+  ['INTC',   '인텔'],
+  ['AMD',    'AMD'],
+  ['QCOM',   '퀄컴'],
+  ['TXN',    '텍사스 인스트루먼트'],
+  ['AMAT',   '어플라이드 머티리얼즈'],
+  ['MU',     '마이크론'],
+  ['ARM',    'ARM홀딩스'],
+  ['ASML',   'ASML'],
+  ['TSM',    'TSMC'],
+  ['SMCI',   '슈퍼마이크로'],
+  // 금융
+  ['BRK-B',  '버크셔 해서웨이 B'],
+  ['BRK-A',  '버크셔 해서웨이 A'],
+  ['JPM',    'JP모건'],
+  ['BAC',    '뱅크오브아메리카'],
+  ['WFC',    '웰스파고'],
+  ['GS',     '골드만삭스'],
+  ['MS',     '모건스탠리'],
+  ['V',      '비자'],
+  ['MA',     '마스터카드'],
+  ['PYPL',   '페이팔'],
+  // 소비재·유통
+  ['AMZN',   '아마존'],
+  ['WMT',    '월마트'],
+  ['COST',   '코스트코'],
+  ['MCD',    '맥도날드'],
+  ['SBUX',   '스타벅스'],
+  ['NKE',    '나이키'],
+  ['TGT',    '타겟'],
+  ['HD',     '홈디포'],
+  // 헬스케어
+  ['JNJ',    '존슨앤존슨'],
+  ['LLY',    '일라이 릴리'],
+  ['PFE',    '화이자'],
+  ['MRNA',   '모더나'],
+  ['ABBV',   '애브비'],
+  ['UNH',    '유나이티드헬스'],
+  ['BMY',    '브리스톨마이어스'],
+  ['MRK',    '머크'],
+  // 에너지·산업
+  ['XOM',    '엑슨모빌'],
+  ['CVX',    '셰브론'],
+  ['GE',     'GE'],
+  ['BA',     '보잉'],
+  ['CAT',    '캐터필러'],
+  ['RTX',    '레이시온'],
+  ['LMT',    '록히드마틴'],
+  // 통신·미디어
+  ['NFLX',   '넷플릭스'],
+  ['DIS',    '디즈니'],
+  ['SPOT',   '스포티파이'],
+  ['T',      'AT&T'],
+  ['VZ',     '버라이즌'],
+  // ETF
+  ['SPY',    'S&P500 ETF'],
+  ['QQQ',    '나스닥100 ETF'],
+  ['TQQQ',   '나스닥100 3X'],
+  ['SQQQ',   '나스닥100 인버스3X'],
+  ['SOXL',   '반도체 3X ETF'],
+  ['SOXS',   '반도체 인버스3X'],
+  ['VTI',    '전미국 ETF'],
+  ['VOO',    'S&P500 ETF(VOO)'],
+  ['IVV',    'S&P500 ETF(IVV)'],
+  ['ARKK',   'ARK 혁신 ETF'],
+  ['GLD',    '금 ETF'],
+  ['SLV',    '은 ETF'],
+  ['TLT',    '미국채20년 ETF'],
+  ['BIL',    '미국채1-3개월 ETF'],
+]);
+
 app.get('/api/search', async (req, res) => {
   const { q } = req.query;
   if (!q) return res.json({ quotes: [] });
@@ -430,7 +515,7 @@ app.get('/api/search', async (req, res) => {
       const data = await r.json();
       (data.quotes || []).forEach(quote => {
         if (!resultsSet.has(quote.symbol)) {
-          const krName = KR_STOCKS_MAP.get(quote.symbol);
+          const krName = KR_STOCKS_MAP.get(quote.symbol) || US_NAMES.get(quote.symbol);
           results.push(krName ? { ...quote, shortname: krName, longname: krName } : quote);
           resultsSet.add(quote.symbol);
         }
@@ -449,7 +534,7 @@ app.get('/api/quote', async (req, res) => {
     const enriched = await Promise.all(yahooResult.map(async q => {
       // 한글명 보강
       const yahooKorName = /[가-힣]/.test(q.shortName) ? q.shortName : (/[가-힣]/.test(q.longName) ? q.longName : null);
-      const korName = yahooKorName || KR_STOCKS_MAP.get(q.symbol) || null;
+      const korName = yahooKorName || KR_STOCKS_MAP.get(q.symbol) || US_NAMES.get(q.symbol) || null;
       let result = { ...q, ...(korName ? { korName } : {}) };
 
       // 국내 주식(KS/KQ)은 네이버 금융 실시간 가격으로 덮어씀
