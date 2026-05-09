@@ -1161,6 +1161,13 @@ html, body {
 }
 .port-sort-btn:active { background: var(--bg-card); color: var(--primary); }
 .port-sort-btn i { font-size: 11px; }
+.port-group-caret {
+  font-size: 13px; color: var(--text-sub); margin-left: 2px;
+  transition: transform 0.25s ease;
+}
+.port-group-caret.collapsed { transform: rotate(-90deg); }
+.port-group-cards { overflow: hidden; transition: max-height 0.3s ease, opacity 0.25s; max-height: 9999px; opacity: 1; }
+.port-group-cards.collapsed { max-height: 0; opacity: 0; }
 .section-ud {
   display: inline-flex; align-items: center; gap: 2px;
   font-size: 10px; font-weight: 700;

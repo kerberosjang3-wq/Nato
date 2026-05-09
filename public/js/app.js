@@ -82,6 +82,7 @@ const state = {
   newsLoaded: false,
   newsFilter: null,  // { symbol, name } 또는 null(전체)
   portfolioSort: { domestic: 'gainPct', foreign: 'gainPct' },
+  portfolioCollapsed: { domestic: false, foreign: false },
   watchlistSearchResults: [],
   watchlistSearchQ: '',
   watchlistSearching: false,
@@ -1314,36 +1315,68 @@ function renderPortfolioHoldings() {
 
   let html = summary;
   if (domestic.length) {
-    html += `<div class="portfolio-section-header">
+    const dcol = state.portfolioCollapsed.domestic;
+    html += `<div class="portfolio-section-header" data-group="domestic">
       <span class="portfolio-section-flag">🇰🇷</span>
       <span class="portfolio-section-label">국내주식</span>
       <span class="section-ud-wrap">${upDownBadges(domestic)}</span>
       <span class="portfolio-section-count kr">${domestic.length}종목</span>
       ${sortBtn('domestic')}
+      <i class="ph ph-caret-down port-group-caret${dcol ? ' collapsed' : ''}"></i>
+    </div>
+    <div class="port-group-cards${dcol ? ' collapsed' : ''}" data-group="domestic">
+      ${domestic.map(item => renderPortfolioCard(item)).join('')}
     </div>`;
-    html += domestic.map(item => renderPortfolioCard(item)).join('');
   }
   if (foreign.length) {
-    html += `<div class="portfolio-section-header">
+    const fcol = state.portfolioCollapsed.foreign;
+    html += `<div class="portfolio-section-header" data-group="foreign">
       <span class="portfolio-section-flag">🇺🇸</span>
       <span class="portfolio-section-label">해외주식</span>
       <span class="section-ud-wrap">${upDownBadges(foreign)}</span>
       <span class="portfolio-section-count us">${foreign.length}종목</span>
       ${sortBtn('foreign')}
+      <i class="ph ph-caret-down port-group-caret${fcol ? ' collapsed' : ''}"></i>
+    </div>
+    <div class="port-group-cards${fcol ? ' collapsed' : ''}" data-group="foreign">
+      ${foreign.map(item => renderPortfolioCard(item)).join('')}
     </div>`;
-    html += foreign.map(item => renderPortfolioCard(item)).join('');
   }
   wrap.innerHTML = html;
   attachPortfolioDoubleTap(wrap);
 }
 
-// 더블탭으로 해당 종목 뉴스 열기
+function toggleGroupCollapse(group) {
+  state.portfolioCollapsed[group] = !state.portfolioCollapsed[group];
+  const collapsed = state.portfolioCollapsed[group];
+  const cards = document.querySelector(`.port-group-cards[data-group="${group}"]`);
+  const caret = document.querySelector(`.portfolio-section-header[data-group="${group}"] .port-group-caret`);
+  if (cards) cards.classList.toggle('collapsed', collapsed);
+  if (caret) caret.classList.toggle('collapsed', collapsed);
+}
+
+// 더블탭으로 해당 종목 뉴스 열기 / 헤더 더블탭으로 그룹 접기
 let _lastTap = { symbol: null, time: 0 };
+let _lastHeaderTap = { group: null, time: 0 };
 function attachPortfolioDoubleTap(wrap) {
   wrap.addEventListener('click', e => {
+    // 헤더 더블탭 — 그룹 접기/펼치기
+    const header = e.target.closest('.portfolio-section-header[data-group]');
+    if (header && !e.target.closest('button')) {
+      const group = header.dataset.group;
+      const now = Date.now();
+      if (_lastHeaderTap.group === group && now - _lastHeaderTap.time < 350) {
+        _lastHeaderTap = { group: null, time: 0 };
+        toggleGroupCollapse(group);
+      } else {
+        _lastHeaderTap = { group, time: now };
+      }
+      return;
+    }
+
+    // 카드 더블탭 — 뉴스 열기
     const card = e.target.closest('.stock-card[data-portfolio="1"]');
     if (!card) return;
-    // 버튼 요소 클릭은 무시
     if (e.target.closest('button')) return;
     const symbol = card.dataset.symbol;
     const now = Date.now();
