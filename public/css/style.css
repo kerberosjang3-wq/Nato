@@ -27,7 +27,7 @@
   --radius-lg: 24px;
   
   --header-h: clamp(56px, 10vh, 72px);
-  --tab-h: 56px;
+  --tab-h: 44px;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
@@ -631,7 +631,7 @@ html, body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3px;
+  gap: 2px;
   border: none;
   background: none;
   cursor: pointer;
@@ -644,7 +644,7 @@ html, body {
 }
 
 .tab-icon {
-  font-size: 20px;
+  font-size: 18px;
   flex-shrink: 0;
   transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
