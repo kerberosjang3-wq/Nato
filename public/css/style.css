@@ -268,7 +268,7 @@ html, body {
 /* ── News ─────────────────────────────────────────────────────────────────── */
 .news-list {
   display: flex; flex-direction: column; gap: 8px;
-  padding: 12px 12px calc(var(--tab-h) + 12px);
+  padding: calc(var(--safe-top) + 16px) 12px calc(var(--tab-h) + 12px);
   overflow-y: auto;
 }
 .news-card {
