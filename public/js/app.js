@@ -1022,6 +1022,43 @@ function toggleSummaryGroup(key) {
 }
 
 // ── Landscape Detail Panel ─────────────────────────────────────────────────
+function toTvSymbol(symbol) {
+  if (/\.KS$/i.test(symbol)) return 'KRX:' + symbol.replace(/\.KS$/i, '');
+  if (/\.KQ$/i.test(symbol)) return 'KOSDAQ:' + symbol.replace(/\.KQ$/i, '');
+  return symbol.replace(/\.[A-Z]+$/i, '');
+}
+
+function renderTvChart(symbol, containerId) {
+  const wrap = document.getElementById(containerId);
+  if (!wrap) return;
+  const tvSymbol = toTvSymbol(symbol);
+  const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+  const containerId2 = containerId + '-inner';
+  wrap.innerHTML = `<div id="${containerId2}" style="width:100%;height:100%;"></div>`;
+  const script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
+  script.async = true;
+  script.innerHTML = JSON.stringify({
+    autosize: true,
+    symbol: tvSymbol,
+    interval: 'D',
+    timezone: 'Asia/Seoul',
+    theme: isDark ? 'dark' : 'light',
+    style: '1',
+    locale: 'kr',
+    hide_top_toolbar: false,
+    hide_legend: true,
+    allow_symbol_change: false,
+    save_image: false,
+    calendar: false,
+    hide_volume: true,
+    support_host: 'https://www.tradingview.com',
+    container_id: containerId2,
+  });
+  document.getElementById(containerId2).appendChild(script);
+}
+
 function clearDetailPanel() {
   const detail = document.getElementById('ls-detail');
   if (!detail) return;
@@ -1061,8 +1098,10 @@ function renderDetailPanel(symbol) {
     </div>` : '';
 
   const name = q?.korName || item.name || item.symbol;
+  const isLandscape = window.matchMedia('(orientation: landscape)').matches;
   detail.innerHTML = `
   <div class="ls-detail-content">
+    ${isLandscape ? `<div class="ls-detail-chart" id="ls-chart-wrap"></div>` : ''}
     <div class="ls-detail-header">
       <div>
         <div class="ls-detail-name">${name}</div>
@@ -1106,6 +1145,8 @@ function renderDetailPanel(symbol) {
       <button class="ls-detail-del" onclick="confirmDeletePortfolio(event,'${symbol}')">삭제</button>
     </div>
   </div>`;
+
+  if (isLandscape) renderTvChart(symbol, 'ls-chart-wrap');
 
   document.querySelectorAll('#portfolio-holdings .stock-card').forEach(c => c.classList.remove('ls-selected'));
   const card = document.querySelector(`.stock-card[data-symbol="${symbol}"][data-portfolio="1"]`);

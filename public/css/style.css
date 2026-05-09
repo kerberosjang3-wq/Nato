@@ -427,46 +427,57 @@ html, body {
 .notif-banner, .install-banner {
   background: var(--bg-card);
   border: 1px solid var(--glass-border);
-  border-radius: var(--radius-md);
-  padding: 16px;
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
   margin-bottom: 20px;
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 10px;
   box-shadow: var(--shadow-sm);
   position: relative;
   overflow: hidden;
 }
 
 .notif-banner::before {
-  content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%;
+  content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 100%;
   background: var(--primary);
 }
 
 .notif-banner-icon, .install-icon {
-  font-size: 24px; color: var(--primary);
+  font-size: 18px; color: var(--primary);
   background: var(--bg-elevated);
-  width: 48px; height: 48px; border-radius: 12px;
+  width: 34px; height: 34px; border-radius: 8px;
   display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
 }
 
-.notif-banner-text, .install-text { flex: 1; }
-.notif-banner-text strong, .install-text strong { display: block; font-size: 15px; font-weight: 700; margin-bottom: 2px; color: var(--text); }
-.notif-banner-text { font-size: 13px; color: var(--text-sub); }
-.install-text span { font-size: 12px; color: var(--text-sub); }
+.notif-banner-text, .install-text {
+  flex: 1; min-width: 0;
+  font-size: 11px; color: var(--text-sub);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.notif-banner-text strong, .install-text strong {
+  display: inline;
+  font-size: 12px; font-weight: 700; color: var(--text);
+}
+.notif-banner-text strong::after, .install-text strong::after {
+  content: ' · '; font-weight: 400; color: var(--text-sub);
+}
+.install-text span { font-size: 11px; }
 
-.notif-banner-actions, .install-banner-actions { display: flex; align-items: center; gap: 12px; }
+.notif-banner-actions, .install-banner-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 
 .banner-btn {
   background: var(--primary); color: white; border: none;
-  border-radius: 8px; padding: 8px 16px; font-size: 13px;
+  border-radius: 6px; padding: 5px 10px; font-size: 11px;
   font-weight: 700; cursor: pointer; transition: opacity 0.2s;
+  white-space: nowrap;
 }
 .banner-btn.primary { background: var(--primary); }
 
 .banner-close {
   background: none; border: none; color: var(--text-sub);
-  font-size: 20px; cursor: pointer; padding: 4px;
+  font-size: 16px; cursor: pointer; padding: 4px;
 }
 
 /* ── Stock List & Cards ── */
@@ -1529,6 +1540,16 @@ html, body {
   .stock-card.ls-selected {
     border-color: var(--primary);
     box-shadow: 0 0 0 2px var(--primary-glow), 0 2px 10px rgba(0,0,0,0.2);
+  }
+
+  /* ⑦ TradingView chart in detail panel */
+  .ls-detail-chart {
+    width: 100%;
+    height: 240px;
+    flex-shrink: 0;
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--bg-elevated);
   }
 
   /* ⑥ Toast re-centers for sidebar offset */
