@@ -1,7 +1,7 @@
 {
-  "name": "NATO - 관심가/목표가 알림",
-  "short_name": "NATO",
-  "description": "관심 주식의 관심가와 목표가를 등록하고 알림을 받으세요",
+  "name": "WillyStock - 내종목관리",
+  "short_name": "WillyStock",
+  "description": "내보유종목, 관심종목 관리앱",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#09090D",
