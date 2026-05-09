@@ -485,9 +485,11 @@ app.get('/api/news', async (req, res) => {
   });
 
   // Google News RSS 병렬 fetch
+  const cutoff = Date.now() - 24 * 60 * 60 * 1000;
   const fetchNewsFor = async ({ symbol, name }) => {
     try {
-      const url = `https://news.google.com/rss/search?q=${encodeURIComponent(name)}&hl=ko&gl=KR&ceid=KR:ko`;
+      // tbs=qdr:d : Google에서 지난 24시간 뉴스로 1차 제한
+      const url = `https://news.google.com/rss/search?q=${encodeURIComponent(name)}&hl=ko&gl=KR&ceid=KR:ko&tbs=qdr:d`;
       const r = await _fetch(url, { timeout: 6000, headers: { 'User-Agent': UA } });
       const xml = await r.text();
       const items = [];
@@ -500,15 +502,22 @@ app.get('/api/news', async (req, res) => {
         const link    = get('link') || (/<link\/>([\s\S]*?)<\/link>/.exec(block)?.[1] || '').trim();
         const pubDate = get('pubDate');
         const source  = get('source') || (/<source[^>]+>([^<]+)<\/source>/.exec(block)?.[1] || '').trim();
-        if (title) items.push({ symbol, stockName: name, title, link: link || '', pubDate, source, ts: pubDate ? new Date(pubDate).getTime() : 0 });
+        if (!title) continue;
+        const ts = pubDate ? new Date(pubDate).getTime() : 0;
+        // 2차: 파싱된 ts가 24시간 이내인 것만 수집
+        if (!ts || isNaN(ts) || ts < cutoff) continue;
+        items.push({ symbol, stockName: name, title, link: link || '', pubDate, source, ts });
       }
-      return items.slice(0, 5);
+      // 날짜 필터 후 최신 5개
+      return items.sort((a, b) => b.ts - a.ts).slice(0, 5);
     } catch (_) { return []; }
   };
 
   const results = await Promise.all(queries.map(fetchNewsFor));
   const seen = new Set();
+  // 3차: 최종 취합 시 한 번 더 cutoff 검증
   const articles = results.flat()
+    .filter(a => a.ts >= cutoff)
     .filter(a => { if (seen.has(a.title)) return false; seen.add(a.title); return true; })
     .sort((a, b) => b.ts - a.ts)
     .slice(0, 40);

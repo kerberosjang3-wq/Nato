@@ -41,7 +41,8 @@ function timeAgo(ts) {
   const sec = Math.floor((Date.now() - ts) / 1000);
   if (sec < 60) return '방금 전';
   if (sec < 3600) return `${Math.floor(sec / 60)}분 전`;
-  return `${Math.floor(sec / 3600)}시간 전`;
+  if (sec < 86400) return `${Math.floor(sec / 3600)}시간 전`;
+  return `${Math.floor(sec / 86400)}일 전`;
 }
 
 function isLandscape() {
@@ -1545,8 +1546,62 @@ async function installApp() {
   }
 }
 
+// ── Pull-to-Refresh (보유종목 화면) ────────────────────────────────────────
+function setupPullToRefresh() {
+  const main = document.querySelector('.main');
+  const bar  = document.getElementById('ptr-bar');
+  const icon = document.getElementById('ptr-icon');
+  if (!main || !bar || !icon) return;
+
+  const THRESHOLD = 64;
+  let startY = 0;
+  let startX = 0;
+  let isPulling = false;
+  let isRefreshing = false;
+
+  main.addEventListener('touchstart', e => {
+    if (state.currentTab !== 'portfolio' || isRefreshing) return;
+    startY = e.touches[0].clientY;
+    startX = e.touches[0].clientX;
+    isPulling = false;
+  }, { passive: true });
+
+  main.addEventListener('touchmove', e => {
+    if (state.currentTab !== 'portfolio' || isRefreshing) return;
+    const dy = e.touches[0].clientY - startY;
+    const dx = Math.abs(e.touches[0].clientX - startX);
+    // 스크롤 상단에서 아래로, 수직 방향 제스처일 때만 활성화
+    if (main.scrollTop > 2 || dy < 8 || dx > dy) return;
+    isPulling = true;
+    const ratio = Math.min(dy / THRESHOLD, 1);
+    icon.style.transform = `rotate(${Math.round(ratio * 270)}deg)`;
+    bar.classList.toggle('ptr-visible', dy >= THRESHOLD);
+  }, { passive: true });
+
+  main.addEventListener('touchend', async () => {
+    if (!isPulling) return;
+    isPulling = false;
+    if (!bar.classList.contains('ptr-visible')) {
+      icon.style.transform = '';
+      return;
+    }
+    isRefreshing = true;
+    bar.classList.add('ptr-refreshing');
+    icon.style.transform = '';
+    try {
+      await Promise.all([loadPortfolioPrices(), fetchFxRates()]);
+      if (state.currentTab === 'portfolio') renderPortfolioHoldings();
+      showToast('최신 정보로 갱신되었습니다');
+    } finally {
+      bar.classList.remove('ptr-visible', 'ptr-refreshing');
+      isRefreshing = false;
+    }
+  }, { passive: true });
+}
+
 // ── Event Listeners ────────────────────────────────────────────────────────
 function setupEventListeners() {
+  setupPullToRefresh();
   // Tab navigation
   ['portfolio', 'home', 'market', 'news', 'more'].forEach(tab => {
     const btn = document.getElementById(`tab-${tab}`);
