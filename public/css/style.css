@@ -1016,6 +1016,11 @@ html, body {
 .psummary-header-top {
   display: flex; align-items: center; gap: 6px; margin-bottom: 4px;
 }
+.psummary-updated {
+  margin-left: auto;
+  font-size: 9px; font-weight: 600; color: var(--text-sub);
+  opacity: 0.7; letter-spacing: 0.2px;
+}
 .psummary-header-label {
   font-size: 10px; font-weight: 700; color: var(--text-sub);
   text-transform: uppercase; letter-spacing: 0.6px;

@@ -83,6 +83,7 @@ const state = {
   newsFilter: null,  // { symbol, name } 또는 null(전체)
   portfolioSort: { domestic: 'gainPct', foreign: 'gainPct' },
   portfolioCollapsed: { domestic: false, foreign: false },
+  portfolioUpdatedAt: null,
   watchlistSearchResults: [],
   watchlistSearchQ: '',
   watchlistSearching: false,
@@ -175,10 +176,14 @@ async function loadPortfolioPrices() {
   try {
     const data = await apiFetch(`/api/quote?symbols=${symbols.join(',')}`);
     (data.quoteResponse?.result || []).forEach(q => { state.portfolioPrices[q.symbol] = q; });
+    state.portfolioUpdatedAt = Date.now();
     localStorage.setItem('portfolioPrices', JSON.stringify(state.portfolioPrices));
+    localStorage.setItem('portfolioUpdatedAt', String(state.portfolioUpdatedAt));
   } catch {
     const cached = localStorage.getItem('portfolioPrices');
     if (cached) state.portfolioPrices = JSON.parse(cached);
+    const ts = localStorage.getItem('portfolioUpdatedAt');
+    if (ts) state.portfolioUpdatedAt = Number(ts);
   }
 }
 
@@ -871,12 +876,23 @@ function renderPortfolioSummary() {
   }
 
   const totalCount = items.length;
+  const updatedStr = (() => {
+    if (!state.portfolioUpdatedAt) return '';
+    const d = new Date(state.portfolioUpdatedAt);
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    const hh = String(d.getHours()).padStart(2, '0');
+    const min = String(d.getMinutes()).padStart(2, '0');
+    return `${mm}/${dd} ${hh}:${min}`;
+  })();
+
   return `
   <div class="portfolio-summary">
     <div class="psummary-header-card">
       <div class="psummary-header-top">
         <span class="psummary-header-label">총 평가금액</span>
         <span class="psummary-header-badge">${totalCount}종목</span>
+        ${updatedStr ? `<span class="psummary-updated">${updatedStr} 갱신</span>` : ''}
       </div>
       <div class="psummary-header-amount">${hasTotal ? formatPrice(totalCurrent, 'KRW') : '—'}</div>
       <div class="psummary-header-gain">
