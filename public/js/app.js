@@ -910,13 +910,16 @@ function renderPortfolioCard(item) {
   // Volume with comma only (no M/K abbreviation)
   const volNum = volume ? volume.toLocaleString('ko-KR') : '';
 
-  // 정규장 line — only during pre/post market
-  let regularLine = '';
+  const delayBadge = currency !== 'KRW' ? `<span class="port-delay-badge">지연</span>` : '';
+  const volLeft = volNum ? `<div class="port-vol-left">${volNum}</div>` : '';
+
+  // 정규장 row — only during pre/post market, shown in LEFT info column
+  let regularLineLeft = '';
   if ((isPost || isPre) && q?.regularMarketPrice) {
     const regPct = q.regularMarketChangePercent;
     const regSign = regPct != null ? (regPct >= 0 ? '+' : '') : '';
     const regPctStr = regPct != null ? `(${regSign}${regPct.toFixed(2)}%)` : '';
-    regularLine = `
+    regularLineLeft = `
       <div class="port-regular-row">
         <span class="mts-regular-label">정규장</span>
         <span class="port-regular-price">${formatPrice(q.regularMarketPrice, currency)}</span>
@@ -927,34 +930,34 @@ function renderPortfolioCard(item) {
   const cardClass = ['stock-card', dirClass, isExpanded ? 'expanded' : ''].filter(Boolean).join(' ');
 
   return `
-  <div class="${cardClass}" data-symbol="${item.symbol}" data-portfolio="1" onclick="handlePortfolioCardTap('${item.symbol}')">
+  <div class="${cardClass}" data-symbol="${item.symbol}" data-portfolio="1">
     <div class="stock-card-main">
       <div class="port-row">
         ${stockLogoHtml(item.symbol, q?.korName || item.name)}
         <div class="port-info">
+          ${delayBadge}
           <div class="port-name">${q?.korName || item.name || item.symbol}</div>
-          <div class="port-qty">${item.symbol} · ${item.qty}주</div>
+          ${volLeft}
+          ${regularLineLeft}
         </div>
-        <!-- Right: price data -->
         <div class="port-price-col">
           <div class="port-line1">
             <span class="port-price ${changeClass}">${currentPrice ? formatPrice(currentPrice, currency) : '—'}</span>
             <span class="port-chg-abs ${changeClass}">${absChangeStr}</span>
           </div>
           <div class="port-line2">
-            ${volNum ? `<span class="port-vol">${volNum}</span>` : ''}
             <span class="port-tri-pct ${changeClass}">${absPctStr}</span>
           </div>
-          ${regularLine}
         </div>
-      </div>
-      <div class="port-collapse-row">
-        <span class="port-collapse-label">손익</span>
-        <span class="port-collapse-gain ${gainClass}">${gainStr}</span>
-        <span class="port-collapse-pct ${gainClass}">${pctStr}</span>
-        <i class="ph ph-caret-down port-caret"></i>
+        <button class="port-dots-btn" onclick="event.stopPropagation();handlePortfolioCardTap('${item.symbol}')"><i class="ph ph-dots-three-vertical"></i></button>
       </div>
       <div class="port-expand-body">
+        <div class="port-gain-summary">
+          <span class="port-gain-label">손익</span>
+          <span class="port-gain-val ${gainClass}">${gainStr}</span>
+          <span class="port-gain-pct ${gainClass}">${pctStr}</span>
+          <span class="port-gain-qty">${item.qty}주</span>
+        </div>
         <div class="port-stats">
           <div class="port-stat">
             <span class="port-stat-label">매수가</span>

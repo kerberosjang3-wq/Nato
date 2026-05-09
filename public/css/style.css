@@ -429,20 +429,28 @@ html, body {
 /* ── Portfolio card (MTS screenshot style) ── */
 .port-row {
   display: flex; align-items: center; gap: 10px;
-  padding: 10px 14px;
+  padding: 10px 14px 10px 10px;
 }
 
-/* Left info column: delay badge stacked above name */
+/* Left info column */
 .port-info {
   flex: 1; min-width: 0;
-  display: flex; flex-direction: column; gap: 3px;
+  display: flex; flex-direction: column; gap: 2px;
 }
-.port-delay-row { display: none !important; }
+.port-delay-badge {
+  display: inline-block;
+  font-size: 9px; font-weight: 700; color: var(--text-sub);
+  background: var(--bg-elevated); border-radius: 3px;
+  padding: 1px 4px; align-self: flex-start; line-height: 1.4;
+}
 .port-name {
   font-size: 14px; font-weight: 700; color: var(--text);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.port-qty { font-size: 10px; color: var(--text-sub); margin-top: 1px; }
+.port-vol-left {
+  font-size: 10px; color: var(--text-sub);
+  font-variant-numeric: tabular-nums;
+}
 
 /* Right price column */
 .port-price-col {
@@ -451,7 +459,7 @@ html, body {
 }
 .port-line1 {
   display: flex; align-items: baseline;
-  justify-content: flex-end; gap: 10px;
+  justify-content: flex-end; gap: 8px;
 }
 .port-price {
   font-size: 17px; font-weight: 800;
@@ -470,10 +478,7 @@ html, body {
   display: flex; align-items: center;
   justify-content: flex-end; gap: 6px;
 }
-.port-vol {
-  font-size: 10px; color: var(--text-sub);
-  font-variant-numeric: tabular-nums;
-}
+.port-vol { font-size: 10px; color: var(--text-sub); font-variant-numeric: tabular-nums; }
 .port-tri-pct {
   font-size: 11px; font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -482,10 +487,21 @@ html, body {
 .port-tri-pct.down { color: var(--stock-down); }
 .port-tri-pct.flat { color: var(--text-sub); }
 
-/* 정규장 row (pre/post market) */
+/* ... 버튼 */
+.port-dots-btn {
+  flex-shrink: 0;
+  background: none; border: none; cursor: pointer;
+  color: var(--text-sub); font-size: 18px;
+  padding: 4px 2px; line-height: 1;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.15s;
+}
+.port-dots-btn:active { color: var(--text); }
+
+/* 정규장 row (pre/post market) — now in left info column */
 .port-regular-row {
   display: flex; align-items: center;
-  justify-content: flex-end; gap: 5px; margin-top: 1px;
+  justify-content: flex-start; gap: 5px; margin-top: 1px;
 }
 .port-regular-price {
   font-size: 10px; color: var(--text-sub);
@@ -976,44 +992,44 @@ html, body {
 .port-stat.gain-up .port-stat-value { color: var(--stock-up); }
 .port-stat.gain-down .port-stat-value { color: var(--stock-down); }
 
-/* 포트폴리오 카드 접기/펼치기 */
-.port-collapse-row {
-  display: flex; align-items: center; gap: 6px;
-  padding: 6px 14px 6px;
-  border-top: 1px solid var(--border);
-}
-.port-collapse-label {
-  font-size: 10px; font-weight: 700; color: var(--text-sub);
-  flex-shrink: 0;
-}
-.port-collapse-gain {
-  font-size: 13px; font-weight: 800;
-  font-variant-numeric: tabular-nums; flex: 1;
-  color: var(--text-sub);
-}
-.port-collapse-pct {
-  font-size: 13px; font-weight: 800;
-  font-variant-numeric: tabular-nums;
-  color: var(--text-sub);
-}
-.port-collapse-gain.gain-up, .port-collapse-pct.gain-up { color: var(--stock-up); }
-.port-collapse-gain.gain-down, .port-collapse-pct.gain-down { color: var(--stock-down); }
-.port-caret {
-  font-size: 13px; color: var(--text-sub);
-  transition: transform 0.25s ease;
-  flex-shrink: 0; margin-left: 2px;
-}
-.stock-card.expanded .port-caret { transform: rotate(180deg); }
+/* 포트폴리오 카드 접기/펼치기 (... 버튼으로 토글) */
 .port-expand-body {
   max-height: 0; overflow: hidden;
-  transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease;
+  transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease;
   opacity: 0;
 }
 .stock-card.expanded .port-expand-body {
-  max-height: 200px; opacity: 1;
+  max-height: 260px; opacity: 1;
+  border-top: 1px solid var(--border);
 }
-.port-expand-body .port-stats { margin-top: 6px; }
-.port-expand-body .port-stat-krw { margin-top: 4px; }
+
+/* 손익 요약 행 */
+.port-gain-summary {
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 14px 4px;
+}
+.port-gain-label {
+  font-size: 10px; font-weight: 700; color: var(--text-sub);
+  flex-shrink: 0;
+}
+.port-gain-val {
+  font-size: 14px; font-weight: 800;
+  font-variant-numeric: tabular-nums; flex: 1;
+  color: var(--text-sub);
+}
+.port-gain-pct {
+  font-size: 13px; font-weight: 700;
+  font-variant-numeric: tabular-nums; color: var(--text-sub);
+}
+.port-gain-qty {
+  font-size: 10px; font-weight: 600; color: var(--text-sub);
+  background: var(--bg-elevated); border-radius: 4px; padding: 1px 6px;
+}
+.port-gain-val.gain-up, .port-gain-pct.gain-up { color: var(--stock-up); }
+.port-gain-val.gain-down, .port-gain-pct.gain-down { color: var(--stock-down); }
+
+.port-expand-body .port-stats { margin: 0 14px 8px; }
+.port-expand-body .port-stat-krw { margin: 0 14px 8px; }
 .port-stat-krw {
   margin-top: 4px;
   background: var(--bg-elevated);
