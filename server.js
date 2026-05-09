@@ -176,7 +176,12 @@ async function checkPrices() {
     await Promise.all(krSymbols.map(async q => {
       const code = q.symbol.replace(/\.(KS|KQ)$/i, '');
       const naver = await fetchNaverPrice(code);
-      if (naver) Object.assign(quotes[q.symbol], naver);
+      if (naver) {
+        quotes[q.symbol].regularMarketPrice         = naver.regularMarketPrice;
+        quotes[q.symbol].regularMarketChange        = naver.regularMarketChange;
+        quotes[q.symbol].regularMarketChangePercent = naver.regularMarketChangePercent;
+        if (naver.regularMarketVolume) quotes[q.symbol].regularMarketVolume = naver.regularMarketVolume;
+      }
     }));
   } catch (e) {
     return { checked: 0, notified: 0, error: e.message };
@@ -541,7 +546,12 @@ app.get('/api/quote', async (req, res) => {
       if (/\.(KS|KQ)$/i.test(q.symbol)) {
         const code = q.symbol.replace(/\.(KS|KQ)$/i, '');
         const naver = await fetchNaverPrice(code);
-        if (naver) Object.assign(result, naver);
+        if (naver) {
+          result.regularMarketPrice         = naver.regularMarketPrice;
+          result.regularMarketChange        = naver.regularMarketChange;
+          result.regularMarketChangePercent = naver.regularMarketChangePercent;
+          if (naver.regularMarketVolume) result.regularMarketVolume = naver.regularMarketVolume;
+        }
       }
 
       return result;
