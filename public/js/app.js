@@ -203,14 +203,6 @@ async function deletePortfolioItem(symbol) {
   localStorage.setItem('portfolio', JSON.stringify(state.portfolio));
 }
 
-function stockLogoHtml(symbol, name) {
-  const base = symbol.replace(/\.(KS|KQ)$/, '');
-  const url = `https://financialmodelingprep.com/image-stock/${base}.png`;
-  const letter = (name || symbol).charAt(0).toUpperCase();
-  const palette = ['#3B82F6','#8B5CF6','#10B981','#F59E0B','#EF4444','#6366F1','#EC4899','#14B8A6','#F97316'];
-  const color = palette[base.charCodeAt(0) % palette.length];
-  return `<div class="stock-logo"><img src="${url}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" onload="this.nextElementSibling.style.display='none'"><div class="stock-logo-fallback" style="background:${color}">${letter}</div></div>`;
-}
 
 let searchTimer;
 async function doSearch(q) {
@@ -398,7 +390,6 @@ function renderStockCard(item) {
     <div class="stock-card-main">
       ${badge}
       <div class="mts-row">
-        ${stockLogoHtml(item.symbol, q?.korName || item.name)}
         <div class="mts-info">
           <div class="mts-name-row">
             <span class="stock-name">${q?.korName || item.name || item.symbol}</span>
@@ -484,7 +475,6 @@ function renderSearchResults() {
     const added = !!state.watchlist[r.symbol];
     return `
     <div class="result-item ${added ? 'added' : ''}" onclick="openAddModal('${r.symbol}','${(r.longname || r.shortname || r.symbol).replace(/'/g, '')}','${currency}')">
-      ${stockLogoHtml(r.symbol, r.shortname || r.longname)}
       <div class="result-info">
         <div class="result-name">${r.longname || r.shortname || r.symbol}</div>
         <div class="result-meta">
@@ -940,7 +930,6 @@ function renderPortfolioCard(item) {
   <div class="${cardClass}" data-symbol="${item.symbol}" data-portfolio="1">
     <div class="stock-card-main">
       <div class="port-row">
-        ${stockLogoHtml(item.symbol, q?.korName || item.name)}
         <div class="port-info">
           <div class="port-name">${q?.korName || item.name || item.symbol}</div>
           <div class="port-qty-row">${marketBadge}<span class="port-qty-num">${item.qty.toLocaleString('ko-KR')}주</span>${volNum ? `<span class="port-vol-sep"> · </span><span class="port-vol-left">${volNum}</span>` : ''}</div>
@@ -1209,7 +1198,6 @@ function renderPortfolioSearch() {
     const name = (r.longname || r.shortname || r.symbol).replace(/'/g, '');
     return `
     <div class="result-item ${added ? 'added' : ''}" onclick="openPortfolioModal('${r.symbol}','${name}','${currency}')">
-      ${stockLogoHtml(r.symbol, r.shortname || r.longname)}
       <div class="result-info">
         <div class="result-name">${r.longname || r.shortname || r.symbol}</div>
         <div class="result-meta"><span class="result-exchange">${r.exchange || ''}</span> <span>${r.symbol}</span></div>
@@ -1354,7 +1342,6 @@ function renderWatchlistSearch() {
     const name = (r.longname || r.shortname || r.symbol).replace(/'/g, '');
     return `
     <div class="result-item ${added ? 'added' : ''}" onclick="openAddModal('${r.symbol}','${name}','${currency}')">
-      ${stockLogoHtml(r.symbol, r.shortname || r.longname)}
       <div class="result-info">
         <div class="result-name">${r.longname || r.shortname || r.symbol}</div>
         <div class="result-meta"><span class="result-exchange">${r.exchange || ''}</span> <span>${r.symbol}</span></div>

@@ -853,20 +853,6 @@ html, body {
 .search-clear:hover { color: var(--text); }
 .search-clear.visible { display: flex; align-items: center; }
 
-.stock-logo {
-  flex-shrink: 0; width: 30px; height: 30px; border-radius: 8px;
-  overflow: hidden; background: white; border: 1px solid var(--border);
-  display: flex; align-items: center; justify-content: center; position: relative;
-}
-.stock-logo img { width: 100%; height: 100%; object-fit: contain; display: block; }
-.stock-logo-fallback {
-  width: 100%; height: 100%; display: none;
-  align-items: center; justify-content: center;
-  font-size: 12px; font-weight: 800; color: white;
-}
-.stock-card .stock-logo { width: 22px; height: 22px; border-radius: 5px; }
-.stock-card .stock-logo-fallback { font-size: 9px; }
-#portfolio-holdings .stock-card .stock-logo { width: 22px; height: 22px; border-radius: 5px; }
 
 .result-item {
   display: flex; align-items: center; gap: 12px;
