@@ -76,6 +76,9 @@ const state = {
   expandedPortfolioCards: new Set(),
   summaryExpanded: false,
   summaryGroupExpanded: {},
+  news: [],
+  newsLoading: false,
+  newsLoaded: false,
   watchlistSearchResults: [],
   watchlistSearchQ: '',
   watchlistSearching: false,
@@ -1381,6 +1384,53 @@ function syncSearchBar(tab) {
   }
 }
 
+// ── News ───────────────────────────────────────────────────────────────────
+async function loadNews() {
+  const el = document.getElementById('news-list');
+  if (!el) return;
+
+  if (state.newsLoading) return;
+  state.newsLoading = true;
+  renderNews();
+
+  try {
+    const res = await fetch(`/api/news?clientId=${encodeURIComponent(state.clientId)}`);
+    const data = await res.json();
+    state.news = data.articles || [];
+    state.newsLoaded = true;
+  } catch (_) {
+    state.news = [];
+  } finally {
+    state.newsLoading = false;
+    renderNews();
+  }
+}
+
+function renderNews() {
+  const el = document.getElementById('news-list');
+  if (!el) return;
+
+  if (state.newsLoading && !state.newsLoaded) {
+    el.innerHTML = '<div class="news-loading"><i class="ph ph-spinner news-spin"></i><span>뉴스를 불러오는 중...</span></div>';
+    return;
+  }
+
+  if (!state.news.length) {
+    el.innerHTML = `<div class="news-empty"><i class="ph ph-newspaper"></i><span>${state.newsLoaded ? '관련 뉴스가 없습니다' : '보유종목을 추가하면 관련 뉴스를 볼 수 있습니다'}</span></div>`;
+    return;
+  }
+
+  el.innerHTML = state.news.map(a => {
+    const ago = a.ts ? timeAgo(a.ts) : '';
+    const src = a.source ? `<span class="news-source">${a.source}</span>` : '';
+    return `<a class="news-card" href="${a.link || '#'}" target="_blank" rel="noopener">
+      <div class="news-card-badge">${a.stockName}</div>
+      <div class="news-card-title">${a.title}</div>
+      <div class="news-card-meta">${src}${ago ? `<span class="news-card-time">${ago}</span>` : ''}</div>
+    </a>`;
+  }).join('');
+}
+
 // ── Tabs ───────────────────────────────────────────────────────────────────
 function switchTab(tab) {
   if (currentSwipedCard) { currentSwipedCard.classList.remove('swiped'); currentSwipedCard = null; }
@@ -1397,6 +1447,7 @@ function switchTab(tab) {
 
   if (tab === 'home') { renderHome(); renderWatchlistSearch(); }
   if (tab === 'settings') renderSettings();
+  if (tab === 'news') loadNews();
   if (tab === 'portfolio') {
     renderPortfolioHoldings();
     renderPortfolioSearch();

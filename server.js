@@ -463,6 +463,59 @@ app.get('/api/fxrates', async (req, res) => {
   res.status(502).json({ error: 'exchange rate fetch failed' });
 });
 
+// ── News (Google News RSS per portfolio holding) ───────────────────────────
+app.get('/api/news', async (req, res) => {
+  const { clientId } = req.query;
+  if (!clientId) return res.json({ articles: [] });
+
+  const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+
+  // 보유종목 이름 수집
+  let portfolio = {};
+  try {
+    const store = await getStore();
+    portfolio = store.portfolios?.[clientId] || {};
+  } catch (_) {}
+  if (!Object.keys(portfolio).length) return res.json({ articles: [] });
+
+  // 종목별 검색어 수집 (한글명 우선, 없으면 심볼)
+  const queries = Object.values(portfolio).map(item => {
+    const name = item.korName || item.name || item.symbol;
+    return { symbol: item.symbol, name };
+  });
+
+  // Google News RSS 병렬 fetch
+  const fetchNewsFor = async ({ symbol, name }) => {
+    try {
+      const url = `https://news.google.com/rss/search?q=${encodeURIComponent(name)}&hl=ko&gl=KR&ceid=KR:ko`;
+      const r = await _fetch(url, { timeout: 6000, headers: { 'User-Agent': UA } });
+      const xml = await r.text();
+      const items = [];
+      const itemRe = /<item>([\s\S]*?)<\/item>/g;
+      let m;
+      while ((m = itemRe.exec(xml)) !== null) {
+        const block = m[1];
+        const get = (tag) => { const t = new RegExp(`<${tag}[^>]*><!\\[CDATA\\[([\\s\\S]*?)\\]\\]><\\/${tag}>|<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`).exec(block); return t ? (t[1] || t[2] || '').trim() : ''; };
+        const title   = get('title');
+        const link    = get('link') || (/<link\/>([\s\S]*?)<\/link>/.exec(block)?.[1] || '').trim();
+        const pubDate = get('pubDate');
+        const source  = get('source') || (/<source[^>]+>([^<]+)<\/source>/.exec(block)?.[1] || '').trim();
+        if (title) items.push({ symbol, stockName: name, title, link: link || '', pubDate, source, ts: pubDate ? new Date(pubDate).getTime() : 0 });
+      }
+      return items.slice(0, 5);
+    } catch (_) { return []; }
+  };
+
+  const results = await Promise.all(queries.map(fetchNewsFor));
+  const seen = new Set();
+  const articles = results.flat()
+    .filter(a => { if (seen.has(a.title)) return false; seen.add(a.title); return true; })
+    .sort((a, b) => b.ts - a.ts)
+    .slice(0, 40);
+
+  res.json({ articles });
+});
+
 app.get('/api/health', (req, res) => res.json({ status: 'ok', env: process.env.VERCEL ? 'vercel' : 'local' }));
 
 // Root route (Fallback)
