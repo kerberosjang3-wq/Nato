@@ -83,6 +83,9 @@ html, body {
   top: 0;
   z-index: 100;
   flex-shrink: 0;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .header {
@@ -93,16 +96,20 @@ html, body {
   gap: 10px;
   padding: 10px 14px;
   padding-top: calc(10px + var(--safe-top));
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .header-search-wrap {
   flex: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
   gap: 8px;
   background: #2a2a2a;
   border-radius: 22px;
   padding: 8px 14px;
+  overflow: hidden;
 }
 
 .header-search-btn {
