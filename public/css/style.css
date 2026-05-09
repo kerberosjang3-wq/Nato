@@ -580,6 +580,7 @@ html, body {
 .port-qty-num { font-weight: 600; color: var(--text-sub); }
 .port-vol-sep { color: var(--border); }
 .port-vol-left { color: var(--text-sub); }
+.port-ticker { color: var(--text-sub); font-size: 11px; font-weight: 600; letter-spacing: 0.3px; }
 
 /* Right price column */
 .port-price-col {
@@ -1132,7 +1133,6 @@ html, body {
 .portfolio-section-header:first-of-type { border-top: none; margin-top: 0; }
 .portfolio-section-flag { font-size: 14px; line-height: 1; }
 .portfolio-section-label {
-  flex: 1;
   font-size: 11px; font-weight: 700;
   color: var(--text-sub); letter-spacing: 0.4px;
 }
@@ -1143,7 +1143,17 @@ html, body {
 .portfolio-section-count.kr { color: #5b9bd5; background: rgba(91,155,213,0.14); }
 .portfolio-section-count.us { color: #4caf82; background: rgba(76,175,130,0.14); }
 
-.section-ud-wrap { display: flex; align-items: center; gap: 4px; }
+.section-ud-wrap { display: flex; align-items: center; gap: 4px; margin-right: auto; }
+.port-sort-btn {
+  display: inline-flex; align-items: center; gap: 3px;
+  background: var(--bg-elevated); border: 1px solid var(--border);
+  border-radius: 6px; padding: 3px 8px;
+  font-size: 10px; font-weight: 700; color: var(--text-sub);
+  cursor: pointer; white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+}
+.port-sort-btn:active { background: var(--bg-card); color: var(--primary); }
+.port-sort-btn i { font-size: 11px; }
 .section-ud {
   display: inline-flex; align-items: center; gap: 2px;
   font-size: 10px; font-weight: 700;
