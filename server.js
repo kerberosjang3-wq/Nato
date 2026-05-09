@@ -463,10 +463,12 @@ app.get('/api/search', async (req, res) => {
             }
 
             if (!resultsSet.has(symbol)) {
+              const mappedName = KR_STOCKS_MAP.get(symbol);
+              const displayName = mappedName || c || t;
               results.push({
                 symbol,
-                shortname: c || t,
-                longname: c || t,
+                shortname: displayName,
+                longname: displayName,
                 exchange: x === 'KRX' || x === 'KOSDAQ' ? (symbol.endsWith('.KQ') ? 'KOQ' : 'KSC') : x,
                 quoteType: 'EQUITY'
               });
@@ -504,7 +506,8 @@ app.get('/api/search', async (req, res) => {
           return;
         }
         if (!resultsSet.has(symbol)) {
-          results.push({ symbol, shortname: item.name, longname: item.name, exchange, quoteType });
+          const mappedName = KR_STOCKS_MAP.get(symbol) || item.name;
+          results.push({ symbol, shortname: mappedName, longname: mappedName, exchange, quoteType });
           resultsSet.add(symbol);
         }
       });
