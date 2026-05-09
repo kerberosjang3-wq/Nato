@@ -1036,23 +1036,7 @@ function renderTvChart(symbol, containerId) {
   const tvSymbol = toTvSymbol(symbol);
   const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
 
-  // TradingView advanced chart requires this exact sibling structure:
-  // .tradingview-widget-container > .tradingview-widget-container__widget + <script src>
-  // The script reads its own textContent for config — container_id is not supported.
-  const container = document.createElement('div');
-  container.className = 'tradingview-widget-container';
-  container.style.cssText = 'width:100%;height:100%';
-
-  const widgetDiv = document.createElement('div');
-  widgetDiv.className = 'tradingview-widget-container__widget';
-  widgetDiv.style.cssText = 'width:100%;height:100%';
-  container.appendChild(widgetDiv);
-
-  const script = document.createElement('script');
-  script.type = 'text/javascript';
-  script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
-  script.async = true;
-  script.textContent = JSON.stringify({
+  const config = JSON.stringify({
     autosize: true,
     symbol: tvSymbol,
     interval: 'D',
@@ -1068,10 +1052,22 @@ function renderTvChart(symbol, containerId) {
     hide_volume: true,
     support_host: 'https://www.tradingview.com',
   });
-  container.appendChild(script);
 
+  // createContextualFragment lets the HTML parser create the <script> node,
+  // which preserves textContent correctly and re-executes on every stock switch.
+  // document.createElement + textContent is silently dropped by some browsers
+  // when the element also has a src attribute.
   wrap.innerHTML = '';
-  wrap.appendChild(container);
+  const range = document.createRange();
+  range.selectNode(document.body);
+  wrap.appendChild(range.createContextualFragment(
+    '<div class="tradingview-widget-container" style="width:100%;height:100%">' +
+    '<div class="tradingview-widget-container__widget" style="width:100%;height:100%"></div>' +
+    '<script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js" async>' +
+    config +
+    '<\/script>' +
+    '</div>'
+  ));
 }
 
 function clearDetailPanel() {
