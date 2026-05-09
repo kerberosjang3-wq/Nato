@@ -1368,11 +1368,11 @@ function syncSearchBar(tab) {
   clear?.classList.remove('visible');
   if (resultsEl) resultsEl.innerHTML = '';
   if (tab === 'portfolio') {
-    input.placeholder = '종목 검색하여 추가...';
+    input.placeholder = '종목 검색하여 추가';
     state.portfolioSearchQ = '';
     state.portfolioSearchResults = [];
   } else {
-    input.placeholder = '전기차를 검색해보세요';
+    input.placeholder = '종목 검색하여 추가';
     state.watchlistSearchQ = '';
     state.watchlistSearchResults = [];
   }
@@ -1385,6 +1385,8 @@ function switchTab(tab) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.getElementById(`screen-${tab}`)?.classList.add('active');
+  const searchHeader = document.getElementById('search-header');
+  if (searchHeader) searchHeader.classList.toggle('hidden', tab !== 'home' && tab !== 'portfolio');
   syncSearchBar(tab);
   // Highlight the matching bottom-nav tab (settings maps to 'more')
   const navTab = tab === 'settings' ? 'more' : tab;

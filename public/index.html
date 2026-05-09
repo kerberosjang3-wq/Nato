@@ -33,6 +33,23 @@
 <body>
 <div id="app">
 
+  <!-- ── 종목 검색 헤더 (관심종목·보유종목 공용) ── -->
+  <div class="header-outer" id="search-header">
+    <header class="header">
+      <div class="header-search-wrap">
+        <i class="ph ph-magnifying-glass search-header-icon"></i>
+        <input type="search" class="header-search-input" id="home-search-input"
+          placeholder="종목 검색하여 추가" autocomplete="off" autocorrect="off" spellcheck="false">
+        <button class="search-field-clear" id="home-search-clear">
+          <i class="ph ph-x-circle"></i>
+        </button>
+        <button class="header-search-btn" id="home-search-btn">
+          <i class="ph ph-magnifying-glass"></i>
+        </button>
+      </div>
+    </header>
+    <div id="home-search-results"></div>
+  </div>
 
   <!-- ── Main content ── -->
   <main class="main">
