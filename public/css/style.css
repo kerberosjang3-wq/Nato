@@ -841,6 +841,12 @@ html, body {
 .form-input:focus { border-color: var(--primary); background: var(--bg-card); box-shadow: 0 0 0 3px var(--primary-glow); }
 .form-input::placeholder { color: var(--text-sub); opacity: 0.5; }
 .form-input-hint { font-size: 11px; color: var(--text-sub); margin-top: 5px; font-weight: 500; }
+.form-select { appearance: none; -webkit-appearance: none; cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 256 256'%3E%3Cpath fill='%23888' d='m213.66 101.66-80 80a8 8 0 0 1-11.32 0l-80-80a8 8 0 0 1 11.32-11.32L128 164.69l74.34-74.35a8 8 0 0 1 11.32 11.32Z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 14px center;
+  padding-right: 36px;
+}
+.form-select option, .form-select optgroup { background: #1e1e2e; color: var(--text); }
 
 .modal-actions { display: flex; gap: 10px; margin-top: 18px; }
 .btn-cancel {
@@ -921,6 +927,36 @@ html, body {
 .empty-icon { font-size: 64px; margin-bottom: 20px; opacity: 0.5; }
 .empty-title { font-size: 20px; font-weight: 800; color: var(--text); margin-bottom: 8px; }
 .empty-sub { font-size: 14px; color: var(--text-sub); line-height: 1.6; margin-bottom: 32px; }
+
+/* ── Lock Screen ── */
+#lock-overlay {
+  position: fixed; inset: 0; z-index: 9999;
+  background: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+  transition: opacity 0.35s ease;
+}
+#lock-overlay.unlocking { opacity: 0; pointer-events: none; }
+.lock-content {
+  display: flex; flex-direction: column; align-items: center; gap: 16px;
+}
+.lock-logo {
+  font-size: 64px; color: var(--primary); line-height: 1;
+  margin-bottom: 4px;
+}
+.lock-app-name {
+  font-size: 24px; font-weight: 800; color: var(--text); letter-spacing: -0.5px;
+}
+.lock-bio-btn {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--bg-elevated); border: 1.5px solid var(--border);
+  border-radius: 16px; padding: 16px 28px;
+  font-size: 15px; font-weight: 700; color: var(--text);
+  cursor: pointer; margin-top: 16px;
+  transition: background 0.15s, transform 0.1s;
+}
+.lock-bio-btn i { font-size: 28px; color: var(--primary); }
+.lock-bio-btn:active { transform: scale(0.97); background: var(--bg-card); }
+.lock-bio-btn:disabled { opacity: 0.6; }
 
 /* ── Toast ── */
 .toast {

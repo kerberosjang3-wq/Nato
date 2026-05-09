@@ -542,9 +542,11 @@ app.get('/api/quote', async (req, res) => {
 
     const enriched = await Promise.all(yahooResult.map(async q => {
       // 한글명 보강
+      // 국내주식(KS/KQ)은 KR_STOCKS_MAP만 사용 — Yahoo 이름은 부정확한 경우가 많음
+      const isKR = /\.(KS|KQ)$/i.test(q.symbol);
       const rawKorName = /[가-힣]/.test(q.shortName) ? q.shortName : (/[가-힣]/.test(q.longName) ? q.longName : null);
       const yahooKorName = rawKorName ? rawKorName.replace(/^\(주\)\s*/g, '').replace(/\s*주식회사\s*$/g, '').trim() || rawKorName : null;
-      const korName = KR_STOCKS_MAP.get(q.symbol) || yahooKorName || US_NAMES.get(q.symbol) || null;
+      const korName = KR_STOCKS_MAP.get(q.symbol) || (isKR ? null : yahooKorName) || US_NAMES.get(q.symbol) || null;
       let result = { ...q, ...(korName ? { korName } : {}) };
 
       // 국내 주식(KS/KQ)은 네이버 금융 실시간 가격으로 덮어씀

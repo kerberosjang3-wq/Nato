@@ -197,8 +197,8 @@ async function fetchFxRates() {
   } catch (_) {}
 }
 
-async function savePortfolioItem(symbol, name, buyPrice, qty, currency) {
-  const item = { symbol, name, buyPrice, qty, currency };
+async function savePortfolioItem(symbol, name, buyPrice, qty, currency, broker) {
+  const item = { symbol, name, buyPrice, qty, currency, ...(broker ? { broker } : {}) };
   await apiFetch('/api/portfolio', { method: 'POST', body: JSON.stringify(item) });
   state.portfolio[symbol] = item;
   localStorage.setItem('portfolio', JSON.stringify(state.portfolio));
@@ -400,7 +400,7 @@ function renderStockCard(item) {
       <div class="mts-row">
         <div class="mts-info">
           <div class="mts-name-row">
-            <span class="stock-name">${q?.korName || item.name || item.symbol}</span>
+            <span class="stock-name">${item.name || q?.korName || item.symbol}</span>
           </div>
           <div class="mts-meta">${metaStr}</div>
         </div>
@@ -501,6 +501,133 @@ function renderSearchResults() {
   }).join('');
 }
 
+// ── Biometric Lock ─────────────────────────────────────────────────────────
+
+function isBiometricSupported() {
+  return !!(window.PublicKeyCredential && navigator.credentials?.create && navigator.credentials?.get);
+}
+
+function isBiometricEnabled() {
+  return localStorage.getItem('biometricEnabled') === 'true' && !!localStorage.getItem('biometricCredId');
+}
+
+async function registerBiometric() {
+  try {
+    const challenge = crypto.getRandomValues(new Uint8Array(32));
+    const userId = crypto.getRandomValues(new Uint8Array(16));
+    const credential = await navigator.credentials.create({
+      publicKey: {
+        challenge,
+        rp: { name: 'WillyStock', id: window.location.hostname },
+        user: { id: userId, name: 'willystock-user', displayName: 'WillyStock' },
+        pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
+        authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required' },
+        timeout: 60000
+      }
+    });
+    const credId = btoa(String.fromCharCode(...new Uint8Array(credential.rawId)));
+    localStorage.setItem('biometricCredId', credId);
+    localStorage.setItem('biometricEnabled', 'true');
+    return true;
+  } catch (e) {
+    console.warn('Biometric register failed:', e);
+    return false;
+  }
+}
+
+async function authenticateBiometric() {
+  try {
+    const b64 = localStorage.getItem('biometricCredId');
+    if (!b64) return false;
+    const credId = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+    const challenge = crypto.getRandomValues(new Uint8Array(32));
+    await navigator.credentials.get({
+      publicKey: {
+        challenge,
+        rpId: window.location.hostname,
+        allowCredentials: [{ type: 'public-key', id: credId }],
+        userVerification: 'required',
+        timeout: 60000
+      }
+    });
+    return true;
+  } catch (e) {
+    console.warn('Biometric auth failed:', e);
+    return false;
+  }
+}
+
+function showLockScreen() {
+  if (document.getElementById('lock-overlay')) return;
+  const el = document.createElement('div');
+  el.id = 'lock-overlay';
+  el.innerHTML = `
+    <div class="lock-content">
+      <div class="lock-logo"><i class="ph-fill ph-chart-line-up"></i></div>
+      <div class="lock-app-name">WillyStock</div>
+      <button class="lock-bio-btn" id="lock-bio-btn">
+        <i class="ph ph-fingerprint"></i>
+        <span>생체인증으로 잠금 해제</span>
+      </button>
+    </div>`;
+  document.body.appendChild(el);
+  document.getElementById('lock-bio-btn').addEventListener('click', tryBiometricUnlock);
+}
+
+function hideLockScreen() {
+  const el = document.getElementById('lock-overlay');
+  if (!el) return;
+  el.classList.add('unlocking');
+  setTimeout(() => el.remove(), 350);
+}
+
+async function tryBiometricUnlock() {
+  const btn = document.getElementById('lock-bio-btn');
+  if (btn) { btn.disabled = true; btn.querySelector('i').className = 'ph ph-circle-notch spinning'; }
+  const ok = await authenticateBiometric();
+  if (ok) {
+    hideLockScreen();
+  } else {
+    if (btn) {
+      btn.disabled = false;
+      btn.querySelector('i').className = 'ph ph-fingerprint';
+    }
+    showToast('인증 실패. 다시 시도해주세요.');
+  }
+}
+
+async function checkBiometricLock() {
+  if (!isBiometricEnabled()) return;
+  showLockScreen();
+  await tryBiometricUnlock();
+}
+
+async function toggleBiometricLock() {
+  if (isBiometricEnabled()) {
+    localStorage.removeItem('biometricEnabled');
+    localStorage.removeItem('biometricCredId');
+    showToast('생체인증 잠금이 해제되었습니다');
+    renderSettings();
+  } else {
+    showToast('생체인증을 등록해주세요...');
+    const ok = await registerBiometric();
+    if (ok) {
+      showToast('✅ 생체인증 잠금이 설정되었습니다');
+    } else {
+      showToast('등록에 실패했습니다. 기기에서 생체인증을 지원하는지 확인해주세요.');
+    }
+    renderSettings();
+  }
+}
+
+// 앱이 백그라운드에서 복귀할 때 잠금
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && isBiometricEnabled()) {
+    showLockScreen();
+    tryBiometricUnlock();
+  }
+});
+
 function renderSettings() {
   const notifLabel = {
     active: '<span class="status-dot active"></span>활성화됨',
@@ -522,6 +649,18 @@ function renderSettings() {
         <div class="info-row-label"><i class="ph ph-activity info-row-icon"></i>알림 상태</div>
         <div class="info-row-value">${notifLabel}</div>
       </div>
+    </div>
+    <div class="section-title">보안 설정</div>
+    <div class="info-card">
+      ${isBiometricSupported() ? `
+      <div class="info-row">
+        <div class="info-row-label"><i class="ph ph-fingerprint info-row-icon"></i>생체인증 잠금</div>
+        <button class="toggle ${isBiometricEnabled() ? 'on' : ''}" onclick="toggleBiometricLock()"></button>
+      </div>` : `
+      <div class="info-row">
+        <div class="info-row-label"><i class="ph ph-fingerprint info-row-icon"></i>생체인증 잠금</div>
+        <div class="info-row-value" style="font-size:11px">미지원 기기</div>
+      </div>`}
     </div>
     <div class="section-title">화면 설정</div>
     <div class="info-card">
@@ -972,7 +1111,7 @@ function renderPortfolioCard(item) {
     <div class="stock-card-main">
       <div class="port-row">
         <div class="port-info">
-          <div class="port-name">${q?.korName || item.name || item.symbol}</div>
+          <div class="port-name">${item.name || q?.korName || item.symbol}</div>
           <div class="port-qty-row">${marketBadge}<span class="port-qty-num">${item.qty.toLocaleString('ko-KR')}주</span>${volNum ? `<span class="port-vol-sep"> · </span><span class="port-vol-left">${volNum}</span>` : ''}${!isKR ? `<span class="port-vol-sep"> · </span><span class="port-ticker">${item.symbol}</span>` : ''}</div>
           ${regularLineLeft}
         </div>
@@ -1152,7 +1291,7 @@ function renderDetailPanel(symbol) {
       </div>
     </div>` : '';
 
-  const name = q?.korName || item.name || item.symbol;
+  const name = item.name || q?.korName || item.symbol;
   const isLandscape = window.matchMedia('(orientation: landscape)').matches;
   detail.innerHTML = `
   <div class="ls-detail-content">
@@ -1193,6 +1332,10 @@ function renderDetailPanel(symbol) {
         <span class="ls-detail-stat-label">수익률</span>
         <span class="ls-detail-stat-value">${gainPct !== null ? `${gainSign}${gainPct.toFixed(2)}%` : '—'}</span>
       </div>
+      ${item.broker ? `<div class="ls-detail-stat">
+        <span class="ls-detail-stat-label">증권사</span>
+        <span class="ls-detail-stat-value">${item.broker}</span>
+      </div>` : ''}
     </div>
     ${krwBlock}
     <div class="ls-detail-actions">
@@ -1401,7 +1544,7 @@ function attachPortfolioDoubleTap(wrap) {
       const item = state.portfolio[symbol];
       if (!item) return;
       const q = state.portfolioPrices[symbol];
-      const name = q?.korName || item.name || symbol;
+      const name = item.name || q?.korName || symbol;
       loadNewsForStock(symbol, name);
     } else {
       _lastTap = { symbol, time: now };
@@ -1545,9 +1688,11 @@ function openPortfolioModal(symbol, name, currency) {
 
   const buyInput = document.getElementById('portfolio-buy-price');
   const qtyInput = document.getElementById('portfolio-qty');
+  const brokerSelect = document.getElementById('portfolio-broker');
   buyInput.value = existing?.buyPrice || '';
   qtyInput.value = existing?.qty || '';
   if (!existing && price) buyInput.placeholder = formatPriceInputPlain(price, cur);
+  if (brokerSelect) brokerSelect.value = existing?.broker || '';
 
   document.getElementById('portfolio-modal-overlay').classList.add('open');
 }
@@ -1560,6 +1705,7 @@ function closePortfolioModal() {
 async function savePortfolioModal() {
   const buyPrice = parseFloat(document.getElementById('portfolio-buy-price').value.replace(/,/g, '')) || null;
   const qty = parseFloat(document.getElementById('portfolio-qty').value.replace(/,/g, '')) || null;
+  const broker = document.getElementById('portfolio-broker')?.value || '';
   const { symbol, name, currency, existing } = portfolioModalData;
 
   if (!buyPrice || !qty) { showToast('매수가와 수량을 입력해주세요'); return; }
@@ -1567,7 +1713,7 @@ async function savePortfolioModal() {
   const q = state.portfolioPrices[symbol];
   const cur = q?.currency || currency;
   try {
-    await savePortfolioItem(symbol, name, buyPrice, qty, cur);
+    await savePortfolioItem(symbol, name, buyPrice, qty, cur, broker);
   } catch {
     showToast('저장 중 오류가 발생했습니다');
     return;
@@ -1993,6 +2139,7 @@ async function init() {
     await updateNotifStatus();
     renderBanners();
     setupEventListeners();
+    checkBiometricLock();
 
     // Load data
     state.loading = true;

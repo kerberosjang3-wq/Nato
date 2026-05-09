@@ -274,6 +274,37 @@
       </div>
     </div>
 
+    <div class="form-group">
+      <div class="form-label">
+        <span class="label-dot" style="background:var(--text-sub)"></span>
+        증권사 <span style="font-weight:400;font-size:12px">(선택사항)</span>
+      </div>
+      <div class="form-input-wrap">
+        <select class="form-input form-select" id="portfolio-broker">
+          <option value="">선택 안함</option>
+          <optgroup label="국내">
+            <option>키움증권</option>
+            <option>미래에셋증권</option>
+            <option>삼성증권</option>
+            <option>NH투자증권</option>
+            <option>KB증권</option>
+            <option>신한투자증권</option>
+            <option>한국투자증권</option>
+            <option>대신증권</option>
+            <option>토스증권</option>
+            <option>카카오페이증권</option>
+            <option>하나증권</option>
+          </optgroup>
+          <optgroup label="해외">
+            <option>Interactive Brokers</option>
+            <option>Charles Schwab</option>
+            <option>Robinhood</option>
+          </optgroup>
+          <option value="기타">기타</option>
+        </select>
+      </div>
+    </div>
+
     <div class="modal-actions">
       <button class="btn-cancel" id="portfolio-modal-cancel">취소</button>
       <button class="btn-save" id="portfolio-modal-save">저장</button>
