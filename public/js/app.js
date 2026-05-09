@@ -80,6 +80,7 @@ const state = {
   news: [],
   newsLoading: false,
   newsLoaded: false,
+  newsFilter: null,  // { symbol, name } 또는 null(전체)
   watchlistSearchResults: [],
   watchlistSearchQ: '',
   watchlistSearching: false,
@@ -1287,6 +1288,30 @@ function renderPortfolioHoldings() {
     html += foreign.map(item => renderPortfolioCard(item)).join('');
   }
   wrap.innerHTML = html;
+  attachPortfolioDoubleTap(wrap);
+}
+
+// 더블탭으로 해당 종목 뉴스 열기
+let _lastTap = { symbol: null, time: 0 };
+function attachPortfolioDoubleTap(wrap) {
+  wrap.addEventListener('click', e => {
+    const card = e.target.closest('.stock-card[data-portfolio="1"]');
+    if (!card) return;
+    // 버튼 요소 클릭은 무시
+    if (e.target.closest('button')) return;
+    const symbol = card.dataset.symbol;
+    const now = Date.now();
+    if (_lastTap.symbol === symbol && now - _lastTap.time < 350) {
+      _lastTap = { symbol: null, time: 0 };
+      const item = state.portfolio[symbol];
+      if (!item) return;
+      const q = state.portfolioPrices[symbol];
+      const name = q?.korName || item.name || symbol;
+      loadNewsForStock(symbol, name);
+    } else {
+      _lastTap = { symbol, time: now };
+    }
+  }, { capture: false });
 }
 
 // ── Portfolio Search ───────────────────────────────────────────────────────
@@ -1499,6 +1524,7 @@ async function loadNews() {
   if (!el) return;
 
   if (state.newsLoading) return;
+  state.newsFilter = null;
   state.newsLoading = true;
   renderNews();
 
@@ -1515,21 +1541,60 @@ async function loadNews() {
   }
 }
 
+async function loadNewsForStock(symbol, name) {
+  state.newsFilter = { symbol, name };
+  state.newsLoading = true;
+  state.newsLoaded = false;
+  state.news = [];
+  switchTab('news');
+  renderNews();
+
+  try {
+    const res = await fetch(`/api/news?symbol=${encodeURIComponent(symbol)}&name=${encodeURIComponent(name)}`);
+    const data = await res.json();
+    state.news = data.articles || [];
+    state.newsLoaded = true;
+  } catch (_) {
+    state.news = [];
+  } finally {
+    state.newsLoading = false;
+    renderNews();
+  }
+}
+
+function clearNewsFilter() {
+  state.newsFilter = null;
+  state.newsLoaded = false;
+  state.news = [];
+  loadNews();
+}
+
 function renderNews() {
   const el = document.getElementById('news-list');
   if (!el) return;
 
+  const filterBar = state.newsFilter
+    ? `<div class="news-filter-bar">
+        <i class="ph ph-funnel-simple"></i>
+        <span class="news-filter-name">${state.newsFilter.name}</span>
+        <span class="news-filter-label">뉴스</span>
+        <button class="news-filter-clear" onclick="clearNewsFilter()">
+          <i class="ph ph-x"></i> 전체보기
+        </button>
+      </div>`
+    : '';
+
   if (state.newsLoading && !state.newsLoaded) {
-    el.innerHTML = '<div class="news-loading"><i class="ph ph-spinner news-spin"></i><span>뉴스를 불러오는 중...</span></div>';
+    el.innerHTML = filterBar + '<div class="news-loading"><i class="ph ph-spinner news-spin"></i><span>뉴스를 불러오는 중...</span></div>';
     return;
   }
 
   if (!state.news.length) {
-    el.innerHTML = `<div class="news-empty"><i class="ph ph-newspaper"></i><span>${state.newsLoaded ? '관련 뉴스가 없습니다' : '보유종목을 추가하면 관련 뉴스를 볼 수 있습니다'}</span></div>`;
+    el.innerHTML = filterBar + `<div class="news-empty"><i class="ph ph-newspaper"></i><span>${state.newsLoaded ? '관련 뉴스가 없습니다' : '보유종목을 추가하면 관련 뉴스를 볼 수 있습니다'}</span></div>`;
     return;
   }
 
-  el.innerHTML = state.news.map(a => {
+  el.innerHTML = filterBar + state.news.map(a => {
     const ago = a.ts ? timeAgo(a.ts) : '';
     const src = a.source ? `<span class="news-source">${a.source}</span>` : '';
     return `<a class="news-card" href="${a.link || '#'}" target="_blank" rel="noopener">

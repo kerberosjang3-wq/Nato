@@ -307,6 +307,23 @@ html, body {
 }
 .news-source { font-weight: 500; }
 .news-card-time::before { content: '·'; margin-right: 4px; }
+.news-filter-bar {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--primary-glow); border: 1px solid var(--primary);
+  border-radius: 10px; padding: 9px 12px;
+  margin-bottom: 12px; font-size: 13px; font-weight: 600; color: var(--primary);
+}
+.news-filter-bar i { font-size: 14px; flex-shrink: 0; }
+.news-filter-name { font-weight: 800; }
+.news-filter-label { color: var(--text-sub); font-weight: 500; }
+.news-filter-clear {
+  margin-left: auto; background: var(--bg-elevated); border: 1px solid var(--border);
+  color: var(--text-sub); border-radius: 7px; padding: 4px 9px;
+  font-size: 11px; font-weight: 600; cursor: pointer;
+  display: flex; align-items: center; gap: 3px;
+}
+.news-filter-clear i { font-size: 11px; }
+
 .news-loading, .news-empty {
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;

@@ -609,24 +609,31 @@ app.get('/api/fxrates', async (req, res) => {
 
 // ── News (Google News RSS per portfolio holding) ───────────────────────────
 app.get('/api/news', async (req, res) => {
-  const { clientId } = req.query;
-  if (!clientId) return res.json({ articles: [] });
+  const { clientId, symbol, name } = req.query;
 
   const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 
-  // 보유종목 이름 수집
-  let portfolio = {};
-  try {
-    const store = await getStore();
-    portfolio = store.portfolios?.[clientId] || {};
-  } catch (_) {}
-  if (!Object.keys(portfolio).length) return res.json({ articles: [] });
+  // 단일 종목 모드: symbol + name이 직접 전달된 경우
+  let queries;
+  if (symbol && name) {
+    queries = [{ symbol, name }];
+  } else {
+    if (!clientId) return res.json({ articles: [] });
 
-  // 종목별 검색어 수집 (한글명 우선, 없으면 심볼)
-  const queries = Object.values(portfolio).map(item => {
-    const name = item.korName || item.name || item.symbol;
-    return { symbol: item.symbol, name };
-  });
+    // 보유종목 이름 수집
+    let portfolio = {};
+    try {
+      const store = await getStore();
+      portfolio = store.portfolios?.[clientId] || {};
+    } catch (_) {}
+    if (!Object.keys(portfolio).length) return res.json({ articles: [] });
+
+    // 종목별 검색어 수집 (한글명 우선, 없으면 심볼)
+    queries = Object.values(portfolio).map(item => {
+      const name = item.korName || item.name || item.symbol;
+      return { symbol: item.symbol, name };
+    });
+  }
 
   // Google News RSS 병렬 fetch
   const cutoff = Date.now() - 24 * 60 * 60 * 1000;
