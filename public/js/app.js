@@ -692,6 +692,7 @@ function setupSwipeForList(list) {
     const card = activeCard;
     activeCard = null;
     if (!card) return;
+    if (window.matchMedia('(orientation: landscape)').matches) return;
     const dx = swipeStart.x - e.changedTouches[0].clientX;
     const dy = Math.abs(swipeStart.y - e.changedTouches[0].clientY);
     if (dx > 30 && dy < 80) revealActions(card);
@@ -712,6 +713,7 @@ function setupSwipeForList(list) {
     const card = mouseCard;
     mouseCard = null;
     if (!card) return;
+    if (window.matchMedia('(orientation: landscape)').matches) return;
     const dx = swipeStart.x - e.clientX;
     const dy = Math.abs(swipeStart.y - e.clientY);
     if (dx > 30 && dy < 80) revealActions(card);
@@ -1777,6 +1779,8 @@ function setupEventListeners() {
   // Orientation change — re-render active screen to apply landscape/portrait logic
   window.addEventListener('orientationchange', () => {
     setTimeout(() => {
+      // Close any open swipe-delete card when rotating to landscape
+      if (currentSwipedCard) { currentSwipedCard.classList.remove('swiped'); currentSwipedCard = null; }
       if (state.currentTab === 'portfolio') {
         renderPortfolioHoldings();
         if (!isLandscape()) clearDetailPanel();
