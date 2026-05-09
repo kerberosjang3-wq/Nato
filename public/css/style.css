@@ -1139,6 +1139,17 @@ html, body {
 .portfolio-section-count.kr { color: #5b9bd5; background: rgba(91,155,213,0.14); }
 .portfolio-section-count.us { color: #4caf82; background: rgba(76,175,130,0.14); }
 
+.section-ud-wrap { display: flex; align-items: center; gap: 4px; }
+.section-ud {
+  display: inline-flex; align-items: center; gap: 2px;
+  font-size: 10px; font-weight: 700;
+  border-radius: 5px; padding: 1px 5px;
+  line-height: 1.4;
+}
+.section-ud i { font-size: 10px; }
+.section-up   { color: var(--stock-up);   background: rgba(255, 82,  82,  0.12); }
+.section-down { color: var(--stock-down); background: rgba(62,  123, 250, 0.12); }
+
 /* ── 카드 내 마켓 배지 ── */
 .market-badge {
   display: inline-flex; align-items: center;

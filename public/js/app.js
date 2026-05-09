@@ -1254,11 +1254,20 @@ function renderPortfolioHoldings() {
   const domestic = sorted.filter(item => getItemCurrency(item) === 'KRW');
   const foreign  = sorted.filter(item => getItemCurrency(item) !== 'KRW');
 
+  const upDownBadges = group => {
+    const up   = group.filter(i => (state.portfolioPrices[i.symbol]?.regularMarketChangePercent ?? 0) > 0).length;
+    const down = group.filter(i => (state.portfolioPrices[i.symbol]?.regularMarketChangePercent ?? 0) < 0).length;
+    const upBadge   = up   > 0 ? `<span class="section-ud section-up"><i class="ph ph-trend-up"></i>${up}</span>`   : '';
+    const downBadge = down > 0 ? `<span class="section-ud section-down"><i class="ph ph-trend-down"></i>${down}</span>` : '';
+    return upBadge + downBadge;
+  };
+
   let html = summary;
   if (domestic.length) {
     html += `<div class="portfolio-section-header">
       <span class="portfolio-section-flag">🇰🇷</span>
       <span class="portfolio-section-label">국내주식</span>
+      <span class="section-ud-wrap">${upDownBadges(domestic)}</span>
       <span class="portfolio-section-count kr">${domestic.length}종목</span>
     </div>`;
     html += domestic.map(item => renderPortfolioCard(item)).join('');
@@ -1267,6 +1276,7 @@ function renderPortfolioHoldings() {
     html += `<div class="portfolio-section-header">
       <span class="portfolio-section-flag">🇺🇸</span>
       <span class="portfolio-section-label">해외주식</span>
+      <span class="section-ud-wrap">${upDownBadges(foreign)}</span>
       <span class="portfolio-section-count us">${foreign.length}종목</span>
     </div>`;
     html += foreign.map(item => renderPortfolioCard(item)).join('');
