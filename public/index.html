@@ -33,26 +33,6 @@
 <body>
 <div id="app">
 
-  <!-- ── Header + search dropdown ── -->
-  <div class="header-outer">
-    <header class="header">
-      <div class="header-search-wrap">
-        <input type="search" class="header-search-input" id="home-search-input"
-          placeholder="" autocomplete="off" autocorrect="off" spellcheck="false">
-        <button class="search-field-clear" id="home-search-clear">
-          <i class="ph ph-x-circle"></i>
-        </button>
-        <button class="header-search-btn" id="home-search-btn">
-          <i class="ph ph-magnifying-glass"></i>
-        </button>
-      </div>
-      <button class="header-bell-btn" id="refresh-btn" title="새로고침">
-        <i class="ph ph-bell"></i>
-      </button>
-    </header>
-    <!-- Search results dropdown -->
-    <div id="home-search-results"></div>
-  </div>
 
   <!-- ── Main content ── -->
   <main class="main">
@@ -89,7 +69,7 @@
 
       <!-- List control panel -->
       <div class="list-control">
-        <button class="lc-add-btn" onclick="document.getElementById('home-search-input').focus()">
+        <button class="lc-add-btn" onclick="document.getElementById('home-search-input')?.focus()">
           <i class="ph ph-plus-circle"></i>
           <span>종목추가</span>
         </button>
