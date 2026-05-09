@@ -907,11 +907,7 @@ function renderPortfolioCard(item) {
   // Triangle + absolute pct
   const triangle = pct != null ? (pct > 0 ? '▲' : pct < 0 ? '▼' : '—') : '';
   const absPctStr = pct != null ? `${triangle} ${Math.abs(pct).toFixed(2)}%` : '';
-  // Volume with comma only (no M/K abbreviation)
   const volNum = volume ? volume.toLocaleString('ko-KR') : '';
-
-  const delayBadge = currency !== 'KRW' ? `<span class="port-delay-badge">지연</span>` : '';
-  const volLeft = volNum ? `<div class="port-vol-left">${volNum}</div>` : '';
 
   // 정규장 row — only during pre/post market, shown in LEFT info column
   let regularLineLeft = '';
@@ -935,9 +931,8 @@ function renderPortfolioCard(item) {
       <div class="port-row">
         ${stockLogoHtml(item.symbol, q?.korName || item.name)}
         <div class="port-info">
-          ${delayBadge}
           <div class="port-name">${q?.korName || item.name || item.symbol}</div>
-          ${volLeft}
+          <div class="port-qty-row"><span class="port-qty-num">${item.qty.toLocaleString('ko-KR')}주</span>${volNum ? `<span class="port-vol-sep"> · </span><span class="port-vol-left">${volNum}</span>` : ''}</div>
           ${regularLineLeft}
         </div>
         <div class="port-price-col">

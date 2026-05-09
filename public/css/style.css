@@ -444,20 +444,18 @@ html, body {
   flex: 1; min-width: 0;
   display: flex; flex-direction: column; gap: 1px;
 }
-.port-delay-badge {
-  display: inline-block;
-  font-size: 9px; font-weight: 700; color: var(--text-sub);
-  background: var(--bg-elevated); border-radius: 3px;
-  padding: 1px 4px; align-self: flex-start; line-height: 1.4;
-}
 .port-name {
   font-size: 13px; font-weight: 700; color: var(--text);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.port-vol-left {
+.port-qty-row {
+  display: flex; align-items: center;
   font-size: 10px; color: var(--text-sub);
   font-variant-numeric: tabular-nums;
 }
+.port-qty-num { font-weight: 600; color: var(--text-sub); }
+.port-vol-sep { color: var(--border); }
+.port-vol-left { color: var(--text-sub); }
 
 /* Right price column */
 .port-price-col {
