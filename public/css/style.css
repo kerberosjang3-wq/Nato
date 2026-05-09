@@ -776,57 +776,57 @@ html, body {
 .modal-overlay.open { opacity: 1; pointer-events: all; }
 
 .modal {
-  background: var(--bg-card); 
+  background: var(--bg-card);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   width: 100%; max-width: 480px;
-  padding: 24px 24px calc(24px + var(--safe-bottom));
+  padding: 18px 18px calc(18px + var(--safe-bottom));
   transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  max-height: 92vh; overflow-y: auto;
+  max-height: 90vh; overflow-y: auto;
 }
 .modal-overlay.open .modal { transform: translateY(0); }
 
-.modal-handle { width: 48px; height: 5px; background: var(--bg-elevated); border-radius: 10px; margin: 0 auto 24px; }
-.modal-title { font-size: 22px; font-weight: 800; margin-bottom: 6px; color: var(--text); }
-.modal-sub { font-size: 14px; color: var(--text-sub); margin-bottom: 24px; }
+.modal-handle { width: 40px; height: 4px; background: var(--bg-elevated); border-radius: 10px; margin: 0 auto 16px; }
+.modal-title { font-size: 17px; font-weight: 800; margin-bottom: 4px; color: var(--text); }
+.modal-sub { font-size: 12px; color: var(--text-sub); margin-bottom: 14px; }
 
 .modal-stock-info {
-  background: var(--bg-elevated); border-radius: var(--radius-md); padding: 20px;
-  margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center;
+  background: var(--bg-elevated); border-radius: var(--radius-sm); padding: 12px 14px;
+  margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;
   border: 1px solid var(--border);
 }
-.modal-stock-name { font-size: 18px; font-weight: 700; color: var(--text); }
-.modal-stock-symbol { font-size: 13px; font-weight: 600; color: var(--text-sub); margin-top: 2px; }
+.modal-stock-name { font-size: 15px; font-weight: 700; color: var(--text); }
+.modal-stock-symbol { font-size: 12px; font-weight: 600; color: var(--text-sub); margin-top: 2px; }
 .modal-current { text-align: right; }
-.modal-current-price { font-size: 20px; font-weight: 800; color: var(--text); }
-.modal-current-label { font-size: 11px; font-weight: 700; color: var(--text-sub); margin-bottom: 2px; text-transform: uppercase; }
+.modal-current-price { font-size: 16px; font-weight: 800; color: var(--text); }
+.modal-current-label { font-size: 10px; font-weight: 700; color: var(--text-sub); margin-bottom: 2px; text-transform: uppercase; }
 
-.form-group { margin-bottom: 20px; }
-.form-label { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
-.form-label .label-dot { width: 10px; height: 10px; border-radius: 50%; }
-.form-label .label-dot.alert { background: var(--warning); box-shadow: 0 0 10px var(--warning); }
-.form-label .label-dot.target { background: var(--success); box-shadow: 0 0 10px var(--success); }
+.form-group { margin-bottom: 13px; }
+.form-label { font-size: 12px; font-weight: 700; color: var(--text); margin-bottom: 7px; display: flex; align-items: center; gap: 6px; }
+.form-label .label-dot { width: 8px; height: 8px; border-radius: 50%; }
+.form-label .label-dot.alert { background: var(--warning); box-shadow: 0 0 8px var(--warning); }
+.form-label .label-dot.target { background: var(--success); box-shadow: 0 0 8px var(--success); }
 
 .form-input {
   width: 100%; background: var(--bg-input);
-  border: 2px solid var(--border); border-radius: 14px;
-  padding: 16px; font-size: 17px; color: var(--text); font-weight: 600;
+  border: 1.5px solid var(--border); border-radius: 12px;
+  padding: 11px 13px; font-size: 15px; color: var(--text); font-weight: 600;
   font-family: inherit; outline: none; transition: all 0.2s;
 }
-.form-input:focus { border-color: var(--primary); background: var(--bg-card); box-shadow: 0 0 0 4px var(--primary-glow); }
+.form-input:focus { border-color: var(--primary); background: var(--bg-card); box-shadow: 0 0 0 3px var(--primary-glow); }
 .form-input::placeholder { color: var(--text-sub); opacity: 0.5; }
-.form-input-hint { font-size: 12px; color: var(--text-sub); margin-top: 6px; font-weight: 500; }
+.form-input-hint { font-size: 11px; color: var(--text-sub); margin-top: 5px; font-weight: 500; }
 
-.modal-actions { display: flex; gap: 12px; margin-top: 32px; }
+.modal-actions { display: flex; gap: 10px; margin-top: 18px; }
 .btn-cancel {
   flex: 1; background: var(--bg-elevated); color: var(--text);
-  border: 1px solid var(--border); border-radius: 16px;
-  padding: 16px; font-size: 16px; font-weight: 700; cursor: pointer; transition: background 0.2s;
+  border: 1px solid var(--border); border-radius: 12px;
+  padding: 12px; font-size: 14px; font-weight: 700; cursor: pointer; transition: background 0.2s;
 }
 .btn-save {
   flex: 1.5; background: var(--primary); color: white;
-  border: none; border-radius: 16px; padding: 16px;
-  font-size: 16px; font-weight: 800; cursor: pointer;
+  border: none; border-radius: 12px; padding: 12px;
+  font-size: 14px; font-weight: 800; cursor: pointer;
   transition: all 0.2s; box-shadow: 0 4px 12px var(--primary-glow);
 }
 .btn-save:active { transform: scale(0.97); }
@@ -1246,8 +1246,8 @@ html, body {
   .port-name { font-size: 11px; }
   .psummary-header-amount { font-size: 22px; }
   .more-menu-item { font-size: 14px; padding: 14px 16px; }
-  .modal { padding: 16px 14px; }
-  .form-input { font-size: 14px; }
+  .modal { padding: 14px 12px; }
+  .form-input { font-size: 14px; padding: 10px 12px; }
 }
 
 /* ── iOS 설치 가이드 바텀시트 ── */

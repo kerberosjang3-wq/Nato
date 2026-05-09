@@ -722,41 +722,58 @@ function formatPriceInputPlain(price, currency) {
 }
 
 // ── Portfolio Rendering ────────────────────────────────────────────────────
+function getDisplayPrice(q) {
+  if (!q) return null;
+  const isPost = q.marketState === 'POST' && q.postMarketPrice;
+  const isPre  = q.marketState === 'PRE'  && q.preMarketPrice;
+  return isPost ? q.postMarketPrice : isPre ? q.preMarketPrice : (q.regularMarketPrice || null);
+}
+
 function renderPortfolioSummary() {
   const items = Object.values(state.portfolio);
   if (!items.length) return '';
 
   // 국내(KRW) / 해외(non-KRW) 분리 집계
-  const krw = { invested: 0, current: 0, hasPrices: false, count: 0 };
-  const foreign = { investedKrw: 0, currentKrw: 0, hasPrices: false, count: 0, byCurrency: {} };
+  // investedWithPrice: 가격이 있는 종목만 포함 (손익/수익률 계산 기준)
+  const krw = { invested: 0, investedWithPrice: 0, current: 0, hasPrices: false, count: 0 };
+  const foreign = { investedKrw: 0, investedKrwWithPrice: 0, currentKrw: 0, hasPrices: false, count: 0, byCurrency: {} };
 
   for (const item of items) {
     const q = state.portfolioPrices[item.symbol];
     const currency = q?.currency || item.currency || 'USD';
-    const price = q?.regularMarketPrice;
+    const price = getDisplayPrice(q);
     const invested = (item.buyPrice || 0) * (item.qty || 0);
     const current = price ? price * item.qty : null;
 
     if (currency === 'KRW') {
       krw.count++;
       krw.invested += invested;
-      if (current !== null) { krw.current += current; krw.hasPrices = true; }
+      if (current !== null) {
+        krw.current += current;
+        krw.investedWithPrice += invested;
+        krw.hasPrices = true;
+      }
     } else {
       foreign.count++;
-      if (!foreign.byCurrency[currency]) foreign.byCurrency[currency] = { invested: 0, current: 0, hasPrices: false };
+      if (!foreign.byCurrency[currency]) foreign.byCurrency[currency] = { invested: 0, investedWithPrice: 0, current: 0, hasPrices: false };
       foreign.byCurrency[currency].invested += invested;
       const rate = state.fxRates[currency] || null;
       if (rate) foreign.investedKrw += invested * rate;
       if (current !== null) {
         foreign.byCurrency[currency].current += current;
+        foreign.byCurrency[currency].investedWithPrice += invested;
         foreign.byCurrency[currency].hasPrices = true;
-        if (rate) { foreign.currentKrw += current * rate; foreign.hasPrices = true; }
+        if (rate) {
+          foreign.currentKrw += current * rate;
+          foreign.investedKrwWithPrice += invested * rate;
+          foreign.hasPrices = true;
+        }
       }
     }
   }
 
-  // 전체 합산 (원화 기준)
-  const totalInvested = krw.invested + foreign.investedKrw;
+  // 전체 합산 (원화 기준) — 가격이 있는 종목만 투자금/평가금을 대응시켜 손익 계산
+  const totalInvested = krw.investedWithPrice + foreign.investedKrwWithPrice;
   const totalCurrent  = (krw.hasPrices ? krw.current : 0) + (foreign.hasPrices ? foreign.currentKrw : 0);
   const hasTotal = krw.hasPrices || foreign.hasPrices;
   const totalGain = hasTotal ? totalCurrent - totalInvested : null;
@@ -793,8 +810,8 @@ function renderPortfolioSummary() {
   // 국내주식 컬럼 데이터
   let krwCol = '';
   if (krw.count > 0) {
-    const gain = krw.hasPrices ? krw.current - krw.invested : null;
-    const gainPct = gain !== null && krw.invested > 0 ? (gain / krw.invested) * 100 : null;
+    const gain = krw.hasPrices ? krw.current - krw.investedWithPrice : null;
+    const gainPct = gain !== null && krw.investedWithPrice > 0 ? (gain / krw.investedWithPrice) * 100 : null;
     const gc = gain !== null ? (gain >= 0 ? 'gain-up' : 'gain-down') : '';
     const gs = gain !== null && gain >= 0 ? '+' : '';
     const detail = statsGrid([
@@ -812,14 +829,14 @@ function renderPortfolioSummary() {
   // 해외주식 컬럼 데이터
   let foreignCol = '';
   if (foreign.count > 0) {
-    const gain = foreign.hasPrices ? foreign.currentKrw - foreign.investedKrw : null;
-    const gainPct = gain !== null && foreign.investedKrw > 0 ? (gain / foreign.investedKrw) * 100 : null;
+    const gain = foreign.hasPrices ? foreign.currentKrw - foreign.investedKrwWithPrice : null;
+    const gainPct = gain !== null && foreign.investedKrwWithPrice > 0 ? (gain / foreign.investedKrwWithPrice) * 100 : null;
     const gc = gain !== null ? (gain >= 0 ? 'gain-up' : 'gain-down') : '';
     const gs = gain !== null && gain >= 0 ? '+' : '';
     let detailHtml = '';
     for (const [currency, g] of Object.entries(foreign.byCurrency)) {
-      const cgain = g.hasPrices ? g.current - g.invested : null;
-      const cgainPct = cgain !== null && g.invested > 0 ? (cgain / g.invested) * 100 : null;
+      const cgain = g.hasPrices ? g.current - g.investedWithPrice : null;
+      const cgainPct = cgain !== null && g.investedWithPrice > 0 ? (cgain / g.investedWithPrice) * 100 : null;
       const cgc = cgain !== null ? (cgain >= 0 ? 'gain-up' : 'gain-down') : '';
       const cgs = cgain !== null && cgain >= 0 ? '+' : '';
       const rate = state.fxRates[currency];
@@ -1088,8 +1105,8 @@ function renderDetailPanel(symbol) {
   if (!item) { clearDetailPanel(); return; }
 
   const q = state.portfolioPrices[symbol];
-  const currentPrice = q?.regularMarketPrice;
-  const pct = q?.regularMarketChangePercent;
+  const currentPrice = getDisplayPrice(q);
+  const pct = q ? (q.marketState === 'POST' && q.postMarketChangePercent ? q.postMarketChangePercent : q.marketState === 'PRE' && q.preMarketChangePercent ? q.preMarketChangePercent : q.regularMarketChangePercent) : null;
   const currency = q?.currency || item.currency || 'USD';
   const invested = (item.buyPrice || 0) * (item.qty || 0);
   const currentVal = currentPrice ? currentPrice * item.qty : null;
