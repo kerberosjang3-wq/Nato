@@ -357,17 +357,19 @@ app.get('/api/search', async (req, res) => {
   if (/[가-힣]/.test(q) && results.length < 5) {
     try {
       const naverRes = await _fetch(
-        `https://ac.stock.naver.com/ac?q=${encodeURIComponent(q)}&target=stock%2Cipo%2Cindex`,
+        `https://ac.stock.naver.com/ac?q=${encodeURIComponent(q)}&target=stock%2Cipo%2Cindex%2Cetf`,
         { timeout: 5000, headers: { Referer: 'https://finance.naver.com/' } }
       );
       const naverData = await naverRes.json();
       (naverData?.items || []).forEach(item => {
         if (!item.code || !item.typeCode) return;
-        let symbol, exchange;
+        let symbol, exchange, quoteType = 'EQUITY';
         if (item.nationCode === 'KOR' && /^\d{6}$/.test(item.code)) {
           const isKosdaq = item.typeCode === 'KOSDAQ';
+          const isEtf = item.typeCode === 'ETF';
           symbol = item.code + (isKosdaq ? '.KQ' : '.KS');
           exchange = isKosdaq ? 'KOQ' : 'KSC';
+          if (isEtf) quoteType = 'ETF';
         } else if (PRIMARY_EXCHANGES.has(item.typeCode)) {
           symbol = item.code;
           exchange = item.typeCode;
@@ -375,7 +377,7 @@ app.get('/api/search', async (req, res) => {
           return;
         }
         if (!resultsSet.has(symbol)) {
-          results.push({ symbol, shortname: item.name, longname: item.name, exchange, quoteType: 'EQUITY' });
+          results.push({ symbol, shortname: item.name, longname: item.name, exchange, quoteType });
           resultsSet.add(symbol);
         }
       });
