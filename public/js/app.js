@@ -75,6 +75,7 @@ const state = {
   fxRatesUpdatedAt: null,
   expandedPortfolioCards: new Set(),
   summaryExpanded: false,
+  summaryGroupExpanded: {},
   watchlistSearchResults: [],
   watchlistSearchQ: '',
   watchlistSearching: false,
@@ -724,143 +725,110 @@ function renderPortfolioSummary() {
   const items = Object.values(state.portfolio);
   if (!items.length) return '';
 
-  const groups = {};
+  // 국내(KRW) / 해외(non-KRW) 분리 집계
+  const krw = { invested: 0, current: 0, hasPrices: false, count: 0 };
+  const foreign = { investedKrw: 0, currentKrw: 0, hasPrices: false, count: 0, byCurrency: {} };
+
   for (const item of items) {
     const q = state.portfolioPrices[item.symbol];
     const currency = q?.currency || item.currency || 'USD';
-    if (!groups[currency]) groups[currency] = { invested: 0, current: 0, hasPrices: false };
-    if (item.buyPrice && item.qty) {
-      const price = q?.regularMarketPrice;
-      groups[currency].invested += item.buyPrice * item.qty;
-      if (price) { groups[currency].current += price * item.qty; groups[currency].hasPrices = true; }
+    const price = q?.regularMarketPrice;
+    const invested = (item.buyPrice || 0) * (item.qty || 0);
+    const current = price ? price * item.qty : null;
+
+    if (currency === 'KRW') {
+      krw.count++;
+      krw.invested += invested;
+      if (current !== null) { krw.current += current; krw.hasPrices = true; }
+    } else {
+      foreign.count++;
+      if (!foreign.byCurrency[currency]) foreign.byCurrency[currency] = { invested: 0, current: 0, hasPrices: false };
+      foreign.byCurrency[currency].invested += invested;
+      const rate = state.fxRates[currency] || null;
+      if (rate) foreign.investedKrw += invested * rate;
+      if (current !== null) {
+        foreign.byCurrency[currency].current += current;
+        foreign.byCurrency[currency].hasPrices = true;
+        if (rate) { foreign.currentKrw += current * rate; foreign.hasPrices = true; }
+      }
     }
   }
 
-  const currencyNames = { KRW: '원화', USD: '달러', JPY: '엔화', EUR: '유로', GBP: '파운드' };
-  const numCurrencies = Object.keys(groups).length;
+  const summaryGroupRow = (key, flag, label, totalStr, pctStr, gc, detailHtml) => {
+    const isExp = !!(state.summaryGroupExpanded && state.summaryGroupExpanded[key]);
+    return `
+    <div class="psummary-group-row">
+      <div class="psummary-flag">${flag}</div>
+      <div class="psummary-group-info">
+        <div class="psummary-group-label">${label}</div>
+        <div class="psummary-group-val">
+          <span class="psummary-group-total">${totalStr}</span>
+          <span class="psummary-group-pct ${gc}">${pctStr}</span>
+        </div>
+      </div>
+      <button class="port-dots-btn" onclick="event.stopPropagation();toggleSummaryGroup('${key}')"><i class="ph ph-dots-three-vertical"></i></button>
+    </div>
+    <div class="psummary-group-detail${isExp ? ' expanded' : ''}" data-key="${key}">${detailHtml}</div>`;
+  };
 
-  // KRW 환산 합계
-  let krwCurrent = 0, krwInvested = 0, fxOk = true, anyPrices = false;
-  for (const [currency, g] of Object.entries(groups)) {
-    const rate = currency === 'KRW' ? 1 : (state.fxRates[currency] || null);
-    if (!rate) { fxOk = false; break; }
-    krwInvested += g.invested * rate;
-    if (g.hasPrices) { krwCurrent += g.current * rate; anyPrices = true; }
-  }
-  const krwGain = fxOk && anyPrices ? krwCurrent - krwInvested : null;
-  const krwGainPct = krwGain !== null && krwInvested > 0 ? (krwGain / krwInvested) * 100 : null;
+  const statsGrid = (rows) => `<div class="psummary-stats">${rows.map(([label, val, cls]) =>
+    `<div class="psummary-stat"><span class="psummary-stat-label">${label}</span><span class="psummary-stat-val${cls ? ' ' + cls : ''}">${val}</span></div>`
+  ).join('')}</div>`;
 
-  // 헤더 (총 평가금액 + 현재가)
-  let totalDisplay, totalLabel;
-  if (numCurrencies === 1) {
-    const [currency, g] = Object.entries(groups)[0];
-    totalDisplay = g.hasPrices ? formatPrice(g.current, currency) : '—';
-    totalLabel = '총 평가금액';
-  } else {
-    totalDisplay = fxOk && anyPrices ? formatPrice(krwCurrent, 'KRW') : '—';
-    totalLabel = '총 평가금액 (원화 환산)';
-  }
+  let html = '<div class="portfolio-summary">';
 
-  // 접힌 행 (손익 + 수익률)
-  let cgain, cgainPct, ccurrency;
-  if (numCurrencies === 1) {
-    const [currency, g] = Object.entries(groups)[0];
-    cgain = g.hasPrices ? g.current - g.invested : null;
-    cgainPct = cgain !== null && g.invested > 0 ? (cgain / g.invested) * 100 : null;
-    ccurrency = currency;
-  } else {
-    cgain = krwGain; cgainPct = krwGainPct; ccurrency = 'KRW';
-  }
-  const cgc = cgain !== null ? (cgain >= 0 ? 'gain-up' : 'gain-down') : '';
-  const cgs = cgain !== null && cgain >= 0 ? '+' : '';
-  const cgainStr = cgain !== null ? `${cgs}${formatPrice(Math.abs(cgain), ccurrency)}` : '—';
-  const cpctStr = cgainPct !== null ? `${cgs}${cgainPct.toFixed(1)}%` : '—';
-
-  // 펼친 내용 (상세 통계)
-  let expandContent = '';
-  if (numCurrencies === 1) {
-    const [currency, g] = Object.entries(groups)[0];
-    const gain = g.hasPrices ? g.current - g.invested : null;
-    const gainPct = gain !== null && g.invested > 0 ? (gain / g.invested) * 100 : null;
+  // 국내주식
+  if (krw.count > 0) {
+    const gain = krw.hasPrices ? krw.current - krw.invested : null;
+    const gainPct = gain !== null && krw.invested > 0 ? (gain / krw.invested) * 100 : null;
     const gc = gain !== null ? (gain >= 0 ? 'gain-up' : 'gain-down') : '';
     const gs = gain !== null && gain >= 0 ? '+' : '';
-    expandContent += `
-      <div class="psummary-inline">
-        <span>투자 <b>${formatPrice(g.invested, currency)}</b></span>
-        <span class="${gc}">손익 <b>${gain !== null ? `${gs}${formatPrice(Math.abs(gain), currency)}` : '—'}</b></span>
-        <span class="${gc}"><b>${gainPct !== null ? `${gs}${gainPct.toFixed(1)}%` : '—'}</b></span>
-      </div>`;
-    const rate = currency !== 'KRW' ? state.fxRates[currency] : null;
-    if (rate && g.hasPrices) {
-      const kgain = gain !== null ? gain * rate : null;
-      const kgc = kgain !== null ? (kgain >= 0 ? 'gain-up' : 'gain-down') : '';
-      expandContent += `<div class="psummary-krw-line">≈ ${formatPrice(g.current * rate, 'KRW')}${kgain !== null ? ` <span class="${kgc}">(${kgain >= 0 ? '+' : ''}${formatPrice(Math.abs(kgain), 'KRW')})</span>` : ''}</div>`;
-    }
-  } else {
-    const gc = krwGain !== null ? (krwGain >= 0 ? 'gain-up' : 'gain-down') : '';
-    const gs = krwGain !== null && krwGain >= 0 ? '+' : '';
-    expandContent += `
-      <div class="psummary-inline">
-        <span>투자 <b>${fxOk && krwInvested ? formatPrice(krwInvested, 'KRW') : '—'}</b></span>
-        <span class="${gc}">손익 <b>${krwGain !== null ? `${gs}${formatPrice(Math.abs(krwGain), 'KRW')}` : '—'}</b></span>
-        <span class="${gc}"><b>${krwGainPct !== null ? `${gs}${krwGainPct.toFixed(1)}%` : '—'}</b></span>
-      </div>`;
-    const currencyRows = Object.entries(groups).map(([currency, g]) => {
-      const gain = g.hasPrices ? g.current - g.invested : null;
-      const gainPct = gain !== null && g.invested > 0 ? (gain / g.invested) * 100 : null;
-      const gc2 = gain !== null ? (gain >= 0 ? 'gain-up' : 'gain-down') : '';
-      const gs2 = gain !== null && gain >= 0 ? '+' : '';
+    const totalStr = krw.hasPrices ? formatPrice(krw.current, 'KRW') : '—';
+    const pctStr = gainPct !== null ? `${gs}${gainPct.toFixed(1)}%` : '—';
+    const detail = statsGrid([
+      ['투자금액', formatPrice(krw.invested, 'KRW'), ''],
+      ['평가금액', krw.hasPrices ? formatPrice(krw.current, 'KRW') : '—', ''],
+      ['손익', gain !== null ? `${gs}${formatPrice(Math.abs(gain), 'KRW')}` : '—', gc],
+      ['수익률', pctStr, gc],
+    ]);
+    html += summaryGroupRow('KRW', '🇰🇷', `국내주식 <span class="psummary-count">${krw.count}종목</span>`, totalStr, pctStr, gc, detail);
+  }
+
+  // 해외주식
+  if (foreign.count > 0) {
+    const gain = foreign.hasPrices ? foreign.currentKrw - foreign.investedKrw : null;
+    const gainPct = gain !== null && foreign.investedKrw > 0 ? (gain / foreign.investedKrw) * 100 : null;
+    const gc = gain !== null ? (gain >= 0 ? 'gain-up' : 'gain-down') : '';
+    const gs = gain !== null && gain >= 0 ? '+' : '';
+    const totalStr = foreign.hasPrices ? formatPrice(foreign.currentKrw, 'KRW') : '—';
+    const pctStr = gainPct !== null ? `${gs}${gainPct.toFixed(1)}%` : '—';
+
+    let detailHtml = '';
+    for (const [currency, g] of Object.entries(foreign.byCurrency)) {
+      const cgain = g.hasPrices ? g.current - g.invested : null;
+      const cgainPct = cgain !== null && g.invested > 0 ? (cgain / g.invested) * 100 : null;
+      const cgc = cgain !== null ? (cgain >= 0 ? 'gain-up' : 'gain-down') : '';
+      const cgs = cgain !== null && cgain >= 0 ? '+' : '';
       const rate = state.fxRates[currency];
-      const krwEq = rate && g.hasPrices ? `<span class="psummary-krw-eq">≈ ${formatPrice(g.current * rate, 'KRW')}</span>` : '';
-      return `
-      <div class="psummary-row">
-        <span class="psummary-cname">${currencyNames[currency] || currency}</span>
-        <span class="psummary-cval">${g.hasPrices ? formatPrice(g.current, currency) : '—'}</span>
-        <span class="psummary-gain ${gc2}">${gain !== null ? `${gs2}${formatPrice(Math.abs(gain), currency)}` : ''}</span>
-        <span class="psummary-pct ${gc2}">${gainPct !== null ? `(${gs2}${gainPct.toFixed(1)}%)` : ''}</span>
-        ${currency !== 'KRW' ? krwEq : ''}
-      </div>`;
-    }).join('');
-    expandContent += `<div class="psummary-rows">${currencyRows}</div>`;
-  }
-
-  const foreignCurrencies = Object.keys(groups).filter(c => c !== 'KRW');
-  if (foreignCurrencies.length > 0) {
-    const rateStrs = foreignCurrencies.filter(c => state.fxRates[c])
-      .map(c => `${currencyNames[c] || c} ₩${Math.round(state.fxRates[c]).toLocaleString('ko-KR')}`);
-    if (rateStrs.length) {
-      const ts = state.fxRatesUpdatedAt;
-      const timeStr = ts ? (() => {
-        const diff = Date.now() - ts;
-        if (diff < 60000) return '방금 갱신';
-        const d = new Date(ts);
-        return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')} 기준`;
-      })() : '';
-      expandContent += `
-        <div class="psummary-fx-footer">
-          <span class="psummary-fx-rates"><i class="ph ph-currency-circle-dollar"></i> ${rateStrs.join(' · ')}</span>
-          ${timeStr ? `<span class="psummary-fx-time">${timeStr}</span>` : ''}
-        </div>`;
+      const cpctStr = cgainPct !== null ? `${cgs}${cgainPct.toFixed(1)}%` : '—';
+      const krwValStr = (rate && g.hasPrices) ? formatPrice(g.current * rate, 'KRW') : null;
+      detailHtml += statsGrid([
+        ['투자금액', formatPrice(g.invested, currency), ''],
+        ['평가금액', g.hasPrices ? formatPrice(g.current, currency) : '—', ''],
+        ['손익', cgain !== null ? `${cgs}${formatPrice(Math.abs(cgain), currency)}` : '—', cgc],
+        ['수익률', cpctStr, cgc],
+      ]);
+      if (krwValStr) {
+        const krwGain = rate && cgain !== null ? cgain * rate : null;
+        const krwGc = krwGain !== null ? (krwGain >= 0 ? 'gain-up' : 'gain-down') : '';
+        detailHtml += `<div class="psummary-krw-row"><i class="ph ph-currency-circle-dollar"></i> ${currency} ₩${Math.round(rate).toLocaleString('ko-KR')} · 평가 ${krwValStr}${krwGain !== null ? ` <span class="${krwGc}">(${krwGain >= 0 ? '+' : ''}${formatPrice(Math.abs(krwGain), 'KRW')})</span>` : ''}</div>`;
+      }
     }
+    html += summaryGroupRow('foreign', '🇺🇸', `해외주식 <span class="psummary-count">${foreign.count}종목</span>`, totalStr, pctStr, gc, detailHtml);
   }
 
-  const isExpanded = state.summaryExpanded;
-  return `
-  <div class="portfolio-summary${isExpanded ? ' expanded' : ''}" onclick="togglePortfolioSummary()">
-    <div class="psummary-header">
-      <div class="psummary-label-group">
-        <span class="psummary-label">${totalLabel}</span>
-        <span class="psummary-count-badge">${items.length}종목</span>
-      </div>
-      <span class="psummary-total">${totalDisplay}</span>
-    </div>
-    <div class="psummary-collapse-row">
-      <span class="psummary-cgain ${cgc}">${cgainStr}</span>
-      <span class="psummary-cpct ${cgc}">${cpctStr}</span>
-      <i class="ph ph-caret-down psummary-caret"></i>
-    </div>
-    <div class="psummary-expand-body">${expandContent}</div>
-  </div>`;
+  html += '</div>';
+  return html;
 }
 
 function renderPortfolioCard(item) {
@@ -1003,6 +971,13 @@ function togglePortfolioSummary() {
   state.summaryExpanded = !state.summaryExpanded;
   const el = document.querySelector('.portfolio-summary');
   if (el) el.classList.toggle('expanded', state.summaryExpanded);
+}
+
+function toggleSummaryGroup(key) {
+  state.summaryGroupExpanded[key] = !state.summaryGroupExpanded[key];
+  const el = document.querySelector(`.psummary-group-detail[data-key="${key}"]`);
+  if (el) { el.classList.toggle('expanded', state.summaryGroupExpanded[key]); return; }
+  renderPortfolioHoldings();
 }
 
 // ── Landscape Detail Panel ─────────────────────────────────────────────────

@@ -889,80 +889,73 @@ html, body {
 .search-field-btn i { transition: none; }
 .search-field-btn .spinning { color: var(--primary); }
 
-.portfolio-summary {
-  background: linear-gradient(135deg, rgba(62,123,250,0.1) 0%, var(--bg-card) 55%);
-  border: 1px solid rgba(62,123,250,0.25);
-  border-radius: var(--radius-md);
-  padding: 12px 14px 12px 18px;
-  margin-bottom: 12px;
-  position: relative;
-  overflow: hidden;
-  cursor: pointer;
-  user-select: none;
-  box-shadow: 0 2px 12px rgba(62,123,250,0.1);
+/* ── 포트폴리오 요약 (국내/해외 그룹) ── */
+.portfolio-summary { margin-bottom: 4px; }
+
+.psummary-group-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 6px 12px 6px 10px;
+  border-bottom: 1px solid var(--border);
 }
-.portfolio-summary::before {
-  content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 100%;
-  background: linear-gradient(180deg, var(--primary), var(--success));
+.psummary-flag {
+  font-size: 22px; flex-shrink: 0;
+  width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg-elevated); border-radius: 10px;
+  line-height: 1;
 }
-.psummary-collapse-row {
-  display: flex; align-items: center; gap: 6px;
-  margin-top: 5px; padding-top: 5px;
-  border-top: 1px solid var(--border);
+.psummary-group-info { flex: 1; min-width: 0; }
+.psummary-group-label {
+  font-size: 10px; color: var(--text-sub); font-weight: 600; margin-bottom: 1px;
 }
-.psummary-cgain {
-  font-size: 14px; font-weight: 800;
-  font-variant-numeric: tabular-nums; flex: 1; color: var(--text-sub);
+.psummary-count { font-size: 9px; color: var(--primary); font-weight: 700; margin-left: 4px; }
+.psummary-group-val { display: flex; align-items: baseline; gap: 6px; }
+.psummary-group-total {
+  font-size: 16px; font-weight: 800; color: var(--text);
+  font-variant-numeric: tabular-nums;
 }
-.psummary-cpct {
-  font-size: 14px; font-weight: 800;
-  font-variant-numeric: tabular-nums; color: var(--text-sub);
+.psummary-group-pct {
+  font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums;
+  color: var(--text-sub);
 }
-.psummary-cgain.gain-up, .psummary-cpct.gain-up { color: var(--stock-up); }
-.psummary-cgain.gain-down, .psummary-cpct.gain-down { color: var(--stock-down); }
-.psummary-caret {
-  font-size: 13px; color: var(--text-sub);
-  transition: transform 0.28s ease; flex-shrink: 0;
-}
-.portfolio-summary.expanded .psummary-caret { transform: rotate(180deg); }
-.psummary-expand-body {
+.psummary-group-pct.gain-up  { color: var(--stock-up); }
+.psummary-group-pct.gain-down { color: var(--stock-down); }
+
+/* 상세 펼침 패널 */
+.psummary-group-detail {
   max-height: 0; overflow: hidden;
   transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease;
   opacity: 0;
 }
-.portfolio-summary.expanded .psummary-expand-body { max-height: 320px; opacity: 1; }
-.psummary-expand-body .psummary-inline { margin-top: 8px; }
-.psummary-expand-body .psummary-rows { margin-top: 7px; padding-top: 7px; border-top: 1px solid var(--border); }
-.psummary-expand-body .psummary-krw-line { margin-top: 5px; }
-.psummary-expand-body .psummary-fx-footer { margin-top: 8px; padding-top: 7px; border-top: 1px solid var(--border); }
-.psummary-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 3px; }
-.psummary-label { font-size: 10px; font-weight: 700; color: var(--text-sub); text-transform: uppercase; letter-spacing: 0.7px; }
-.psummary-total { font-size: 24px; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
-.psummary-label-group { display: flex; align-items: center; gap: 6px; }
-.psummary-count-badge { font-size: 10px; font-weight: 700; color: var(--primary); background: rgba(62,123,250,0.12); border-radius: 6px; padding: 1px 6px; }
-.psummary-inline { display: flex; gap: 10px; font-size: 11px; color: var(--text-sub); flex-wrap: wrap; }
-.psummary-inline b { color: var(--text); font-variant-numeric: tabular-nums; }
-.psummary-inline .gain-up b { color: var(--stock-up); }
-.psummary-inline .gain-down b { color: var(--stock-down); }
-.psummary-rows { margin-top: 7px; padding-top: 7px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 3px; }
-.psummary-row { display: flex; align-items: center; gap: 5px; font-size: 11px; flex-wrap: wrap; }
-.psummary-cname { font-size: 10px; font-weight: 700; color: var(--primary); min-width: 26px; }
-.psummary-cval { font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; flex: 1; min-width: 0; }
-.psummary-gain { font-weight: 700; font-variant-numeric: tabular-nums; color: var(--text); }
-.psummary-pct { font-weight: 600; color: var(--text-sub); }
-.psummary-gain.gain-up, .psummary-pct.gain-up { color: var(--stock-up); }
-.psummary-gain.gain-down, .psummary-pct.gain-down { color: var(--stock-down); }
-.psummary-krw-eq { font-size: 10px; color: var(--text-sub); margin-left: auto; font-variant-numeric: tabular-nums; }
-.psummary-krw-line { font-size: 11px; color: var(--text-sub); margin-top: 4px; font-variant-numeric: tabular-nums; }
-.psummary-krw-line .gain-up { color: var(--stock-up); }
-.psummary-krw-line .gain-down { color: var(--stock-down); }
-.psummary-fx-footer {
-  display: flex; justify-content: space-between; align-items: center;
-  font-size: 10px; color: var(--text-sub);
+.psummary-group-detail.expanded { max-height: 320px; opacity: 1; }
+
+/* 상세 2×2 스탯 그리드 */
+.psummary-stats {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 4px; padding: 8px 12px;
 }
-.psummary-fx-rates { display: flex; align-items: center; gap: 4px; font-variant-numeric: tabular-nums; font-weight: 600; }
-.psummary-fx-rates i { font-size: 12px; color: var(--primary); }
-.psummary-fx-time { opacity: 0.65; font-size: 10px; }
+.psummary-stat {
+  background: var(--bg-elevated); border-radius: 7px;
+  padding: 5px 8px; display: flex; justify-content: space-between;
+  align-items: center; gap: 4px;
+}
+.psummary-stat-label { font-size: 10px; font-weight: 600; color: var(--text-sub); flex-shrink: 0; }
+.psummary-stat-val {
+  font-size: 11px; font-weight: 800; color: var(--text);
+  font-variant-numeric: tabular-nums; text-align: right;
+}
+.psummary-stat-val.gain-up  { color: var(--stock-up); }
+.psummary-stat-val.gain-down { color: var(--stock-down); }
+
+/* 환율 행 */
+.psummary-krw-row {
+  font-size: 10px; color: var(--text-sub);
+  padding: 0 12px 8px; font-variant-numeric: tabular-nums;
+  display: flex; align-items: center; gap: 4px; flex-wrap: wrap;
+}
+.psummary-krw-row i { color: var(--primary); }
+.psummary-krw-row .gain-up  { color: var(--stock-up); }
+.psummary-krw-row .gain-down { color: var(--stock-down); }
 
 #portfolio-holdings .stock-card { margin-bottom: 4px; }
 
@@ -1142,7 +1135,7 @@ html, body {
   }
 
   /* ④ Summary card compact */
-  .psummary-total { font-size: 20px; }
+  .psummary-group-total { font-size: 14px; }
 
   /* ⑤ Portfolio split panel */
   #screen-portfolio.active {
