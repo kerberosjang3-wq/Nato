@@ -731,6 +731,15 @@ function getDisplayPrice(q) {
   return isPost ? q.postMarketPrice : isPre ? q.preMarketPrice : (q.regularMarketPrice || null);
 }
 
+function getDisplayPct(q) {
+  if (!q) return null;
+  const isPost = q.marketState === 'POST' && q.postMarketPrice;
+  const isPre  = q.marketState === 'PRE'  && q.preMarketPrice;
+  return isPost ? (q.postMarketChangePercent ?? null)
+       : isPre  ? (q.preMarketChangePercent  ?? null)
+       : (q.regularMarketChangePercent ?? null);
+}
+
 function renderPortfolioSummary() {
   const items = Object.values(state.portfolio);
   if (!items.length) return '';
@@ -1258,7 +1267,7 @@ function sortGroup(items, mode) {
       return vb - va;
     }
     if (mode === 'change') {
-      return (qb?.regularMarketChangePercent ?? -Infinity) - (qa?.regularMarketChangePercent ?? -Infinity);
+      return (getDisplayPct(qb) ?? -Infinity) - (getDisplayPct(qa) ?? -Infinity);
     }
     // gainPct (default)
     const pa = qa?.regularMarketPrice;
@@ -1293,8 +1302,8 @@ function renderPortfolioHoldings() {
   const foreign  = sortGroup(foreignRaw,  state.portfolioSort.foreign);
 
   const upDownBadges = group => {
-    const up   = group.filter(i => (state.portfolioPrices[i.symbol]?.regularMarketChangePercent ?? 0) > 0).length;
-    const down = group.filter(i => (state.portfolioPrices[i.symbol]?.regularMarketChangePercent ?? 0) < 0).length;
+    const up   = group.filter(i => (getDisplayPct(state.portfolioPrices[i.symbol]) ?? 0) > 0).length;
+    const down = group.filter(i => (getDisplayPct(state.portfolioPrices[i.symbol]) ?? 0) < 0).length;
     const upBadge   = up   > 0 ? `<span class="section-ud section-up"><i class="ph ph-trend-up"></i>${up}</span>`   : '';
     const downBadge = down > 0 ? `<span class="section-ud section-down"><i class="ph ph-trend-down"></i>${down}</span>` : '';
     return upBadge + downBadge;
