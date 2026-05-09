@@ -1150,6 +1150,10 @@ function renderPortfolioCard(item) {
             <span class="port-stat-label">수익률</span>
             <span class="port-stat-value">${gainPct !== null ? `${gainSign}${gainPct.toFixed(2)}%` : '—'}</span>
           </div>
+          ${item.broker ? `<div class="port-stat">
+            <span class="port-stat-label">증권사</span>
+            <span class="port-stat-value">${item.broker}</span>
+          </div>` : ''}
         </div>
         ${krwRow}
       </div>
