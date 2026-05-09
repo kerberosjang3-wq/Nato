@@ -429,13 +429,13 @@ html, body {
 /* ── Portfolio card (MTS screenshot style) ── */
 .port-row {
   display: flex; align-items: center; gap: 10px;
-  padding: 10px 14px 10px 10px;
+  padding: 7px 14px 7px 10px;
 }
 
 /* Left info column */
 .port-info {
   flex: 1; min-width: 0;
-  display: flex; flex-direction: column; gap: 2px;
+  display: flex; flex-direction: column; gap: 1px;
 }
 .port-delay-badge {
   display: inline-block;
@@ -444,7 +444,7 @@ html, body {
   padding: 1px 4px; align-self: flex-start; line-height: 1.4;
 }
 .port-name {
-  font-size: 14px; font-weight: 700; color: var(--text);
+  font-size: 13px; font-weight: 700; color: var(--text);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .port-vol-left {
@@ -462,7 +462,7 @@ html, body {
   justify-content: flex-end; gap: 8px;
 }
 .port-price {
-  font-size: 17px; font-weight: 800;
+  font-size: 15px; font-weight: 800;
   font-variant-numeric: tabular-nums; color: var(--text);
 }
 .port-price.up   { color: var(--stock-up); }
@@ -954,7 +954,7 @@ html, body {
 .psummary-fx-rates i { font-size: 12px; color: var(--primary); }
 .psummary-fx-time { opacity: 0.65; font-size: 10px; }
 
-#portfolio-holdings .stock-card { margin-bottom: 10px; }
+#portfolio-holdings .stock-card { margin-bottom: 4px; }
 
 /* 포트폴리오 카드 2×2 스탯 그리드 */
 .port-stats {
