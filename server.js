@@ -118,16 +118,45 @@ async function getYahooCrumb() {
   return { crumb, cookie };
 }
 
+const YAHOO_FIELDS = [
+  'regularMarketPrice', 'regularMarketChange', 'regularMarketChangePercent',
+  'regularMarketVolume', 'regularMarketPreviousClose',
+  'postMarketPrice', 'postMarketChange', 'postMarketChangePercent',
+  'preMarketPrice', 'preMarketChange', 'preMarketChangePercent',
+  'marketState', 'shortName', 'longName', 'currency',
+].join(',');
+
 async function fetchQuotesBatch(symbols) {
   const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
   const { crumb, cookie } = await getYahooCrumb();
   const r = await _fetch(
-    `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${symbols.map(encodeURIComponent).join(',')}&crumb=${encodeURIComponent(crumb)}&fields=regularMarketPrice,shortName,longName,currency,regularMarketChangePercent&lang=ko-KR&region=KR`,
+    `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${symbols.map(encodeURIComponent).join(',')}&crumb=${encodeURIComponent(crumb)}&fields=${YAHOO_FIELDS}&lang=ko-KR&region=KR`,
     { headers: { 'User-Agent': UA, 'Cookie': cookie }, timeout: 10000 }
   );
   if (!r.ok) throw new Error(`Yahoo Finance ${r.status}`);
   const data = await r.json();
   return data.quoteResponse?.result || [];
+}
+
+// 국내 주식 실시간 가격: 네이버 금융 API (Yahoo는 15~20분 지연)
+async function fetchNaverPrice(code) {
+  try {
+    const r = await _fetch(
+      `https://m.stock.naver.com/api/stock/${code}/basic`,
+      { timeout: 5000, headers: { Referer: 'https://m.stock.naver.com/' } }
+    );
+    if (!r.ok) return null;
+    const d = await r.json();
+    const toNum = s => Number(String(s ?? '').replace(/,/g, '')) || 0;
+    const price  = toNum(d.closePrice);
+    if (!price) return null;
+    return {
+      regularMarketPrice:         price,
+      regularMarketChange:        toNum(d.compareToPreviousClosePrice),
+      regularMarketChangePercent: parseFloat(String(d.fluctuationsRatio ?? '').replace(/[+%]/g, '')) || 0,
+      regularMarketVolume:        toNum(d.accumulatedTradingVolume ?? d.tradeVolume),
+    };
+  } catch (_) { return null; }
 }
 
 async function checkPrices() {
@@ -141,6 +170,14 @@ async function checkPrices() {
     const results = await fetchQuotesBatch([...allSymbols]);
     quotes = {};
     results.forEach(q => { quotes[q.symbol] = q; });
+
+    // 국내 주식은 네이버 금융 실시간 가격으로 보정 (Yahoo는 데이터 품질 불량)
+    const krSymbols = results.filter(q => /\.(KS|KQ)$/i.test(q.symbol));
+    await Promise.all(krSymbols.map(async q => {
+      const code = q.symbol.replace(/\.(KS|KQ)$/i, '');
+      const naver = await fetchNaverPrice(code);
+      if (naver) Object.assign(quotes[q.symbol], naver);
+    }));
   } catch (e) {
     return { checked: 0, notified: 0, error: e.message };
   }
@@ -406,13 +443,25 @@ app.get('/api/search', async (req, res) => {
 
 app.get('/api/quote', async (req, res) => {
   try {
-    const result = await fetchQuotesBatch(req.query.symbols.split(','));
-    const enriched = result.map(q => {
-      // Yahoo Finance가 한글명을 반환하면 우선 사용, 없으면 로컬 KR_STOCKS_MAP 폴백
+    const symbols = req.query.symbols.split(',');
+    const yahooResult = await fetchQuotesBatch(symbols);
+
+    const enriched = await Promise.all(yahooResult.map(async q => {
+      // 한글명 보강
       const yahooKorName = /[가-힣]/.test(q.shortName) ? q.shortName : (/[가-힣]/.test(q.longName) ? q.longName : null);
       const korName = yahooKorName || KR_STOCKS_MAP.get(q.symbol) || null;
-      return korName ? { ...q, korName } : q;
-    });
+      let result = { ...q, ...(korName ? { korName } : {}) };
+
+      // 국내 주식(KS/KQ)은 네이버 금융 실시간 가격으로 덮어씀
+      if (/\.(KS|KQ)$/i.test(q.symbol)) {
+        const code = q.symbol.replace(/\.(KS|KQ)$/i, '');
+        const naver = await fetchNaverPrice(code);
+        if (naver) Object.assign(result, naver);
+      }
+
+      return result;
+    }));
+
     res.json({ quoteResponse: { result: enriched } });
   } catch (e) { res.status(502).json({ error: e.message }); }
 });
