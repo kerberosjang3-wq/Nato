@@ -1150,10 +1150,10 @@ function renderPortfolioCard(item) {
             <span class="port-stat-label">수익률</span>
             <span class="port-stat-value">${gainPct !== null ? `${gainSign}${gainPct.toFixed(2)}%` : '—'}</span>
           </div>
-          ${item.broker ? `<div class="port-stat">
+          <div class="port-stat">
             <span class="port-stat-label">증권사</span>
-            <span class="port-stat-value">${item.broker}</span>
-          </div>` : ''}
+            <span class="port-stat-value">${item.broker || '—'}</span>
+          </div>
         </div>
         ${krwRow}
       </div>
@@ -1336,10 +1336,10 @@ function renderDetailPanel(symbol) {
         <span class="ls-detail-stat-label">수익률</span>
         <span class="ls-detail-stat-value">${gainPct !== null ? `${gainSign}${gainPct.toFixed(2)}%` : '—'}</span>
       </div>
-      ${item.broker ? `<div class="ls-detail-stat">
+      <div class="ls-detail-stat">
         <span class="ls-detail-stat-label">증권사</span>
-        <span class="ls-detail-stat-value">${item.broker}</span>
-      </div>` : ''}
+        <span class="ls-detail-stat-value">${item.broker || '—'}</span>
+      </div>
     </div>
     ${krwBlock}
     <div class="ls-detail-actions">
