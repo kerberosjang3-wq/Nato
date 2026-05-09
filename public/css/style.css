@@ -926,52 +926,40 @@ html, body {
 .psummary-header-pct.gain-up  { color: var(--stock-up); }
 .psummary-header-pct.gain-down { color: var(--stock-down); }
 
-/* 하단 국내/해외 2컬럼 */
-.psummary-cols {
-  display: flex; flex-direction: column;
-}
-.psummary-cols.two {
-  display: grid; grid-template-columns: 1fr 1fr;
-  border-bottom: 1px solid var(--border);
-}
-.psummary-col {
-  padding: 8px 10px 6px;
-  border-bottom: 1px solid var(--border);
-}
-.psummary-cols.two .psummary-col {
-  border-bottom: none;
-}
-.psummary-cols.two .psummary-col:first-child {
-  border-right: 1px solid var(--border);
-}
+/* 하단 국내/해외 세로 스택 */
+.psummary-cols { display: flex; flex-direction: column; }
 
+.psummary-col {
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 12px 7px 14px;
+  border-bottom: 1px solid var(--border);
+}
 .psummary-col-top {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 2px;
+  display: flex; align-items: center; gap: 5px; flex: none;
 }
-.psummary-col-flag-wrap {
-  display: flex; align-items: center; gap: 4px;
-}
-.psummary-col-flag { font-size: 14px; line-height: 1; }
+.psummary-col-flag { font-size: 18px; line-height: 1; flex-shrink: 0; }
 .psummary-col-label {
   font-size: 10px; font-weight: 700; color: var(--text-sub);
 }
 .psummary-col-count {
   font-size: 9px; color: var(--primary); font-weight: 700;
 }
+.psummary-col-main {
+  flex: 1; min-width: 0;
+  display: flex; align-items: baseline; gap: 6px;
+}
 .psummary-col-amount {
-  font-size: 14px; font-weight: 800; color: var(--text);
-  font-variant-numeric: tabular-nums; line-height: 1.2;
+  font-size: 15px; font-weight: 800; color: var(--text);
+  font-variant-numeric: tabular-nums;
 }
 .psummary-col-sub {
-  display: flex; align-items: center; gap: 4px;
-  margin-top: 1px; font-size: 10px; font-weight: 700;
-  font-variant-numeric: tabular-nums;
+  display: flex; align-items: center; gap: 3px;
+  font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums;
 }
 .psummary-col-gain.gain-up,  .psummary-col-pct.gain-up  { color: var(--stock-up); }
 .psummary-col-gain.gain-down, .psummary-col-pct.gain-down { color: var(--stock-down); }
 .psummary-col-gain { color: var(--text-sub); }
-.psummary-col-pct  { color: var(--text-sub); font-size: 11px; }
+.psummary-col-pct  { color: var(--text-sub); }
 
 /* 상세 펼침 패널 */
 .psummary-group-detail {

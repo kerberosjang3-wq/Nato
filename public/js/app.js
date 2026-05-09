@@ -767,22 +767,23 @@ function renderPortfolioSummary() {
     `<div class="psummary-stat"><span class="psummary-stat-label">${label}</span><span class="psummary-stat-val${cls ? ' ' + cls : ''}">${val}</span></div>`
   ).join('')}</div>`;
 
-  const summaryCol = (key, flag, label, count, totalStr, gainStr, pctStr, gc, detailHtml) => {
+  const summaryCol = (key, flag, label, count, totalStr, pctStr, gc, detailHtml) => {
     const isExp = !!(state.summaryGroupExpanded && state.summaryGroupExpanded[key]);
     return `
-    <div class="psummary-col">
-      <div class="psummary-col-top">
-        <div class="psummary-col-flag-wrap">
+    <div class="psummary-col-wrap">
+      <div class="psummary-col">
+        <div class="psummary-col-top">
           <span class="psummary-col-flag">${flag}</span>
           <span class="psummary-col-label">${label}</span>
           <span class="psummary-col-count">${count}종목</span>
         </div>
+        <div class="psummary-col-main">
+          <span class="psummary-col-amount">${totalStr}</span>
+          <div class="psummary-col-sub">
+            <span class="psummary-col-pct ${gc}">${pctStr}</span>
+          </div>
+        </div>
         <button class="port-dots-btn" onclick="event.stopPropagation();toggleSummaryGroup('${key}')"><i class="ph ph-dots-three-vertical"></i></button>
-      </div>
-      <div class="psummary-col-amount">${totalStr}</div>
-      <div class="psummary-col-sub">
-        <span class="psummary-col-gain ${gc}">${gainStr}</span>
-        <span class="psummary-col-pct ${gc}">${pctStr}</span>
       </div>
       <div class="psummary-group-detail${isExp ? ' expanded' : ''}" data-key="${key}">${detailHtml}</div>
     </div>`;
@@ -803,7 +804,6 @@ function renderPortfolioSummary() {
     ]);
     krwCol = summaryCol('KRW', '🇰🇷', '국내주식', krw.count,
       krw.hasPrices ? formatPrice(krw.current, 'KRW') : '—',
-      gain !== null ? `${gs}${formatPrice(Math.abs(gain), 'KRW')}` : '—',
       gainPct !== null ? `${gs}${gainPct.toFixed(1)}%` : '—',
       gc, detail);
   }
@@ -836,7 +836,6 @@ function renderPortfolioSummary() {
     }
     foreignCol = summaryCol('foreign', '🇺🇸', '해외주식', foreign.count,
       foreign.hasPrices ? formatPrice(foreign.currentKrw, 'KRW') : '—',
-      gain !== null ? `${gs}${formatPrice(Math.abs(gain), 'KRW')}` : '—',
       gainPct !== null ? `${gs}${gainPct.toFixed(1)}%` : '—',
       gc, detailHtml);
   }
