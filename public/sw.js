@@ -1,5 +1,5 @@
-const CACHE = 'stock-alert-v35';
-const STATIC = ['/', '/css/style.css', '/js/app.js', '/manifest.json', '/icons/logo.png'];
+const CACHE = 'stock-alert-v36';
+const STATIC = ['/', '/css/style.css', '/js/app.js', '/manifest.json', '/icons/icon-192.png', '/icons/icon-512.png', '/icons/logo.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(STATIC)).then(() => self.skipWaiting()));

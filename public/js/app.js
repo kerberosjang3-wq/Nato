@@ -1523,17 +1523,10 @@ let _lastTap = { symbol: null, time: 0 };
 let _lastHeaderTap = { group: null, time: 0 };
 function attachPortfolioDoubleTap(wrap) {
   wrap.addEventListener('click', e => {
-    // 헤더 더블탭 — 그룹 접기/펼치기
+    // 헤더 단일탭 — 그룹 접기/펼치기
     const header = e.target.closest('.portfolio-section-header[data-group]');
     if (header && !e.target.closest('button')) {
-      const group = header.dataset.group;
-      const now = Date.now();
-      if (_lastHeaderTap.group === group && now - _lastHeaderTap.time < 350) {
-        _lastHeaderTap = { group: null, time: 0 };
-        toggleGroupCollapse(group);
-      } else {
-        _lastHeaderTap = { group, time: now };
-      }
+      toggleGroupCollapse(header.dataset.group);
       return;
     }
 
