@@ -1033,13 +1033,24 @@ function renderTvChart(symbol, containerId) {
   if (!wrap) return;
   const tvSymbol = toTvSymbol(symbol);
   const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
-  const containerId2 = containerId + '-inner';
-  wrap.innerHTML = `<div id="${containerId2}" style="width:100%;height:100%;"></div>`;
+
+  // TradingView advanced chart requires this exact sibling structure:
+  // .tradingview-widget-container > .tradingview-widget-container__widget + <script src>
+  // The script reads its own textContent for config — container_id is not supported.
+  const container = document.createElement('div');
+  container.className = 'tradingview-widget-container';
+  container.style.cssText = 'width:100%;height:100%';
+
+  const widgetDiv = document.createElement('div');
+  widgetDiv.className = 'tradingview-widget-container__widget';
+  widgetDiv.style.cssText = 'width:100%;height:100%';
+  container.appendChild(widgetDiv);
+
   const script = document.createElement('script');
   script.type = 'text/javascript';
   script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
   script.async = true;
-  script.innerHTML = JSON.stringify({
+  script.textContent = JSON.stringify({
     autosize: true,
     symbol: tvSymbol,
     interval: 'D',
@@ -1054,9 +1065,11 @@ function renderTvChart(symbol, containerId) {
     calendar: false,
     hide_volume: true,
     support_host: 'https://www.tradingview.com',
-    container_id: containerId2,
   });
-  document.getElementById(containerId2).appendChild(script);
+  container.appendChild(script);
+
+  wrap.innerHTML = '';
+  wrap.appendChild(container);
 }
 
 function clearDetailPanel() {
