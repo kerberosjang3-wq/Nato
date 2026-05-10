@@ -1524,7 +1524,9 @@ function renderPortfolioHoldings() {
       <span class="section-ud-wrap">${upDownBadges(domestic)}</span>
       <span class="portfolio-section-count kr">${domestic.length}종목</span>
       ${sortBtn('domestic')}
-      <i class="ph ph-caret-down port-group-caret${dcol ? ' collapsed' : ''}"></i>
+      <button class="port-dots-btn" onclick="event.stopPropagation();toggleGroupCollapse('domestic')">
+        <i class="ph ph-dots-three-vertical-bold"></i>
+      </button>
     </div>
     <div class="port-group-cards${dcol ? ' collapsed' : ''}" data-group="domestic">
       ${domestic.map(item => renderPortfolioCard(item)).join('')}
@@ -1538,7 +1540,9 @@ function renderPortfolioHoldings() {
       <span class="section-ud-wrap">${upDownBadges(foreign)}</span>
       <span class="portfolio-section-count us">${foreign.length}종목</span>
       ${sortBtn('foreign')}
-      <i class="ph ph-caret-down port-group-caret${fcol ? ' collapsed' : ''}"></i>
+      <button class="port-dots-btn" onclick="event.stopPropagation();toggleGroupCollapse('foreign')">
+        <i class="ph ph-dots-three-vertical-bold"></i>
+      </button>
     </div>
     <div class="port-group-cards${fcol ? ' collapsed' : ''}" data-group="foreign">
       ${foreign.map(item => renderPortfolioCard(item)).join('')}

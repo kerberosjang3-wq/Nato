@@ -1254,30 +1254,39 @@ html, body {
 .portfolio-list-count { font-size: 10px; font-weight: 700; color: var(--primary); background: var(--primary-glow); border-radius: 5px; padding: 1px 6px; }
 
 .portfolio-section-header {
-  display: flex; align-items: center; gap: 10px;
-  padding: 12px 14px;
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 12px 6px 14px;
   background: var(--bg-card);
   border-top: 1px solid var(--border);
   cursor: pointer;
   user-select: none;
   transition: background 0.2s;
   -webkit-tap-highlight-color: transparent;
+  min-height: 44px;
 }
 .portfolio-section-header:hover { background: var(--bg-elevated); }
 .portfolio-section-header:first-of-type { border-top: none; margin-top: 0; }
 
-.portfolio-section-flag { font-size: 16px; }
-.portfolio-section-label { font-size: 13px; font-weight: 700; color: var(--text); }
-.portfolio-section-count { font-size: 10px; font-weight: 600; color: var(--text-sub); background: var(--bg-elevated); border-radius: 5px; padding: 1px 6px; }
+.portfolio-section-flag { font-size: 16px; margin-right: -2px; }
+.portfolio-section-label { font-size: 11px; font-weight: 700; color: var(--text-sub); }
+.portfolio-section-count { font-size: 9px; font-weight: 600; color: var(--primary); background: var(--primary-glow); border-radius: 5px; padding: 1px 5px; }
 
-.port-group-caret {
+.portfolio-section-header .port-dots-btn {
   margin-left: auto;
-  font-size: 20px;
-  color: var(--text-sub);
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  pointer-events: none;
+  margin-right: -4px;
 }
-.port-group-caret.collapsed { transform: rotate(-90deg); }
+
+.port-sort-btn {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: var(--bg-elevated); border: 1px solid var(--border);
+  border-radius: 6px; padding: 4px 8px;
+  font-size: 10px; font-weight: 700; color: var(--text-sub);
+  cursor: pointer; white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+  height: 24px;
+}
+.port-sort-btn:active { background: var(--bg-card); color: var(--primary); }
+.port-sort-btn i { font-size: 12px; }
 
 .section-ud-wrap { display: flex; align-items: center; gap: 4px; margin-right: 4px; }
 
