@@ -1740,8 +1740,50 @@ html, body {
 }
 
 /* ── Market Trends ── */
+.market-page-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: calc(var(--safe-top) + 18px) 16px 14px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+
+.market-page-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -0.5px;
+}
+
+.market-page-time {
+  font-size: 11px;
+  color: var(--text-sub);
+  margin-top: 3px;
+  min-height: 16px;
+}
+
+.market-refresh-btn {
+  width: 36px; height: 36px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  color: var(--text-sub);
+  font-size: 16px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.15s, transform 0.15s;
+}
+.market-refresh-btn:active { color: var(--primary); transform: scale(0.88); }
+.market-refresh-btn .spinning { animation: spin 0.8s linear infinite; color: var(--primary); }
+
 .market-section { padding: 14px; }
-.market-section:first-of-type { padding-bottom: 0; }
+#market-indices { padding-bottom: 0; }
 
 .market-grid {
   display: grid;
@@ -1753,15 +1795,28 @@ html, body {
 .market-idx-card {
   background: var(--bg-card);
   border-radius: 14px;
-  padding: 12px;
+  padding: 13px 14px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 5px;
+  border: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
 }
+.market-idx-card::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 3px;
+  border-radius: 0 0 14px 14px;
+  background: transparent;
+}
+.market-idx-card.up::after { background: var(--stock-up); }
+.market-idx-card.down::after { background: var(--stock-down); }
 
 .midx-top { display: flex; align-items: center; gap: 6px; }
 .midx-flag { font-size: 14px; }
-.midx-label { font-size: 11px; font-weight: 700; color: var(--text-sub); }
+.midx-label { font-size: 11px; font-weight: 700; color: var(--text-sub); flex: 1; }
 .midx-price { font-size: 16px; font-weight: 800; color: var(--text); letter-spacing: -0.3px; }
 .midx-change { font-size: 11px; font-weight: 600; }
 
@@ -1770,37 +1825,45 @@ html, body {
   border-radius: 16px;
   padding: 16px;
   margin-bottom: 16px;
+  border: 1px solid var(--border);
 }
 
 .mtop-header {
   font-size: 14px;
   font-weight: 800;
   color: var(--text);
-  margin-bottom: 12px;
+  margin-bottom: 4px;
   display: flex;
   align-items: center;
   gap: 8px;
 }
 .mtop-header i { color: var(--primary); font-size: 18px; }
 
-.mtop-list { display: flex; flex-direction: column; gap: 12px; }
+.mtop-list { display: flex; flex-direction: column; }
 
 .mtop-item {
   display: flex; align-items: center; gap: 12px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--border);
 }
+.mtop-item:first-child { padding-top: 12px; }
+.mtop-item:last-child { border-bottom: none; padding-bottom: 0; }
 
 .mtop-rank {
-  font-size: 14px; font-weight: 800; color: var(--primary);
-  width: 18px; text-align: center;
+  font-size: 13px; font-weight: 800; color: var(--text-sub);
+  width: 20px; text-align: center; flex-shrink: 0;
 }
+.mtop-rank-1 { color: #FFB800; }
+.mtop-rank-2 { color: #9EA8BA; }
+.mtop-rank-3 { color: #B07040; }
 
 .mtop-info { flex: 1; min-width: 0; }
 .mtop-name-row { display: flex; align-items: center; gap: 5px; min-width: 0; }
 .mtop-name { font-size: 13px; font-weight: 700; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mtop-market-badge { flex-shrink: 0; font-size: 9px; font-weight: 700; padding: 1px 5px; border-radius: 4px; background: rgba(0,120,212,0.12); color: var(--primary); }
-.mtop-market-badge.us { background: rgba(100,100,100,0.12); color: var(--text-sub); }
+.mtop-market-badge { flex-shrink: 0; font-size: 9px; font-weight: 700; padding: 1px 5px; border-radius: 4px; background: rgba(62,123,250,0.12); color: var(--primary); }
+.mtop-market-badge.us { background: rgba(150,150,150,0.12); color: var(--text-sub); }
 .mtop-vol { font-size: 10px; color: var(--text-sub); margin-top: 2px; }
 
-.mtop-right { text-align: right; }
+.mtop-right { text-align: right; flex-shrink: 0; }
 .mtop-price { font-size: 13px; font-weight: 700; color: var(--text); }
-.mtop-pct { font-size: 11px; font-weight: 600; margin-top: 1px; }
+.mtop-pct { font-size: 11px; font-weight: 600; margin-top: 2px; }

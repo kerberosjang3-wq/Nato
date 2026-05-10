@@ -1957,6 +1957,7 @@ function renderNews() {
 async function loadMarketTrends() {
   if (state.marketLoading) return;
   state.marketLoading = true;
+  document.getElementById('market-refresh-icon')?.classList.add('spinning');
   renderMarketTrends();
 
   try {
@@ -1966,10 +1967,12 @@ async function loadMarketTrends() {
     ]);
     state.marketData = m;
     state.marketTop = t;
+    state.marketLastUpdated = new Date();
   } catch (e) {
     console.error('Market load error:', e);
   } finally {
     state.marketLoading = false;
+    document.getElementById('market-refresh-icon')?.classList.remove('spinning');
     renderMarketTrends();
   }
 }
@@ -1977,7 +1980,20 @@ async function loadMarketTrends() {
 function renderMarketTrends() {
   const indicesEl = document.getElementById('market-indices');
   const topEl = document.getElementById('market-top-lists');
+  const timeEl = document.getElementById('market-update-time');
   if (!indicesEl || !topEl) return;
+
+  // Update time display
+  if (timeEl) {
+    if (state.marketLoading && !state.marketData) {
+      timeEl.textContent = '불러오는 중...';
+    } else if (state.marketLastUpdated) {
+      const d = state.marketLastUpdated;
+      const hh = d.getHours().toString().padStart(2, '0');
+      const mm = d.getMinutes().toString().padStart(2, '0');
+      timeEl.textContent = `${hh}:${mm} 업데이트`;
+    }
+  }
 
   if (state.marketLoading && !state.marketData) {
     indicesEl.innerHTML = '<div class="news-loading"><i class="ph ph-spinner news-spin"></i><span>증시 정보를 불러오는 중...</span></div>';
@@ -2001,10 +2017,12 @@ function renderMarketTrends() {
       <div class="market-grid">
         ${items.filter(i => i.data).map(i => {
           const v = i.data;
-          const cls = getChangeClass(parseFloat(v.pct));
-          const sign = parseFloat(v.pct) > 0 ? '+' : '';
+          const pct = parseFloat(v.pct);
+          const cls = getChangeClass(pct);
+          const cardCls = pct > 0 ? 'up' : pct < 0 ? 'down' : '';
+          const sign = pct > 0 ? '+' : '';
           return `
-            <div class="market-idx-card">
+            <div class="market-idx-card ${cardCls}">
               <div class="midx-top">
                 <span class="midx-flag">${i.flag}</span>
                 <span class="midx-label">${i.id}</span>
@@ -2020,20 +2038,22 @@ function renderMarketTrends() {
 
   // Top Volume
   if (state.marketTop) {
+    const RANK_CLS = ['mtop-rank-1', 'mtop-rank-2', 'mtop-rank-3'];
     const buildList = (title, icon, list, isKr) => {
       if (!list?.length) return '';
       return `
         <div class="mtop-section">
-          <div class="mtop-header"><i class="ph ${icon}"></i> ${title} 거래량 Top 5</div>
+          <div class="mtop-header"><i class="ph ${icon}"></i> ${title} 거래량 TOP 5</div>
           <div class="mtop-list">
             ${list.map((s, idx) => {
               const cls = getChangeClass(s.pct);
               const sign = s.pct > 0 ? '+' : '';
               const vol = isKr ? formatVolumeKr(s.volume) : formatVolume(s.volume);
               const badge = isKr && s.market ? `<span class="mtop-market-badge">${s.market}</span>` : `<span class="mtop-market-badge us">${s.symbol}</span>`;
+              const rankCls = idx < 3 ? RANK_CLS[idx] : '';
               return `
                 <div class="mtop-item">
-                  <div class="mtop-rank">${idx + 1}</div>
+                  <div class="mtop-rank ${rankCls}">${idx + 1}</div>
                   <div class="mtop-info">
                     <div class="mtop-name-row">
                       <span class="mtop-name">${s.name}</span>
@@ -2280,6 +2300,7 @@ function setupEventListeners() {
 
   // Refresh
   document.getElementById('refresh-btn')?.addEventListener('click', refreshPrices);
+  document.getElementById('market-refresh-btn')?.addEventListener('click', loadMarketTrends);
 
   // Notification banner
   document.getElementById('notif-enable-btn')?.addEventListener('click', requestPushPermission);
