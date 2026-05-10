@@ -789,6 +789,79 @@ app.get('/api/market', async (req, res) => {
   res.json(result);
 });
 
+// ── Market Top (Volume Top 5) ──────────────────────────────────────────────
+app.get('/api/market-top', async (req, res) => {
+  const result = { kr: [], us: [] };
+  try {
+    // 1. KR Top Volume (KOSPI + KOSDAQ)
+    const [kospiR, kosdaqR] = await Promise.all([
+      _fetch('https://m.stock.naver.com/api/stocks/marketValue/KOSPI?page=1&pageSize=10&category=trade_volume').then(r => r.json()).catch(() => ({ stocks: [] })),
+      _fetch('https://m.stock.naver.com/api/stocks/marketValue/KOSDAQ?page=1&pageSize=10&category=trade_volume').then(r => r.json()).catch(() => ({ stocks: [] })),
+    ]);
+
+    const formatKr = (market) => (s) => ({
+      symbol: s.itemCode,
+      name: s.stockName,
+      market,
+      price: s.closePrice,
+      diff: s.compareToPreviousClosePrice,
+      pct: parseFloat(s.fluctuationsRatio),
+      volume: s.accumulatedTradingVolume || s.accumulatedTradingVolumeRaw || '0'
+    });
+
+    const combined = [
+      ...(kospiR.stocks || []).map(formatKr('KOSPI')),
+      ...(kosdaqR.stocks || []).map(formatKr('KOSDAQ'))
+    ];
+    result.kr = combined
+      .sort((a, b) => {
+        const va = parseInt(a.volume.replace(/,/g, '')) || 0;
+        const vb = parseInt(b.volume.replace(/,/g, '')) || 0;
+        return vb - va;
+      })
+      .slice(0, 5);
+
+    console.log(`Final KR Top 5 count: ${result.kr.length}`);
+
+    // 2. US Top Volume (Yahoo Finance Most Actives)
+    try {
+      const { crumb, cookie } = await getYahooCrumb();
+      const usR = await _fetch(`https://query1.finance.yahoo.com/v1/finance/screener/predefined/saved?screenerIds=most_actives&count=5&crumb=${encodeURIComponent(crumb)}`, {
+        headers: { 'User-Agent': 'Mozilla/5.0', 'Cookie': cookie }
+      }).then(r => r.json());
+
+      if (usR?.finance?.result?.[0]?.quotes?.length) {
+        result.us = usR.finance.result[0].quotes.map(s => ({
+          symbol: s.symbol,
+          name: s.shortName || s.symbol,
+          price: s.regularMarketPrice,
+          diff: s.regularMarketChange,
+          pct: s.regularMarketChangePercent,
+          volume: s.regularMarketVolume
+        }));
+      } else {
+        throw new Error('empty us');
+      }
+    } catch (_) { 
+      // Fallback: Use some major active tickers
+      const SYMS = ['TSLA', 'NVDA', 'AAPL', 'AMD', 'MSFT'];
+      const r = await fetchQuotesBatch(SYMS);
+      result.us = r.map(s => ({
+        symbol: s.symbol,
+        name: s.shortName || s.symbol,
+        price: s.regularMarketPrice,
+        diff: s.regularMarketChange,
+        pct: s.regularMarketChangePercent,
+        volume: s.regularMarketVolume
+      }));
+    }
+
+  } catch (err) {
+    console.error('Market Top fetch error:', err);
+  }
+  res.json(result);
+});
+
 app.get('/api/health', (req, res) => res.json({ status: 'ok', env: process.env.VERCEL ? 'vercel' : 'local' }));
 
 // Root route (Fallback)

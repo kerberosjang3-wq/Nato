@@ -1738,3 +1738,69 @@ html, body {
     left: calc(56px + (100vw - 56px) / 2);
   }
 }
+
+/* ── Market Trends ── */
+.market-section { padding: 14px; }
+.market-section:first-of-type { padding-bottom: 0; }
+
+.market-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.market-idx-card {
+  background: var(--bg-card);
+  border-radius: 14px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.midx-top { display: flex; align-items: center; gap: 6px; }
+.midx-flag { font-size: 14px; }
+.midx-label { font-size: 11px; font-weight: 700; color: var(--text-sub); }
+.midx-price { font-size: 16px; font-weight: 800; color: var(--text); letter-spacing: -0.3px; }
+.midx-change { font-size: 11px; font-weight: 600; }
+
+.mtop-section {
+  background: var(--bg-card);
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.mtop-header {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.mtop-header i { color: var(--primary); font-size: 18px; }
+
+.mtop-list { display: flex; flex-direction: column; gap: 12px; }
+
+.mtop-item {
+  display: flex; align-items: center; gap: 12px;
+}
+
+.mtop-rank {
+  font-size: 14px; font-weight: 800; color: var(--primary);
+  width: 18px; text-align: center;
+}
+
+.mtop-info { flex: 1; min-width: 0; }
+.mtop-name-row { display: flex; align-items: center; gap: 5px; min-width: 0; }
+.mtop-name { font-size: 13px; font-weight: 700; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mtop-market-badge { flex-shrink: 0; font-size: 9px; font-weight: 700; padding: 1px 5px; border-radius: 4px; background: rgba(0,120,212,0.12); color: var(--primary); }
+.mtop-market-badge.us { background: rgba(100,100,100,0.12); color: var(--text-sub); }
+.mtop-vol { font-size: 10px; color: var(--text-sub); margin-top: 2px; }
+
+.mtop-right { text-align: right; }
+.mtop-price { font-size: 13px; font-weight: 700; color: var(--text); }
+.mtop-pct { font-size: 11px; font-weight: 600; margin-top: 1px; }

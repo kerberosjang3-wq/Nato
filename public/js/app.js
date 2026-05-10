@@ -125,6 +125,9 @@ const state = {
   watchlistSearchQ: '',
   watchlistSearching: false,
   watchlistFetchingPrices: false,
+  marketData: null,
+  marketTop: null,
+  marketLoading: false,
 };
 
 // ── API ────────────────────────────────────────────────────────────────────
@@ -387,6 +390,15 @@ function formatVolume(vol) {
   if (vol >= 1e6) return (vol / 1e6).toFixed(1) + 'M';
   if (vol >= 1e3) return (vol / 1e3).toFixed(0) + 'K';
   return vol.toLocaleString();
+}
+
+function formatVolumeKr(vol) {
+  if (!vol) return '';
+  const n = typeof vol === 'string' ? parseInt(vol.replace(/,/g, ''), 10) : vol;
+  if (isNaN(n)) return vol;
+  if (n >= 1e8) return (n / 1e8).toFixed(1) + '억주';
+  if (n >= 1e4) return Math.floor(n / 1e4).toLocaleString() + '만주';
+  return n.toLocaleString() + '주';
 }
 
 function buildSparklineSvg(closes, h = 22, full = false) {
@@ -1941,6 +1953,113 @@ function renderNews() {
   }).join('');
 }
 
+// ── Market Trends ──────────────────────────────────────────────────────────
+async function loadMarketTrends() {
+  if (state.marketLoading) return;
+  state.marketLoading = true;
+  renderMarketTrends();
+
+  try {
+    const [m, t] = await Promise.all([
+      apiFetch('/api/market'),
+      apiFetch('/api/market-top')
+    ]);
+    state.marketData = m;
+    state.marketTop = t;
+  } catch (e) {
+    console.error('Market load error:', e);
+  } finally {
+    state.marketLoading = false;
+    renderMarketTrends();
+  }
+}
+
+function renderMarketTrends() {
+  const indicesEl = document.getElementById('market-indices');
+  const topEl = document.getElementById('market-top-lists');
+  if (!indicesEl || !topEl) return;
+
+  if (state.marketLoading && !state.marketData) {
+    indicesEl.innerHTML = '<div class="news-loading"><i class="ph ph-spinner news-spin"></i><span>증시 정보를 불러오는 중...</span></div>';
+    topEl.innerHTML = '';
+    return;
+  }
+
+  // Indices
+  if (state.marketData) {
+    const d = state.marketData;
+    const items = [
+      { id: 'KOSPI',  data: d.kospi,  flag: '🇰🇷' },
+      { id: 'KOSDAQ', data: d.kosdaq, flag: '🇰🇷' },
+      { id: 'NASDAQ', data: d.nasdaq, flag: '🇺🇸' },
+      { id: 'S&P 500',data: d.sp500,  flag: '🇺🇸' },
+      { id: '환율',    data: d.usdkrw, flag: '💵' },
+      { id: 'WTI',    data: d.wti,    flag: '🛢️' }
+    ];
+
+    indicesEl.innerHTML = `
+      <div class="market-grid">
+        ${items.filter(i => i.data).map(i => {
+          const v = i.data;
+          const cls = getChangeClass(parseFloat(v.pct));
+          const sign = parseFloat(v.pct) > 0 ? '+' : '';
+          return `
+            <div class="market-idx-card">
+              <div class="midx-top">
+                <span class="midx-flag">${i.flag}</span>
+                <span class="midx-label">${i.id}</span>
+              </div>
+              <div class="midx-price">${v.price}</div>
+              <div class="midx-change ${cls}">${sign}${v.diff} (${sign}${v.pct}%)</div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+  }
+
+  // Top Volume
+  if (state.marketTop) {
+    const buildList = (title, icon, list, isKr) => {
+      if (!list?.length) return '';
+      return `
+        <div class="mtop-section">
+          <div class="mtop-header"><i class="ph ${icon}"></i> ${title} 거래량 Top 5</div>
+          <div class="mtop-list">
+            ${list.map((s, idx) => {
+              const cls = getChangeClass(s.pct);
+              const sign = s.pct > 0 ? '+' : '';
+              const vol = isKr ? formatVolumeKr(s.volume) : formatVolume(s.volume);
+              const badge = isKr && s.market ? `<span class="mtop-market-badge">${s.market}</span>` : `<span class="mtop-market-badge us">${s.symbol}</span>`;
+              return `
+                <div class="mtop-item">
+                  <div class="mtop-rank">${idx + 1}</div>
+                  <div class="mtop-info">
+                    <div class="mtop-name-row">
+                      <span class="mtop-name">${s.name}</span>
+                      ${badge}
+                    </div>
+                    <div class="mtop-vol">거래량 ${vol}</div>
+                  </div>
+                  <div class="mtop-right">
+                    <div class="mtop-price">${isKr ? s.price : formatPrice(s.price, 'USD')}</div>
+                    <div class="mtop-pct ${cls}">${sign}${s.pct.toFixed(2)}%</div>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    };
+
+    topEl.innerHTML = `
+      ${buildList('국내주식', 'ph-chart-line-up', state.marketTop.kr, true)}
+      ${buildList('해외주식', 'ph-globe', state.marketTop.us, false)}
+    `;
+  }
+}
+
 // ── Tabs ───────────────────────────────────────────────────────────────────
 function switchTab(tab) {
   if (currentSwipedCard) { currentSwipedCard.classList.remove('swiped'); currentSwipedCard = null; }
@@ -1958,6 +2077,7 @@ function switchTab(tab) {
   if (tab === 'home') { renderHome(); renderWatchlistSearch(); }
   if (tab === 'settings') renderSettings();
   if (tab === 'news') loadNews();
+  if (tab === 'market') loadMarketTrends();
   if (tab === 'portfolio') {
     renderPortfolioHoldings();
     renderPortfolioSearch();

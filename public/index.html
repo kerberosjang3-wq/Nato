@@ -28,7 +28,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
-  <link rel="stylesheet" href="/css/style.css?v=1.2.0">
+  <link rel="stylesheet" href="/css/style.css?v=1.2.1">
 </head>
 <body>
 <div id="app">
@@ -100,11 +100,8 @@
 
     <!-- 증시동향 -->
     <section class="screen" id="screen-market">
-      <div class="placeholder-screen">
-        <i class="ph ph-chart-line-up"></i>
-        <span>증시동향</span>
-        <p>준비 중입니다</p>
-      </div>
+      <div id="market-indices" class="market-section"></div>
+      <div id="market-top-lists" class="market-section"></div>
     </section>
 
     <!-- 뉴스룸 -->
@@ -349,6 +346,6 @@
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
-<script src="/js/app.js?v=1.2.0"></script>
+<script src="/js/app.js?v=1.2.1"></script>
 </body>
 </html>
