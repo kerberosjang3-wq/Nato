@@ -1088,8 +1088,12 @@ html, body {
 
 .psummary-header-amount {
   font-size: 26px; font-weight: 800; color: var(--text);
-  line-height: 1.2; letter-spacing: -0.5px;
-  margin-bottom: 4px;
+  line-height: 1.1; letter-spacing: -0.5px;
+  margin-bottom: 8px;
+}
+
+.psummary-header-footer {
+  display: flex; justify-content: space-between; align-items: flex-end;
 }
 
 .psummary-header-gain { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; }
@@ -1098,6 +1102,16 @@ html, body {
 .psummary-header-pct { font-size: 14px; font-weight: 800; }
 .psummary-header-pct.gain-up  { color: var(--stock-up); }
 .psummary-header-pct.gain-down { color: var(--stock-down); }
+
+.psummary-market-status {
+  display: flex; align-items: center; gap: 4px;
+}
+.psummary-market-status .m-item {
+  font-size: 9px; font-weight: 700; color: var(--text-sub);
+  background: var(--bg-elevated); border: 1px solid var(--border);
+  border-radius: 4px; padding: 1px 4px;
+  white-space: nowrap; opacity: 0.8;
+}
 
 .psummary-divider {
   height: 1px; background: var(--border);

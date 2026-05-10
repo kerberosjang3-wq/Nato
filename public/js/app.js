@@ -49,6 +49,41 @@ function isLandscape() {
   return window.matchMedia('(orientation: landscape)').matches;
 }
 
+function getMarketStatus() {
+  const now = new Date();
+  // Get KST time
+  const kstOffset = 9 * 60;
+  const kst = new Date(now.getTime() + (now.getTimezoneOffset() + kstOffset) * 60000);
+  const day = kst.getDay(); // 0:Sun, 1:Mon... 6:Sat
+  const hh = kst.getHours();
+  const mm = kst.getMinutes();
+  const hhmm = hh * 100 + mm;
+
+  let kr = '장마감';
+  if (day >= 1 && day <= 5) {
+    if (hhmm >= 900 && hhmm < 1530) kr = '장중';
+    else if (hhmm < 900) kr = '장전';
+  }
+
+  // US Market (KST approx)
+  // DST check (approx: Mar to Nov)
+  const month = kst.getMonth() + 1;
+  const isDST = month > 3 && month < 11;
+  const usStart = isDST ? 2230 : 2330;
+  const usEnd = isDST ? 500 : 600;
+
+  let us = '장마감';
+  // US market is open Mon-Fri (US time)
+  // KST: Mon night to Sat morning
+  const isOpenTime = (hhmm >= usStart || hhmm < usEnd);
+  const isMarketDay = (day === 1 && hhmm >= usStart) || (day >= 2 && day <= 5) || (day === 6 && hhmm < usEnd);
+  
+  if (isMarketDay && isOpenTime) us = '장중';
+  else if (isMarketDay && hhmm < usStart && hhmm > 600) us = '장전';
+
+  return { kr, us };
+}
+
 // ── State ──────────────────────────────────────────────────────────────────
 const state = {
   clientId: localStorage.getItem('clientId') || (() => { const id = uid(); localStorage.setItem('clientId', id); return id; })(),
@@ -1052,6 +1087,7 @@ function renderPortfolioSummary() {
   }
 
   const totalCount = items.length;
+  const m = getMarketStatus();
   const updatedStr = (() => {
     if (!state.portfolioUpdatedAt) return '';
     const d = new Date(state.portfolioUpdatedAt);
@@ -1073,9 +1109,17 @@ function renderPortfolioSummary() {
         ${updatedStr ? `<span class="psummary-updated">${updatedStr} 갱신</span>` : ''}
       </div>
       <div class="psummary-header-amount">${hasTotal ? formatPrice(totalCurrent, 'KRW') : '—'}</div>
-      <div class="psummary-header-gain">
-        <span class="${tgc}">${totalGain !== null ? `${tgs}${formatPrice(Math.abs(totalGain), 'KRW')}` : '—'}</span>
-        <span class="psummary-header-pct ${tgc}">${totalGainPct !== null ? `${tgs}${totalGainPct.toFixed(1)}%` : ''}</span>
+      
+      <div class="psummary-header-footer">
+        <div class="psummary-header-gain">
+          <span class="${tgc}">${totalGain !== null ? `${tgs}${formatPrice(Math.abs(totalGain), 'KRW')}` : '—'}</span>
+          <span class="psummary-header-pct ${tgc}">${totalGainPct !== null ? `${tgs}${totalGainPct.toFixed(1)}%` : ''}</span>
+        </div>
+        
+        <div class="psummary-market-status">
+          <span class="m-item kr">🇰🇷 ${m.kr}</span>
+          <span class="m-item us">🇺🇸 ${m.us}</span>
+        </div>
       </div>
       
       <div class="psummary-divider"></div>
