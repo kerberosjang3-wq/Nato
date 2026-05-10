@@ -1228,10 +1228,18 @@ html, body {
 /* ── Sparkline ── */
 .sparkline {
   display: block;
-  margin-top: 4px;
-  opacity: 0.8;
-  flex-shrink: 0;
-  align-self: flex-end;
+  opacity: 0.85;
+}
+
+/* 포트폴리오 카드 펼침 내 스파크라인 */
+.port-spark-wrap {
+  padding: 8px 14px 2px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* 상세 패널 내 스파크라인 */
+.ls-spark-wrap {
+  padding: 0 16px 12px;
 }
 
 /* ── 카드 내 마켓 배지 ── */

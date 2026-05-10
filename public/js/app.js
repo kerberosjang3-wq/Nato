@@ -354,20 +354,23 @@ function formatVolume(vol) {
   return vol.toLocaleString();
 }
 
-function buildSparklineSvg(closes) {
+function buildSparklineSvg(closes, h = 22, full = false) {
   if (!closes || closes.length < 2) return '';
-  const W = 64, H = 22, pad = 1.5;
+  const VW = full ? 300 : 64, pad = 2;
   const min = Math.min(...closes);
   const max = Math.max(...closes);
   const range = max - min || 1;
   const pts = closes.map((c, i) => {
-    const x = pad + (i / (closes.length - 1)) * (W - pad * 2);
-    const y = pad + (1 - (c - min) / range) * (H - pad * 2);
+    const x = pad + (i / (closes.length - 1)) * (VW - pad * 2);
+    const y = pad + (1 - (c - min) / range) * (h - pad * 2);
     return `${x.toFixed(1)},${y.toFixed(1)}`;
   }).join(' ');
   const isUp = closes[closes.length - 1] >= closes[0];
   const color = isUp ? 'var(--stock-up)' : 'var(--stock-down)';
-  return `<svg class="sparkline" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" preserveAspectRatio="none"><polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  const wAttr = full ? 'width="100%"' : `width="${VW}"`;
+  const sw = full ? '2.5' : '1.5';
+  const cls = full ? 'sparkline sparkline-detail' : 'sparkline';
+  return `<svg class="${cls}" viewBox="0 0 ${VW} ${h}" ${wAttr} height="${h}" preserveAspectRatio="none"><polyline points="${pts}" fill="none" stroke="${color}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 }
 
 async function loadSparklines() {
@@ -444,7 +447,6 @@ function renderStockCard(item) {
             <span class="${changeClass}">${changeAmtStr}</span>
             <span class="${changeClass}">${pctDisplayStr}</span>
           </div>
-          ${buildSparklineSvg(state.sparklines[item.symbol])}
         </div>
         <button class="mts-order-btn" onclick="event.stopPropagation()">주문</button>
       </div>
@@ -1158,11 +1160,11 @@ function renderPortfolioCard(item) {
           <div class="port-line2">
             <span class="port-gain-inline ${gainClass}">${gain !== null ? `${gainSign}${formatPrice(Math.abs(gain), currency)}` : '—'}</span>
           </div>
-          ${buildSparklineSvg(state.sparklines[item.symbol])}
         </div>
         <button class="port-dots-btn" onclick="event.stopPropagation();handlePortfolioCardTap('${item.symbol}')"><i class="ph ph-dots-three-vertical"></i></button>
       </div>
       <div class="port-expand-body">
+        ${state.sparklines[item.symbol] ? `<div class="port-spark-wrap">${buildSparklineSvg(state.sparklines[item.symbol], 44, true)}</div>` : ''}
         <div class="port-gain-summary">
           <span class="port-gain-label">손익</span>
           <span class="port-gain-val ${gainClass}">${gainStr}</span>
@@ -1346,6 +1348,7 @@ function renderDetailPanel(symbol) {
         <div class="stock-change ${getChangeClass(pct)}">${getChangeStr(pct)}</div>
       </div>
     </div>
+    ${state.sparklines[symbol] && !isLandscape ? `<div class="ls-spark-wrap">${buildSparklineSvg(state.sparklines[symbol], 60, true)}</div>` : ''}
     <div class="ls-detail-divider"></div>
     <div class="ls-detail-stats">
       <div class="ls-detail-stat">
