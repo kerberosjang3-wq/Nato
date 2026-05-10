@@ -1112,7 +1112,7 @@ function renderPortfolioCard(item) {
       <div class="port-row">
         <div class="port-info">
           <div class="port-name">${item.name || q?.korName || item.symbol}</div>
-          <div class="port-qty-row">${marketBadge}<span class="port-qty-num">${item.qty.toLocaleString('ko-KR')}주</span>${volNum ? `<span class="port-vol-sep"> · </span><span class="port-vol-left">${volNum}</span>` : ''}${!isKR ? `<span class="port-vol-sep"> · </span><span class="port-ticker">${item.symbol}</span>` : ''}</div>
+          <div class="port-qty-row">${marketBadge}<span class="port-qty-num">${item.qty.toLocaleString('ko-KR')}주</span>${volNum ? `<span class="port-vol-group"><span class="port-vol-sep"> · </span><span class="port-vol-left">${volNum}</span></span>` : ''}${!isKR ? `<span class="port-vol-sep"> · </span><span class="port-ticker">${item.symbol}</span>` : ''}</div>
           ${regularLineLeft}
         </div>
         <div class="port-price-col">

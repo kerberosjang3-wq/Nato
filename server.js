@@ -683,6 +683,80 @@ app.get('/api/news', async (req, res) => {
   res.json({ articles });
 });
 
+app.get('/api/market', async (req, res) => {
+  const result = {
+    kospi: null, kosdaq: null, kpi200: null,
+    usdkrw: null,
+    dji: null, nasdaq: null, sp500: null,
+    wti: null
+  };
+
+  try {
+    // 1. Domestic Indices & FX
+    const [kospiR, kosdaqR, kpi200R, usdR, wtiR] = await Promise.all([
+      _fetch('https://m.stock.naver.com/api/index/KOSPI/basic').then(r => r.json()).catch(() => null),
+      _fetch('https://m.stock.naver.com/api/index/KOSDAQ/basic').then(r => r.json()).catch(() => null),
+      _fetch('https://m.stock.naver.com/api/index/KPI200/basic').then(r => r.json()).catch(() => null),
+      _fetch('https://api.stock.naver.com/marketindex/exchange/FX_USDKRW').then(r => r.json()).catch(() => null),
+      _fetch('https://m.stock.naver.com/front-api/marketIndex/productDetail?category=energy&reutersCode=CLcv1').then(r => r.json()).catch(() => null),
+    ]);
+
+    if (kospiR) result.kospi = { price: kospiR.closePrice, diff: kospiR.compareToPreviousClosePrice, pct: kospiR.fluctuationsRatio };
+    if (kosdaqR) result.kosdaq = { price: kosdaqR.closePrice, diff: kosdaqR.compareToPreviousClosePrice, pct: kosdaqR.fluctuationsRatio };
+    if (kpi200R) result.kpi200 = { price: kpi200R.closePrice, diff: kpi200R.compareToPreviousClosePrice, pct: kpi200R.fluctuationsRatio };
+    if (usdR?.exchangeInfo) {
+      result.usdkrw = { 
+        price: usdR.exchangeInfo.closePrice, 
+        diff: usdR.exchangeInfo.fluctuations, 
+        pct: usdR.exchangeInfo.fluctuationsRatio 
+      };
+    }
+    if (wtiR?.result) {
+      result.wti = { 
+        price: wtiR.result.closePrice, 
+        diff: wtiR.result.fluctuations, 
+        pct: wtiR.result.fluctuationsRatio 
+      };
+    }
+
+    // 2. US Futures (Scraping)
+    const fetchFuture = async (sym) => {
+      try {
+        const r = await _fetch(`https://finance.naver.com/marketindex/worldDailyQuote.naver?marketindexCd=${sym}`);
+        const h = await r.text();
+        const priceM = h.match(/<td class="num">([\d,.]+)/);
+        const diffM = h.match(/<td class="num"><img[^>]*> ([\d,.]+)/);
+        const isMinus = h.includes('alt="하락"') || h.includes('alt="dn"');
+        
+        if (priceM) {
+          const price = priceM[1];
+          const diffVal = diffM ? diffM[1] : '0';
+          const diff = (isMinus ? '-' : '') + diffVal;
+          const pVal = parseFloat(price.replace(/,/g, ''));
+          const dVal = parseFloat(diff.replace(/,/g, ''));
+          const pct = ((dVal / (pVal - dVal)) * 100).toFixed(2);
+          return { price, diff, pct };
+        }
+      } catch (e) { console.error(`Error fetching ${sym}:`, e); }
+      return null;
+    };
+
+    const [nq, es, ym] = await Promise.all([
+      fetchFuture('FUT_NQ'),
+      fetchFuture('FUT_ES'),
+      fetchFuture('FUT_YM')
+    ]);
+
+    result.nasdaq = nq;
+    result.sp500 = es;
+    result.dji = ym;
+
+  } catch (err) {
+    console.error('Market fetch error:', err);
+  }
+  res.json(result);
+});
+
 app.get('/api/health', (req, res) => res.json({ status: 'ok', env: process.env.VERCEL ? 'vercel' : 'local' }));
 
 // Root route (Fallback)

@@ -4,9 +4,9 @@
   --primary: #3E7BFA;
   --primary-glow: rgba(62, 123, 250, 0.3);
   --success: #00D084;
-  --danger: #FF5252;
-  --stock-up: #FF5252;
-  --stock-down: #3E7BFA;
+  --danger: #E06666;
+  --stock-up: #E06666;
+  --stock-down: #6090D8;
   --warning: #FFAB00;
   
   --bg: #121212;
@@ -45,6 +45,11 @@
   --glass-bg: rgba(255, 255, 255, 0.7);
   --glass-border: rgba(0, 0, 0, 0.05);
   --shadow-lg: 0 8px 32px rgba(0, 0, 40, 0.06);
+}
+[data-theme="light"] .market-badge-kr,
+[data-theme="light"] .market-badge-us {
+  color: #94a3b8;
+  border-color: rgba(0, 0, 0, 0.14);
 }
 
 * { 
@@ -559,40 +564,41 @@ html, body {
 /* ── Portfolio card (MTS screenshot style) ── */
 .port-row {
   display: flex; align-items: center; gap: 8px;
-  padding: 4px 12px 4px 8px;
+  padding: 7px 12px 7px 10px;
 }
 
 /* Left info column */
 .port-info {
   flex: 1; min-width: 0;
-  display: flex; flex-direction: column; gap: 0;
+  display: flex; flex-direction: column; gap: 2px;
 }
 .port-name {
-  font-size: 12px; font-weight: 700; color: var(--text);
+  font-size: 13px; font-weight: 700; color: var(--text);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   line-height: 1.3;
 }
 .port-qty-row {
   display: flex; align-items: center;
-  font-size: 9px; color: var(--text-sub);
+  font-size: 9px; color: #555;
   font-variant-numeric: tabular-nums;
 }
-.port-qty-num { font-weight: 600; color: var(--text-sub); }
+.port-qty-num { font-weight: 500; color: #555; }
 .port-vol-sep { color: var(--border); }
 .port-vol-left { color: var(--text-sub); }
+.port-vol-group { display: none; }
 .port-ticker { color: var(--text-sub); font-size: 11px; font-weight: 600; letter-spacing: 0.3px; }
 
 /* Right price column */
 .port-price-col {
   flex-shrink: 0; display: flex; flex-direction: column;
-  align-items: flex-end; gap: 1px;
+  align-items: flex-end; gap: 2px; min-width: 90px;
 }
 .port-line1 {
   display: flex; align-items: baseline;
-  justify-content: flex-end; gap: 6px;
+  justify-content: flex-end; gap: 5px; width: 100%;
 }
 .port-price {
-  font-size: 13px; font-weight: 800;
+  font-size: 14px; font-weight: 800;
   font-variant-numeric: tabular-nums; color: var(--text);
 }
 .port-price.up   { color: var(--stock-up); }
@@ -618,7 +624,7 @@ html, body {
 .port-tri-pct.flat { color: var(--text-sub); }
 
 .port-gain-inline {
-  font-size: 10px; font-weight: 600;
+  font-size: 11px; font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
 .port-gain-inline.gain-up   { color: var(--stock-up); }
@@ -1188,8 +1194,8 @@ html, body {
   font-size: 10px; font-weight: 700;
   border-radius: 5px; padding: 1px 6px;
 }
-.portfolio-section-count.kr { color: #5b9bd5; background: rgba(91,155,213,0.14); }
-.portfolio-section-count.us { color: #4caf82; background: rgba(76,175,130,0.14); }
+.portfolio-section-count.kr { color: var(--text-sub); background: var(--bg-elevated); }
+.portfolio-section-count.us { color: var(--text-sub); background: var(--bg-elevated); }
 
 .section-ud-wrap { display: flex; align-items: center; gap: 4px; margin-right: auto; }
 .port-sort-btn {
@@ -1216,8 +1222,8 @@ html, body {
   line-height: 1.4;
 }
 .section-ud i { font-size: 10px; }
-.section-up   { color: var(--stock-up);   background: rgba(255, 82,  82,  0.12); }
-.section-down { color: var(--stock-down); background: rgba(62,  123, 250, 0.12); }
+.section-up   { color: var(--stock-up);   background: rgba(224, 102, 102, 0.10); }
+.section-down { color: var(--stock-down); background: rgba(96,  144, 216, 0.10); }
 
 /* ── 카드 내 마켓 배지 ── */
 .market-badge {
@@ -1227,8 +1233,8 @@ html, body {
   letter-spacing: 0.4px; flex-shrink: 0;
   margin-right: 3px;
 }
-.market-badge-kr { color: #5b9bd5; background: rgba(91,155,213,0.15); }
-.market-badge-us { color: #4caf82; background: rgba(76,175,130,0.15); }
+.market-badge-kr { color: #666; background: transparent; border: 1px solid rgba(255,255,255,0.14); }
+.market-badge-us { color: #666; background: transparent; border: 1px solid rgba(255,255,255,0.14); }
 
 /* 포트폴리오 카드 2×2 스탯 그리드 */
 .port-stats {
