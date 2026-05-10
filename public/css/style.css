@@ -30,21 +30,45 @@
   --tab-h: clamp(49px, 12.5vw, 58px);
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
+
+  /* ── 스큐어모픽 카드 토큰 (다크) ── */
+  --card-bg:            #232328;
+  --card-bg-grad:       linear-gradient(160deg, #2c2c34 0%, #1e1e24 55%, #1a1a20 100%);
+  --card-metallic:      repeating-linear-gradient(45deg, rgba(255,255,255,0.01) 0px, rgba(255,255,255,0.01) 1px, transparent 1px, transparent 2px);
+  --card-highlight:     rgba(255, 255, 255, 0.08); /* 상단 하이라이트 라인 */
+  --card-shadow-outer:  0 4px 8px rgba(0,0,0,0.5), 0 1px 3px rgba(0,0,0,0.4);
+  --card-shadow-inner:  inset 0 1px 0 rgba(255,255,255,0.08), inset 0 -1px 0 rgba(0,0,0,0.4);
+  --card-border-top:    rgba(255,255,255,0.12);
+  --card-border-rest:   rgba(0,0,0,0.4);
+  --card-radius:        12px;
+  --card-gap:           8px;
 }
 
 [data-theme="light"] {
   --bg-rgb: 245, 247, 255;
-  --bg: #F5F7FF;
-  --bg-card: rgba(255, 255, 255, 0.8);
-  --bg-elevated: rgba(240, 242, 250, 0.6);
+  --bg: #ECEEF5;
+  --bg-card: rgba(255, 255, 255, 0.92);
+  --bg-elevated: rgba(240, 242, 250, 0.8);
   --bg-input: #FFFFFF;
-  --border: rgba(0, 0, 0, 0.05);
+  --border: rgba(0, 0, 0, 0.06);
   --text: #0F172A;
   --text-sub: #64748B;
-  --tab-bg: rgba(255, 255, 255, 0.85);
-  --glass-bg: rgba(255, 255, 255, 0.7);
+  --tab-bg: rgba(255, 255, 255, 0.90);
+  --glass-bg: rgba(255, 255, 255, 0.75);
   --glass-border: rgba(0, 0, 0, 0.05);
-  --shadow-lg: 0 8px 32px rgba(0, 0, 40, 0.06);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 40, 0.07);
+
+  /* 라이트 스큐어모픽 토큰 */
+  --card-bg:            #FFFFFF;
+  --card-bg-grad:       linear-gradient(160deg, #FFFFFF 0%, #F4F6FC 55%, #EEF0F8 100%);
+  --card-metallic:      repeating-linear-gradient(45deg, rgba(0,0,0,0.005) 0px, rgba(0,0,0,0.005) 1px, transparent 1px, transparent 2px);
+  --card-highlight:     rgba(255,255,255,1.0);
+  --card-shadow-outer:  0 3px 8px rgba(160,165,200,0.25), 0 1px 3px rgba(140,145,190,0.15);
+  --card-shadow-inner:  inset 0 1px 0 rgba(255,255,255,1.0), inset 0 -1px 0 rgba(180,185,220,0.2);
+  --card-border-top:    rgba(255,255,255,1.0);
+  --card-border-rest:   rgba(180,185,220,0.35);
+  --card-radius:        12px;
+  --card-gap:           8px;
 }
 [data-theme="light"] .market-badge-kr,
 [data-theme="light"] .market-badge-us {
@@ -180,10 +204,11 @@ html, body {
 
 /* Search results dropdown */
 #home-search-results {
-  background: #1a1a1a;
+  background: #141418;
   border-bottom: 1px solid var(--glass-border);
+  padding: 8px 12px 6px;
 }
-#home-search-results:empty { display: none; }
+#home-search-results:empty { display: none; padding: 0; }
 
 /* ── Watchlist tabs ── */
 .wl-tab-bar {
@@ -520,17 +545,59 @@ html, body {
   font-size: 16px; cursor: pointer; padding: 4px;
 }
 
-/* ── Stock List & Cards ── */
-.stock-list { display: flex; flex-direction: column; gap: 0; }
+/* ── Stock List & Cards (스큐어모픽) ── */
+.stock-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--card-gap);
+  padding: 10px 12px 4px;
+}
 
+/* ── 스큐어모픽 카드 베이스 ── */
 .stock-card {
   position: relative;
-  background: transparent;
-  border-bottom: 1px solid var(--border);
-  transition: background 0.15s;
+  background: var(--card-bg-grad);
+  border-radius: var(--card-radius);
+  border: 1px solid var(--card-border-rest);
+  border-top-color: var(--card-border-top);
+  box-shadow:
+    var(--card-shadow-outer),
+    var(--card-shadow-inner);
   overflow: hidden;
   user-select: none;
   touch-action: pan-y;
+  transition:
+    box-shadow 0.18s ease,
+    transform  0.15s ease,
+    background 0.15s;
+  /* 클립을 위한 stacking context */
+  isolation: isolate;
+}
+
+/* 금속 질감 (Brushed Metal) 레이어 */
+.stock-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--card-metallic);
+  opacity: 0.5;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* 미세 광택 오버레이 — 금속판 상단 광원 */
+.stock-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--card-radius);
+  background: linear-gradient(
+    to bottom,
+    var(--card-highlight) 0%,
+    transparent 45%
+  );
+  pointer-events: none;
+  z-index: 2;
 }
 
 .stock-card-main {
@@ -542,21 +609,55 @@ html, body {
   position: relative;
   z-index: 2;
 }
+
 /* Watchlist cards keep their row padding via mts-row */
-.mts-row { padding: 10px 16px; }
+.mts-row { padding: 10px 14px; }
 
 .stock-card.swiped .stock-card-main {
   transform: translateX(-90px);
 }
-.stock-card:active { background: rgba(255,255,255,0.03); }
 
-.stock-card.alert-reached { background: rgba(255, 171, 0, 0.05); border-left: 3px solid var(--warning); }
-.stock-card.target-reached { background: rgba(0, 208, 132, 0.05); border-left: 3px solid var(--success); }
+/* 눌렸을 때: 안으로 쑥 들어가는 입체 효과 */
+.stock-card:active {
+  transform: scale(0.985) translateY(1px);
+  box-shadow:
+    0 1px 3px rgba(0,0,0,0.5),
+    inset 0 2px 6px rgba(0,0,0,0.25),
+    var(--card-shadow-inner);
+}
 
-/* Directional left bar for portfolio cards */
-.stock-card.dir-up   { border-left: 3px solid var(--stock-up); }
-.stock-card.dir-down { border-left: 3px solid var(--stock-down); }
-.stock-card.dir-flat { border-left: 3px solid #444; }
+/* 알림/목표가 도달 카드 */
+.stock-card.alert-reached {
+  background: linear-gradient(160deg, rgba(255,171,0,0.10) 0%, #232328 60%);
+  border-color: rgba(255,171,0,0.35);
+  border-top-color: rgba(255,218,100,0.4);
+  box-shadow:
+    0 0 0 1px rgba(255,171,0,0.12),
+    var(--card-shadow-outer),
+    var(--card-shadow-inner);
+}
+.stock-card.target-reached {
+  background: linear-gradient(160deg, rgba(0,208,132,0.10) 0%, #232328 60%);
+  border-color: rgba(0,208,132,0.30);
+  border-top-color: rgba(80,230,160,0.38);
+  box-shadow:
+    0 0 0 1px rgba(0,208,132,0.10),
+    var(--card-shadow-outer),
+    var(--card-shadow-inner);
+}
+
+/* 방향 컬러 사이드 바 — 스큐어모픽 버전: 좌측 광원 */
+.stock-card.dir-up {
+  border-left: 3px solid rgba(224,102,102,0.75);
+  border-top-color: rgba(255,180,180,0.18);
+}
+.stock-card.dir-down {
+  border-left: 3px solid rgba(96,144,216,0.75);
+  border-top-color: rgba(140,180,255,0.18);
+}
+.stock-card.dir-flat {
+  border-left: 3px solid rgba(100,100,110,0.55);
+}
 
 /* MTS flat-list row layout */
 .mts-row { display: flex; align-items: center; gap: 10px; }
@@ -571,13 +672,22 @@ html, body {
   margin-top: 2px;
 }
 .mts-order-btn {
-  flex-shrink: 0; background: none; border: 1px solid var(--primary);
-  color: var(--primary); font-size: 11px; font-weight: 700;
-  padding: 5px 10px; border-radius: 6px; cursor: pointer;
+  flex-shrink: 0;
+  background: linear-gradient(160deg, #2c3c5c 0%, #1c2c4c 100%);
+  border: 1px solid rgba(62,123,250,0.4);
+  border-top-color: rgba(62,123,250,0.6);
+  color: #a0c0ff;
+  font-size: 11px; font-weight: 700;
+  padding: 5px 12px; border-radius: 8px; cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05);
   transition: all 0.15s; white-space: nowrap;
   -webkit-tap-highlight-color: transparent;
 }
-.mts-order-btn:active { background: var(--primary); color: white; }
+.mts-order-btn:active {
+  transform: scale(0.95) translateY(1px);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.4), inset 0 2px 4px rgba(0,0,0,0.3);
+  background: linear-gradient(160deg, #1c2c4c 0%, #0c1c3c 100%);
+}
 
 /* ── Portfolio card (MTS screenshot style) ── */
 .port-row {
@@ -734,7 +844,14 @@ html, body {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  background: rgba(var(--bg-rgb), 0.5);
+  /* 스큐어모픽 메탈 패널 */
+  background: linear-gradient(
+    to left,
+    rgba(15,15,18,0.97) 0%,
+    rgba(22,22,28,0.93) 70%,
+    rgba(22,22,28,0.60) 100%
+  );
+  border-radius: 0 var(--card-radius) var(--card-radius) 0;
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   padding-right: 8px;
   z-index: 1;
@@ -749,31 +866,51 @@ html, body {
   width: 34px;
   height: 34px;
   border-radius: 10px;
-  border: none;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-top-color: rgba(255,255,255,0.14);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 1rem;
   cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.07);
 }
 
-.card-btn.edit { background: none; color: #0284c7; }
-.card-btn.del { background: none; color: #dc2626; }
-.card-btn:active { transform: scale(0.9); }
+.card-btn.edit {
+  background: linear-gradient(160deg, #1a2a3a 0%, #112030 100%);
+  color: #38bdf8;
+}
+.card-btn.del {
+  background: linear-gradient(160deg, #2a1a1a 0%, #201010 100%);
+  color: #f87171;
+}
+.card-btn:active {
+  transform: scale(0.88) translateY(1px);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.5), inset 0 2px 4px rgba(0,0,0,0.3);
+}
 
-/* ── Bottom Nav ── */
+/* ── Bottom Nav (스큐어모픽) ── */
 .tab-bar {
   height: calc(var(--tab-h) + var(--safe-bottom));
-  background: var(--tab-bg);
-  border-top: 1px solid var(--glass-border);
+  background: linear-gradient(to bottom, #1a1a20 0%, #0d0d12 100%);
+  border-top: 1px solid rgba(255,255,255,0.08);
   display: flex;
   flex-shrink: 0;
   position: sticky;
   bottom: 0;
   z-index: 100;
   padding-bottom: var(--safe-bottom);
+  box-shadow: 0 -4px 12px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);
+  position: relative;
+  overflow: hidden;
+}
+.tab-bar::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: var(--card-metallic);
+  opacity: 0.3;
+  pointer-events: none;
 }
 
 .tab-btn {
@@ -789,10 +926,12 @@ html, body {
   cursor: pointer;
   color: var(--text-sub);
   font-family: inherit;
-  transition: color 0.2s;
+  transition: all 0.2s;
   -webkit-tap-highlight-color: transparent;
   overflow: hidden;
   padding: 0 2px;
+  position: relative;
+  z-index: 2;
 }
 
 .tab-icon {
@@ -811,9 +950,29 @@ html, body {
   max-width: 100%;
 }
 
-.tab-btn.active { color: #ffffff; }
-.tab-btn.active .tab-icon { opacity: 1; }
-.tab-btn:active .tab-icon { transform: scale(0.85); }
+.tab-btn.active {
+  color: var(--primary);
+  text-shadow: 0 0 10px var(--primary-glow);
+}
+.tab-btn.active .tab-icon {
+  opacity: 1;
+  transform: translateY(-1px);
+}
+.tab-btn::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 2px;
+  background: var(--primary);
+  transition: width 0.3s ease;
+  box-shadow: 0 0 12px var(--primary);
+}
+.tab-btn.active::before {
+  width: 30%;
+}
+.tab-btn:active .tab-icon { transform: scale(0.9); }
 
 /* ── Modal ── */
 .modal-overlay {
@@ -879,22 +1038,29 @@ html, body {
   padding: 12px; font-size: 14px; font-weight: 700; cursor: pointer; transition: background 0.2s;
 }
 .btn-save {
-  flex: 1.5; background: var(--primary); color: white;
-  border: none; border-radius: 12px; padding: 12px;
+  flex: 1.5; background: linear-gradient(160deg, var(--primary) 0%, #2e6bd6 100%);
+  color: white; border: 1px solid rgba(255,255,255,0.1);
+  border-top-color: rgba(255,255,255,0.2);
+  border-radius: 12px; padding: 12px;
   font-size: 14px; font-weight: 800; cursor: pointer;
-  transition: all 0.2s; box-shadow: 0 4px 12px var(--primary-glow);
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.15);
 }
-.btn-save:active { transform: scale(0.97); }
+.btn-save:active {
+  transform: scale(0.96) translateY(1px);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4), inset 0 2px 6px rgba(0,0,0,0.3);
+}
 
 /* ── Search Screen ── */
 .search-wrap { position: sticky; top: 0; background: var(--bg); padding: 4px 0 16px; z-index: 5; }
 .search-box {
   display: flex; align-items: center; gap: 8px;
-  background: var(--bg-card); border: 1px solid var(--border);
+  background: rgba(0,0,0,0.2); border: 1px solid var(--border);
   border-radius: 14px; padding: 0 16px; height: 50px;
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
+  box-shadow: inset 0 2px 6px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.05);
 }
 .search-box:focus-within { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-glow); }
 .search-icon { font-size: 18px; color: var(--text-sub); flex-shrink: 0; }
@@ -911,12 +1077,37 @@ html, body {
 
 .result-item {
   display: flex; align-items: center; gap: 12px;
-  background: var(--bg-card); border: 1px solid var(--border);
-  border-radius: 14px; padding: 12px 16px; margin-bottom: 8px;
-  cursor: pointer; transition: all 0.2s;
+  background: var(--card-bg-grad);
+  border: 1px solid var(--card-border-rest);
+  border-top-color: var(--card-border-top);
+  border-radius: var(--card-radius);
+  padding: 12px 16px; margin-bottom: 6px;
+  cursor: pointer;
+  box-shadow: var(--card-shadow-outer), var(--card-shadow-inner);
+  transition: box-shadow 0.18s ease, transform 0.15s ease, border-color 0.15s;
+  position: relative; overflow: hidden;
 }
-.result-item:hover { border-color: var(--primary); background: var(--bg-elevated); }
-.result-item.added { border-color: var(--success); }
+.result-item::before {
+  content: '';
+  position: absolute; inset: 0;
+  border-radius: var(--card-radius);
+  background: linear-gradient(to bottom, var(--card-highlight) 0%, transparent 40%);
+  pointer-events: none;
+}
+.result-item:hover {
+  border-color: var(--primary);
+  border-top-color: rgba(120,170,255,0.4);
+  box-shadow: 0 0 0 1px var(--primary-glow), var(--card-shadow-outer), var(--card-shadow-inner);
+}
+.result-item:active {
+  transform: scale(0.985) translateY(1px);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.5), inset 0 2px 5px rgba(0,0,0,0.2);
+}
+.result-item.added {
+  border-color: rgba(0,208,132,0.35);
+  border-top-color: rgba(80,230,160,0.35);
+  box-shadow: 0 0 0 1px rgba(0,208,132,0.10), var(--card-shadow-outer), var(--card-shadow-inner);
+}
 .result-info { flex: 1; overflow: hidden; }
 .result-name { font-size: 15px; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .result-meta { font-size: 11px; color: var(--text-sub); font-weight: 600; margin-top: 2px; }
@@ -1073,11 +1264,37 @@ html, body {
   --font-digital-title: 'Orbitron', 'Share Tech Mono', monospace;
 }
 
-/* 상단 총합 카드 */
+/* 상단 총합 카드 (스큐어모픽) */
 .psummary-header-card {
-  padding: 12px 14px 10px;
-  border-bottom: 1px solid var(--border);
-  background: linear-gradient(135deg, rgba(62,123,250,0.08) 0%, transparent 70%);
+  padding: 14px 16px 12px;
+  background: var(--card-bg-grad);
+  border: 1px solid var(--card-border-rest);
+  border-top-color: var(--card-border-top);
+  border-radius: var(--card-radius);
+  box-shadow: var(--card-shadow-outer), var(--card-shadow-inner);
+  margin: 10px 12px;
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.psummary-header-card::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: var(--card-metallic);
+  opacity: 0.4;
+  pointer-events: none;
+  z-index: 1;
+}
+.psummary-header-card::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(to bottom, var(--card-highlight) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 2;
+}
+.psummary-header-top, .psummary-header-amount, .psummary-header-gain {
+  position: relative;
+  z-index: 3;
 }
 .psummary-header-top {
   display: flex; align-items: center; gap: 6px; margin-bottom: 4px;
@@ -1167,15 +1384,19 @@ html, body {
 /* 상세 2×2 스탯 그리드 */
 .psummary-stats {
   display: grid; grid-template-columns: 1fr 1fr;
-  gap: 3px; padding: 6px 0 4px;
+  gap: 8px; padding: 10px 4px 6px;
 }
 .psummary-stat {
-  background: var(--bg-elevated); border-radius: 6px;
-  padding: 4px 7px; display: flex; flex-direction: column; gap: 1px;
+  background: rgba(0,0,0,0.2);
+  border-radius: 8px;
+  padding: 8px 10px;
+  display: flex; flex-direction: column; gap: 3px;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.4), 0 1px 0 rgba(255,255,255,0.05);
+  border: 1px solid rgba(0,0,0,0.3);
 }
-.psummary-stat-label { font-size: 9px; font-weight: 600; color: var(--text-sub); }
+.psummary-stat-label { font-size: 9px; font-weight: 700; color: var(--text-sub); text-transform: uppercase; opacity: 0.8; }
 .psummary-stat-val {
-  font-size: 11px; font-weight: 400; color: var(--text);
+  font-size: 13px; font-weight: 400; color: var(--text);
   font-family: var(--font-digital);
   letter-spacing: 0.03em;
 }
@@ -1192,7 +1413,8 @@ html, body {
 .psummary-krw-row .gain-up  { color: var(--stock-up); }
 .psummary-krw-row .gain-down { color: var(--stock-down); }
 
-#portfolio-holdings .stock-card { margin-bottom: 4px; }
+/* 포트폴리오 홀딩스: gap은 .stock-list의 var(--card-gap)이 담당 */
+#portfolio-holdings .stock-card { margin-bottom: 0; }
 
 .portfolio-list-header {
   display: flex; align-items: center; gap: 6px;
@@ -1230,6 +1452,40 @@ html, body {
 }
 .portfolio-section-count.kr { color: var(--text-sub); background: var(--bg-elevated); }
 .portfolio-section-count.us { color: var(--text-sub); background: var(--bg-elevated); }
+
+/* 포트폴리오 섹션 구분선: 그루브(groove) 스큐어모픽 라인 */
+.portfolio-section-header {
+  border-top: none;
+  position: relative;
+  margin-top: 4px;
+  padding-top: 12px;
+}
+.portfolio-section-header::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 12px; right: 12px;
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    var(--card-border-rest) 20%,
+    var(--card-border-rest) 80%,
+    transparent
+  );
+}
+.portfolio-section-header::after {
+  content: '';
+  position: absolute;
+  top: 1px; left: 12px; right: 12px;
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    var(--card-highlight) 20%,
+    var(--card-highlight) 80%,
+    transparent
+  );
+}
 
 .section-ud-wrap { display: flex; align-items: center; gap: 4px; margin-right: auto; }
 .port-sort-btn {
@@ -1294,14 +1550,16 @@ html, body {
   gap: 4px;
 }
 .port-stat {
-  background: var(--bg-elevated);
+  background: rgba(0,0,0,0.15);
   border-radius: 7px;
-  padding: 5px 8px;
+  padding: 6px 10px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 6px;
   min-width: 0;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.3);
+  border: 1px solid rgba(0,0,0,0.1);
 }
 .port-stat-label {
   font-size: 10px;
@@ -1533,7 +1791,8 @@ html, body {
   #home-list {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 10px;
+    gap: var(--card-gap);
+    padding: 10px 12px;
   }
 
   /* ④ Summary card compact */
@@ -1679,10 +1938,15 @@ html, body {
     transition: background 0.2s;
   }
 
-  /* Selected card highlight */
+  /* Selected card highlight — 스큐어모픽 선택 테두리 */
   .stock-card.ls-selected {
     border-color: var(--primary);
-    box-shadow: 0 0 0 2px var(--primary-glow), 0 2px 10px rgba(0,0,0,0.2);
+    border-top-color: rgba(120, 170, 255, 0.55);
+    box-shadow:
+      0 0 0 1px var(--primary-glow),
+      0 0 12px rgba(62,123,250,0.20),
+      var(--card-shadow-outer),
+      var(--card-shadow-inner);
   }
 
   /* ⑦ TradingView chart in detail panel */
