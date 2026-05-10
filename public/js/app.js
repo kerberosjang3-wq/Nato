@@ -1518,8 +1518,9 @@ function renderPortfolioHoldings() {
 
   const sortBtn = (group) => {
     const mode = state.portfolioSort[group];
-    return `<button class="port-sort-btn" onclick="event.stopPropagation();cycleSortMode('${group}')" title="${SORT_LABELS[mode]}">
+    return `<button class="port-sort-btn" onclick="event.stopPropagation();cycleSortMode('${group}')">
       <i class="ph ${SORT_ICONS[mode]}"></i>
+      <span>${SORT_LABELS[mode]}</span>
     </button>`;
   };
 

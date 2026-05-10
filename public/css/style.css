@@ -1284,16 +1284,17 @@ html, body {
 }
 
 .port-sort-btn {
-  display: inline-flex; align-items: center; justify-content: center;
+  display: inline-flex; align-items: center; justify-content: center; gap: 3px;
   background: var(--bg-elevated); border: 1px solid var(--border);
-  border-radius: 6px; width: 28px; height: 28px;
+  border-radius: 4px; padding: 0 5px; height: 18px;
   color: var(--text-sub);
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
   flex-shrink: 0;
 }
 .port-sort-btn:active { background: var(--bg-card); color: var(--primary); }
-.port-sort-btn i { font-size: 14px; }
+.port-sort-btn i { font-size: 10px; }
+.port-sort-btn span { font-size: 8px; font-weight: 800; white-space: nowrap; }
 
 .section-ud-wrap { display: flex; align-items: center; gap: 2px; margin-right: 0; flex-shrink: 0; }
 .section-ud { 
