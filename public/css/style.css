@@ -1269,8 +1269,12 @@ html, body {
 .portfolio-section-header:first-of-type { border-top: none; margin-top: 0; }
 
 .portfolio-section-flag { font-size: 14px; margin-right: -4px; }
-.portfolio-section-label { font-size: 11px; font-weight: 800; color: var(--text-sub); flex-shrink: 0; }
-.portfolio-section-count { font-size: 9px; font-weight: 700; color: var(--primary); background: var(--primary-glow); border-radius: 4px; padding: 1px 4px; }
+.portfolio-section-label { font-size: 11px; font-weight: 800; color: var(--text-sub); flex-shrink: 0; min-width: 48px; }
+.portfolio-section-count { 
+  font-size: 9px; font-weight: 700; color: var(--primary); 
+  background: var(--primary-glow); border-radius: 4px; padding: 1px 4px; 
+  min-width: 18px; text-align: center; 
+}
 
 .portfolio-section-header .port-dots-btn {
   margin-left: auto;
@@ -1289,9 +1293,14 @@ html, body {
 .port-sort-btn:active { background: var(--bg-card); color: var(--primary); }
 .port-sort-btn i { font-size: 14px; }
 
-.section-ud-wrap { display: flex; align-items: center; gap: 3px; margin-right: 0; flex-shrink: 0; }
-.section-ud { font-size: 9px; padding: 1px 3px; border-radius: 3px; font-weight: 700; display: flex; align-items: center; gap: 1px; }
+.section-ud-wrap { display: flex; align-items: center; gap: 2px; margin-right: 0; flex-shrink: 0; }
+.section-ud { 
+  font-size: 9px; padding: 1px 0; border-radius: 4px; font-weight: 800; 
+  display: flex; align-items: center; justify-content: center; gap: 1px;
+  width: 28px; height: 16px;
+}
 .section-ud i { font-size: 8px; }
+.section-ud.empty { visibility: hidden; }
 
 /* ── 카드 내 마켓 배지 ── */
 .market-badge {

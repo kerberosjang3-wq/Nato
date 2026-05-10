@@ -1510,9 +1510,10 @@ function renderPortfolioHoldings() {
   const upDownBadges = group => {
     const up   = group.filter(i => (getDisplayPct(state.portfolioPrices[i.symbol]) ?? 0) > 0).length;
     const down = group.filter(i => (getDisplayPct(state.portfolioPrices[i.symbol]) ?? 0) < 0).length;
-    const upBadge   = up   > 0 ? `<span class="section-ud section-up"><i class="ph ph-trend-up"></i>${up}</span>`   : '';
-    const downBadge = down > 0 ? `<span class="section-ud section-down"><i class="ph ph-trend-down"></i>${down}</span>` : '';
-    return upBadge + downBadge;
+    return `
+      <span class="section-ud section-up ${up === 0 ? 'empty' : ''}"><i class="ph ph-trend-up"></i>${up}</span>
+      <span class="section-ud section-down ${down === 0 ? 'empty' : ''}"><i class="ph ph-trend-down"></i>${down}</span>
+    `;
   };
 
   const sortBtn = (group) => {
