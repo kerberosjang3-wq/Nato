@@ -1510,8 +1510,8 @@ function renderPortfolioHoldings() {
 
   const sortBtn = (group) => {
     const mode = state.portfolioSort[group];
-    return `<button class="port-sort-btn" onclick="event.stopPropagation();cycleSortMode('${group}')">
-      <i class="ph ${SORT_ICONS[mode]}"></i><span>${SORT_LABELS[mode]}</span>
+    return `<button class="port-sort-btn" onclick="event.stopPropagation();cycleSortMode('${group}')" title="${SORT_LABELS[mode]}">
+      <i class="ph ${SORT_ICONS[mode]}"></i>
     </button>`;
   };
 
@@ -1522,7 +1522,7 @@ function renderPortfolioHoldings() {
       <span class="portfolio-section-flag">🇰🇷</span>
       <span class="portfolio-section-label">국내주식</span>
       <span class="section-ud-wrap">${upDownBadges(domestic)}</span>
-      <span class="portfolio-section-count kr">${domestic.length}종목</span>
+      <span class="portfolio-section-count kr">${domestic.length}</span>
       ${sortBtn('domestic')}
       <button class="port-dots-btn" onclick="event.stopPropagation();toggleGroupCollapse('domestic')">
         <i class="ph ph-dots-three-vertical"></i>
@@ -1538,7 +1538,7 @@ function renderPortfolioHoldings() {
       <span class="portfolio-section-flag">🇺🇸</span>
       <span class="portfolio-section-label">해외주식</span>
       <span class="section-ud-wrap">${upDownBadges(foreign)}</span>
-      <span class="portfolio-section-count us">${foreign.length}종목</span>
+      <span class="portfolio-section-count us">${foreign.length}</span>
       ${sortBtn('foreign')}
       <button class="port-dots-btn" onclick="event.stopPropagation();toggleGroupCollapse('foreign')">
         <i class="ph ph-dots-three-vertical"></i>

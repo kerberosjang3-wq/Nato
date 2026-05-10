@@ -1255,8 +1255,8 @@ html, body {
 .portfolio-list-count { font-size: 10px; font-weight: 700; color: var(--primary); background: var(--primary-glow); border-radius: 5px; padding: 1px 6px; }
 
 .portfolio-section-header {
-  display: flex; align-items: center; gap: 8px;
-  padding: 6px 12px 6px 14px;
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 10px 6px 14px;
   background: var(--bg-card);
   border-top: 1px solid var(--border);
   cursor: pointer;
@@ -1268,28 +1268,30 @@ html, body {
 .portfolio-section-header:hover { background: var(--bg-elevated); }
 .portfolio-section-header:first-of-type { border-top: none; margin-top: 0; }
 
-.portfolio-section-flag { font-size: 16px; margin-right: -2px; }
-.portfolio-section-label { font-size: 11px; font-weight: 700; color: var(--text-sub); }
-.portfolio-section-count { font-size: 9px; font-weight: 600; color: var(--primary); background: var(--primary-glow); border-radius: 5px; padding: 1px 5px; }
+.portfolio-section-flag { font-size: 14px; margin-right: -4px; }
+.portfolio-section-label { font-size: 11px; font-weight: 800; color: var(--text-sub); flex-shrink: 0; }
+.portfolio-section-count { font-size: 9px; font-weight: 700; color: var(--primary); background: var(--primary-glow); border-radius: 4px; padding: 1px 4px; }
 
 .portfolio-section-header .port-dots-btn {
   margin-left: auto;
-  margin-right: -4px;
+  margin-right: -6px;
 }
 
 .port-sort-btn {
-  display: inline-flex; align-items: center; gap: 4px;
+  display: inline-flex; align-items: center; justify-content: center;
   background: var(--bg-elevated); border: 1px solid var(--border);
-  border-radius: 6px; padding: 4px 8px;
-  font-size: 10px; font-weight: 700; color: var(--text-sub);
-  cursor: pointer; white-space: nowrap;
+  border-radius: 6px; width: 28px; height: 28px;
+  color: var(--text-sub);
+  cursor: pointer;
   transition: background 0.15s, color 0.15s;
-  height: 24px;
+  flex-shrink: 0;
 }
 .port-sort-btn:active { background: var(--bg-card); color: var(--primary); }
-.port-sort-btn i { font-size: 12px; }
+.port-sort-btn i { font-size: 14px; }
 
-.section-ud-wrap { display: flex; align-items: center; gap: 4px; margin-right: 4px; }
+.section-ud-wrap { display: flex; align-items: center; gap: 3px; margin-right: 0; flex-shrink: 0; }
+.section-ud { font-size: 9px; padding: 1px 3px; border-radius: 3px; font-weight: 700; display: flex; align-items: center; gap: 1px; }
+.section-ud i { font-size: 8px; }
 
 /* ── 카드 내 마켓 배지 ── */
 .market-badge {
