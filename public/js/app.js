@@ -1064,10 +1064,12 @@ function renderPortfolioSummary() {
 
   return `
   <div class="portfolio-summary">
-    <div class="psummary-header-card">
+    <div class="psummary-card">
       <div class="psummary-header-top">
-        <span class="psummary-header-label">총 평가금액</span>
-        <span class="psummary-header-badge">${totalCount}종목</span>
+        <div class="psummary-header-info">
+          <span class="psummary-header-label">총 평가금액</span>
+          <span class="psummary-header-badge">${totalCount}종목</span>
+        </div>
         ${updatedStr ? `<span class="psummary-updated">${updatedStr} 갱신</span>` : ''}
       </div>
       <div class="psummary-header-amount">${hasTotal ? formatPrice(totalCurrent, 'KRW') : '—'}</div>
@@ -1075,8 +1077,13 @@ function renderPortfolioSummary() {
         <span class="${tgc}">${totalGain !== null ? `${tgs}${formatPrice(Math.abs(totalGain), 'KRW')}` : '—'}</span>
         <span class="psummary-header-pct ${tgc}">${totalGainPct !== null ? `${tgs}${totalGainPct.toFixed(1)}%` : ''}</span>
       </div>
+      
+      <div class="psummary-divider"></div>
+      
+      <div class="psummary-rows">
+        ${krwCol}${foreignCol}
+      </div>
     </div>
-    <div class="psummary-cols${krw.count > 0 && foreign.count > 0 ? ' two' : ''}">${krwCol}${foreignCol}</div>
   </div>`;
 }
 
