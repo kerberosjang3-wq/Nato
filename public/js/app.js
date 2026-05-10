@@ -373,13 +373,15 @@ function buildSparklineSvg(closes) {
 async function loadSparklines() {
   const symbols = [...new Set([...Object.keys(state.watchlist), ...Object.keys(state.portfolio)])];
   if (!symbols.length) return;
-  if (state.sparklinesUpdatedAt && Date.now() - state.sparklinesUpdatedAt < 4 * 60 * 60 * 1000) return;
+  if (state.sparklinesUpdatedAt && Object.keys(state.sparklines).length && Date.now() - state.sparklinesUpdatedAt < 4 * 60 * 60 * 1000) return;
   try {
     const data = await apiFetch(`/api/spark?symbols=${symbols.join(',')}`);
-    if (data.result) {
+    if (data.result && Object.keys(data.result).length) {
       state.sparklines = data.result;
       state.sparklinesUpdatedAt = Date.now();
       localStorage.setItem('sparklines', JSON.stringify({ data: state.sparklines, ts: state.sparklinesUpdatedAt }));
+      if (state.currentTab === 'home') renderHome();
+      if (state.currentTab === 'portfolio') renderPortfolioHoldings();
     }
   } catch (_) {}
 }

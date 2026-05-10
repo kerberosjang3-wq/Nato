@@ -621,38 +621,28 @@ app.get('/api/spark', async (req, res) => {
   if (!symbols.length) return res.json({ result: {} });
   const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 
-  const parseData = (data) => {
-    const result = {};
-    (data.spark?.result || []).forEach(item => {
-      const closes = item?.response?.[0]?.indicators?.quote?.[0]?.close;
-      if (closes?.length >= 2) result[item.symbol] = closes.filter(c => c != null);
-    });
-    return result;
-  };
-
-  // 1차: 인증 없이 시도
-  try {
-    const r = await _fetch(
-      `https://query2.finance.yahoo.com/v8/finance/spark?symbols=${symbols.map(encodeURIComponent).join(',')}&range=5d&interval=1d`,
-      { headers: { 'User-Agent': UA }, timeout: 8000 }
-    );
-    if (r.ok) {
-      const data = await r.json();
-      const result = parseData(data);
-      if (Object.keys(result).length) return res.json({ result });
-    }
-  } catch (_) {}
-
-  // 2차: 크럼 인증 폴백
   try {
     const { crumb, cookie } = await getYahooCrumb();
-    const r = await _fetch(
-      `https://query1.finance.yahoo.com/v7/finance/spark?symbols=${symbols.map(encodeURIComponent).join(',')}&range=5d&interval=1d&crumb=${encodeURIComponent(crumb)}`,
-      { headers: { 'User-Agent': UA, 'Cookie': cookie }, timeout: 8000 }
-    );
-    if (!r.ok) throw new Error(`Yahoo spark ${r.status}`);
-    const data = await r.json();
-    res.json({ result: parseData(data) });
+
+    const fetchOne = async (symbol) => {
+      try {
+        const r = await _fetch(
+          `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=5d&interval=1d&crumb=${encodeURIComponent(crumb)}`,
+          { headers: { 'User-Agent': UA, 'Cookie': cookie }, timeout: 6000 }
+        );
+        if (!r.ok) return null;
+        const data = await r.json();
+        const closes = data.chart?.result?.[0]?.indicators?.quote?.[0]?.close;
+        if (!closes) return null;
+        const filtered = closes.filter(c => c != null);
+        return filtered.length >= 2 ? { symbol, closes: filtered } : null;
+      } catch (_) { return null; }
+    };
+
+    const entries = await Promise.all(symbols.map(fetchOne));
+    const result = {};
+    entries.forEach(e => { if (e) result[e.symbol] = e.closes; });
+    res.json({ result });
   } catch (e) { res.status(502).json({ error: e.message }); }
 });
 
