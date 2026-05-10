@@ -1525,7 +1525,7 @@ function renderPortfolioHoldings() {
       <span class="portfolio-section-count kr">${domestic.length}종목</span>
       ${sortBtn('domestic')}
       <button class="port-dots-btn" onclick="event.stopPropagation();toggleGroupCollapse('domestic')">
-        <i class="ph ph-dots-three-vertical-bold"></i>
+        <i class="ph ph-dots-three-vertical"></i>
       </button>
     </div>
     <div class="port-group-cards${dcol ? ' collapsed' : ''}" data-group="domestic">
@@ -1541,7 +1541,7 @@ function renderPortfolioHoldings() {
       <span class="portfolio-section-count us">${foreign.length}종목</span>
       ${sortBtn('foreign')}
       <button class="port-dots-btn" onclick="event.stopPropagation();toggleGroupCollapse('foreign')">
-        <i class="ph ph-dots-three-vertical-bold"></i>
+        <i class="ph ph-dots-three-vertical"></i>
       </button>
     </div>
     <div class="port-group-cards${fcol ? ' collapsed' : ''}" data-group="foreign">

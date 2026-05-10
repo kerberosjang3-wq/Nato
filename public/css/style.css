@@ -640,12 +640,13 @@ html, body {
 .port-dots-btn {
   flex-shrink: 0;
   background: none; border: none; cursor: pointer;
-  color: var(--text-sub); font-size: 18px;
-  padding: 4px 2px; line-height: 1;
+  color: var(--text-sub); font-size: 20px;
+  padding: 8px 4px; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
   -webkit-tap-highlight-color: transparent;
-  transition: color 0.15s;
+  transition: color 0.15s, transform 0.15s;
 }
-.port-dots-btn:active { color: var(--text); }
+.port-dots-btn:active { color: var(--text); transform: scale(0.9); }
 
 /* 정규장 row (pre/post market) — now in left info column */
 .port-regular-row {
