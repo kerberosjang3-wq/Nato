@@ -51,6 +51,24 @@
   color: #94a3b8;
   border-color: rgba(0, 0, 0, 0.14);
 }
+/* 라이트 모드: 디지털 폰트 glow 비활성화 */
+[data-theme="light"] .psummary-header-amount,
+[data-theme="light"] .psummary-header-gain .gain-up,
+[data-theme="light"] .psummary-header-gain .gain-down,
+[data-theme="light"] .psummary-header-pct.gain-up,
+[data-theme="light"] .psummary-header-pct.gain-down,
+[data-theme="light"] .psummary-col-gain.gain-up,
+[data-theme="light"] .psummary-col-pct.gain-up,
+[data-theme="light"] .psummary-col-gain.gain-down,
+[data-theme="light"] .psummary-col-pct.gain-down,
+[data-theme="light"] .psummary-stat-val.gain-up,
+[data-theme="light"] .psummary-stat-val.gain-down,
+[data-theme="light"] .port-gain-val.gain-up,
+[data-theme="light"] .port-gain-pct.gain-up,
+[data-theme="light"] .port-gain-val.gain-down,
+[data-theme="light"] .port-gain-pct.gain-down {
+  text-shadow: none;
+}
 
 * { 
   box-sizing: border-box; 
@@ -1049,6 +1067,12 @@ html, body {
 /* ══ 포트폴리오 요약 카드 ══ */
 .portfolio-summary { margin-bottom: 4px; }
 
+/* ── 디지털/7-Segment 폰트 변수 ── */
+:root {
+  --font-digital: 'Share Tech Mono', 'Courier New', monospace;
+  --font-digital-title: 'Orbitron', 'Share Tech Mono', monospace;
+}
+
 /* 상단 총합 카드 */
 .psummary-header-card {
   padding: 12px 14px 10px;
@@ -1072,21 +1096,27 @@ html, body {
   background: rgba(62,123,250,0.15); border-radius: 5px; padding: 1px 5px;
 }
 .psummary-header-amount {
-  font-size: 26px; font-weight: 800; color: var(--text);
-  font-variant-numeric: tabular-nums; line-height: 1.15;
+  font-size: 26px; font-weight: 400; color: var(--text);
+  font-family: var(--font-digital);
+  letter-spacing: 0.04em;
+  line-height: 1.15;
+  text-shadow: 0 0 18px rgba(255,255,255,0.12), 0 0 6px rgba(255,255,255,0.06);
 }
 .psummary-header-gain {
   display: flex; align-items: center; gap: 6px;
-  margin-top: 2px; font-size: 12px; font-weight: 700;
-  font-variant-numeric: tabular-nums;
+  margin-top: 2px; font-size: 12px; font-weight: 400;
+  font-family: var(--font-digital);
+  letter-spacing: 0.03em;
 }
-.psummary-header-gain .gain-up  { color: var(--stock-up); }
-.psummary-header-gain .gain-down { color: var(--stock-down); }
+.psummary-header-gain .gain-up  { color: var(--stock-up);   text-shadow: 0 0 12px rgba(224,102,102,0.45); }
+.psummary-header-gain .gain-down { color: var(--stock-down); text-shadow: 0 0 12px rgba(96,144,216,0.45); }
 .psummary-header-pct {
-  font-size: 13px; font-weight: 800;
+  font-size: 14px; font-weight: 400;
+  font-family: var(--font-digital);
+  letter-spacing: 0.04em;
 }
-.psummary-header-pct.gain-up  { color: var(--stock-up); }
-.psummary-header-pct.gain-down { color: var(--stock-down); }
+.psummary-header-pct.gain-up  { color: var(--stock-up);   text-shadow: 0 0 14px rgba(224,102,102,0.5); }
+.psummary-header-pct.gain-down { color: var(--stock-down); text-shadow: 0 0 14px rgba(96,144,216,0.5); }
 
 /* 하단 국내/해외 세로 스택 */
 .psummary-cols { display: flex; flex-direction: column; }
@@ -1111,15 +1141,18 @@ html, body {
   display: flex; align-items: baseline; gap: 6px;
 }
 .psummary-col-amount {
-  font-size: 15px; font-weight: 800; color: var(--text);
-  font-variant-numeric: tabular-nums;
+  font-size: 14px; font-weight: 400; color: var(--text);
+  font-family: var(--font-digital);
+  letter-spacing: 0.03em;
 }
 .psummary-col-sub {
   display: flex; align-items: center; gap: 3px;
-  font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums;
+  font-size: 11px; font-weight: 400;
+  font-family: var(--font-digital);
+  letter-spacing: 0.03em;
 }
-.psummary-col-gain.gain-up,  .psummary-col-pct.gain-up  { color: var(--stock-up); }
-.psummary-col-gain.gain-down, .psummary-col-pct.gain-down { color: var(--stock-down); }
+.psummary-col-gain.gain-up,  .psummary-col-pct.gain-up  { color: var(--stock-up);   text-shadow: 0 0 10px rgba(224,102,102,0.4); }
+.psummary-col-gain.gain-down, .psummary-col-pct.gain-down { color: var(--stock-down); text-shadow: 0 0 10px rgba(96,144,216,0.4); }
 .psummary-col-gain { color: var(--text-sub); }
 .psummary-col-pct  { color: var(--text-sub); }
 
@@ -1142,11 +1175,12 @@ html, body {
 }
 .psummary-stat-label { font-size: 9px; font-weight: 600; color: var(--text-sub); }
 .psummary-stat-val {
-  font-size: 11px; font-weight: 800; color: var(--text);
-  font-variant-numeric: tabular-nums;
+  font-size: 11px; font-weight: 400; color: var(--text);
+  font-family: var(--font-digital);
+  letter-spacing: 0.03em;
 }
-.psummary-stat-val.gain-up  { color: var(--stock-up); }
-.psummary-stat-val.gain-down { color: var(--stock-down); }
+.psummary-stat-val.gain-up  { color: var(--stock-up);   text-shadow: 0 0 8px rgba(224,102,102,0.35); }
+.psummary-stat-val.gain-down { color: var(--stock-down); text-shadow: 0 0 8px rgba(96,144,216,0.35); }
 
 /* 환율 행 */
 .psummary-krw-row {
@@ -1278,9 +1312,10 @@ html, body {
 }
 .port-stat-value {
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 400;
   color: var(--text);
-  font-variant-numeric: tabular-nums;
+  font-family: var(--font-digital);
+  letter-spacing: 0.03em;
   text-align: right;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1310,20 +1345,24 @@ html, body {
   flex-shrink: 0;
 }
 .port-gain-val {
-  font-size: 14px; font-weight: 800;
-  font-variant-numeric: tabular-nums; flex: 1;
+  font-size: 13px; font-weight: 400;
+  font-family: var(--font-digital);
+  letter-spacing: 0.03em;
+  flex: 1;
   color: var(--text-sub);
 }
 .port-gain-pct {
-  font-size: 13px; font-weight: 700;
-  font-variant-numeric: tabular-nums; color: var(--text-sub);
+  font-size: 13px; font-weight: 400;
+  font-family: var(--font-digital);
+  letter-spacing: 0.03em;
+  color: var(--text-sub);
 }
 .port-gain-qty {
   font-size: 10px; font-weight: 600; color: var(--text-sub);
   background: var(--bg-elevated); border-radius: 4px; padding: 1px 6px;
 }
-.port-gain-val.gain-up, .port-gain-pct.gain-up { color: var(--stock-up); }
-.port-gain-val.gain-down, .port-gain-pct.gain-down { color: var(--stock-down); }
+.port-gain-val.gain-up, .port-gain-pct.gain-up { color: var(--stock-up);   text-shadow: 0 0 10px rgba(224,102,102,0.4); }
+.port-gain-val.gain-down, .port-gain-pct.gain-down { color: var(--stock-down); text-shadow: 0 0 10px rgba(96,144,216,0.4); }
 
 .port-expand-body .port-stats { margin: 0 14px 8px; }
 .port-expand-body .port-stat-krw { margin: 0 14px 8px; }
@@ -1350,7 +1389,7 @@ html, body {
   .tab-icon  { font-size: 17px; }
   .tab-label { font-size: 8px; }
   .port-name { font-size: 11px; }
-  .psummary-header-amount { font-size: 22px; }
+  .psummary-header-amount { font-size: 20px; }
   .more-menu-item { font-size: 14px; padding: 14px 16px; }
   .modal { padding: 14px 12px; }
   .form-input { font-size: 14px; padding: 10px 12px; }

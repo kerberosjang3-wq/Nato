@@ -1,0 +1,16 @@
+{
+  "watchlists": {},
+  "subscriptions": {},
+  "portfolios": {
+    "6521ae0c-99bb-4808-b4a8-3ad773048d6f": {
+      "AAPL": {
+        "symbol": "AAPL",
+        "name": "Apple Inc",
+        "buyPrice": 150,
+        "qty": 100,
+        "currency": "USD",
+        "addedAt": 1778406551567
+      }
+    }
+  }
+}
