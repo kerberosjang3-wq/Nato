@@ -1225,6 +1225,15 @@ html, body {
 .section-up   { color: var(--stock-up);   background: rgba(224, 102, 102, 0.10); }
 .section-down { color: var(--stock-down); background: rgba(96,  144, 216, 0.10); }
 
+/* ── Sparkline ── */
+.sparkline {
+  display: block;
+  margin-top: 4px;
+  opacity: 0.8;
+  flex-shrink: 0;
+  align-self: flex-end;
+}
+
 /* ── 카드 내 마켓 배지 ── */
 .market-badge {
   display: inline-flex; align-items: center;

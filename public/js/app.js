@@ -84,6 +84,8 @@ const state = {
   portfolioSort: { domestic: 'gainPct', foreign: 'gainPct' },
   portfolioCollapsed: { domestic: false, foreign: false },
   portfolioUpdatedAt: null,
+  sparklines: {},
+  sparklinesUpdatedAt: null,
   watchlistSearchResults: [],
   watchlistSearchQ: '',
   watchlistSearching: false,
@@ -352,6 +354,36 @@ function formatVolume(vol) {
   return vol.toLocaleString();
 }
 
+function buildSparklineSvg(closes) {
+  if (!closes || closes.length < 2) return '';
+  const W = 64, H = 22, pad = 1.5;
+  const min = Math.min(...closes);
+  const max = Math.max(...closes);
+  const range = max - min || 1;
+  const pts = closes.map((c, i) => {
+    const x = pad + (i / (closes.length - 1)) * (W - pad * 2);
+    const y = pad + (1 - (c - min) / range) * (H - pad * 2);
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(' ');
+  const isUp = closes[closes.length - 1] >= closes[0];
+  const color = isUp ? 'var(--stock-up)' : 'var(--stock-down)';
+  return `<svg class="sparkline" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" preserveAspectRatio="none"><polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+}
+
+async function loadSparklines() {
+  const symbols = [...new Set([...Object.keys(state.watchlist), ...Object.keys(state.portfolio)])];
+  if (!symbols.length) return;
+  if (state.sparklinesUpdatedAt && Date.now() - state.sparklinesUpdatedAt < 4 * 60 * 60 * 1000) return;
+  try {
+    const data = await apiFetch(`/api/spark?symbols=${symbols.join(',')}`);
+    if (data.result) {
+      state.sparklines = data.result;
+      state.sparklinesUpdatedAt = Date.now();
+      localStorage.setItem('sparklines', JSON.stringify({ data: state.sparklines, ts: state.sparklinesUpdatedAt }));
+    }
+  } catch (_) {}
+}
+
 
 function renderStockCard(item) {
   if (!item || !item.symbol) return '';
@@ -410,6 +442,7 @@ function renderStockCard(item) {
             <span class="${changeClass}">${changeAmtStr}</span>
             <span class="${changeClass}">${pctDisplayStr}</span>
           </div>
+          ${buildSparklineSvg(state.sparklines[item.symbol])}
         </div>
         <button class="mts-order-btn" onclick="event.stopPropagation()">주문</button>
       </div>
@@ -1123,6 +1156,7 @@ function renderPortfolioCard(item) {
           <div class="port-line2">
             <span class="port-gain-inline ${gainClass}">${gain !== null ? `${gainSign}${formatPrice(Math.abs(gain), currency)}` : '—'}</span>
           </div>
+          ${buildSparklineSvg(state.sparklines[item.symbol])}
         </div>
         <button class="port-dots-btn" onclick="event.stopPropagation();handlePortfolioCardTap('${item.symbol}')"><i class="ph ph-dots-three-vertical"></i></button>
       </div>
@@ -2149,6 +2183,15 @@ async function init() {
     setupEventListeners();
     checkBiometricLock();
 
+    // 스파크라인 캐시 복원 (4시간 이내)
+    try {
+      const _sp = localStorage.getItem('sparklines');
+      if (_sp) {
+        const { data, ts } = JSON.parse(_sp);
+        if (Date.now() - ts < 4 * 60 * 60 * 1000) { state.sparklines = data || {}; state.sparklinesUpdatedAt = ts; }
+      }
+    } catch (_) {}
+
     // Load data
     state.loading = true;
     renderHome();
@@ -2157,6 +2200,7 @@ async function init() {
     await loadPortfolio();
     await loadPortfolioPrices();
     await fetchFxRates();
+    await loadSparklines();
     state.loading = false;
     renderHome();
 
