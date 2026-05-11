@@ -404,7 +404,7 @@ function formatVolumeKr(vol) {
 
 function buildSparklineSvg(closes, h = 22, full = false, mini = false) {
   if (!closes || closes.length < 2) return '';
-  const VW = mini ? 32 : (full ? 300 : 64);
+  const VW = mini ? 18 : (full ? 300 : 64);
   const pad = mini ? 1 : 2;
   const min = Math.min(...closes);
   const max = Math.max(...closes);
@@ -1161,7 +1161,7 @@ function renderPortfolioCard(item) {
   const pct = displayPct;
   const volume = q?.regularMarketVolume;
   const miniSpark = state.sparklines[item.symbol] ? 
-    `<div class="mini-sparkline-box">${buildSparklineSvg(state.sparklines[item.symbol], 12, false, true)}</div>` : '';
+    `<div class="mini-sparkline-box">${buildSparklineSvg(state.sparklines[item.symbol], 10, false, true)}</div>` : '';
 
   const currentVal = currentPrice ? currentPrice * item.qty : null;
   const gain = currentVal !== null ? currentVal - invested : null;
