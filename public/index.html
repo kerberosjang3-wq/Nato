@@ -136,17 +136,15 @@
       <div class="more-profile">
         <div class="more-profile-icon"><i class="ph-fill ph-user"></i></div>
         <div class="more-profile-info">
-          <div class="more-profile-name">사용자 님</div>
+          <div class="more-profile-name-wrap">
+            <div class="more-profile-name" id="profile-name">사용자 님</div>
+            <button class="edit-name-btn" id="edit-name-btn"><i class="ph ph-pencil-simple"></i></button>
+          </div>
           <div class="more-profile-desc">반갑습니다, 오늘도 성투하세요!</div>
         </div>
       </div>
 
       <div class="more-menu">
-        <button class="more-menu-item" onclick="switchTab('portfolio')">
-          <div class="more-menu-icon"><i class="ph-fill ph-wallet"></i></div>
-          <span>내 보유종목 관리</span>
-          <i class="ph ph-caret-right more-caret"></i>
-        </button>
         <button class="more-menu-item" onclick="switchTab('settings')">
           <div class="more-menu-icon"><i class="ph-fill ph-gear"></i></div>
           <span>앱 환경설정</span>

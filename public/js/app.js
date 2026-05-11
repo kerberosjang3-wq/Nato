@@ -128,6 +128,7 @@ const state = {
   marketData: null,
   marketTop: null,
   marketLoading: false,
+  userName: localStorage.getItem('userName') || '사용자',
 };
 
 // ── API ────────────────────────────────────────────────────────────────────
@@ -2096,6 +2097,7 @@ function switchTab(tab) {
   document.getElementById(`tab-${navTab}`)?.classList.add('active');
 
   if (tab === 'home') { renderHome(); renderWatchlistSearch(); }
+  if (tab === 'more') updateProfileUI();
   if (tab === 'settings') renderSettings();
   if (tab === 'news') loadNews();
   if (tab === 'market') loadMarketTrends();
@@ -2118,6 +2120,25 @@ function toggleTheme() {
   localStorage.setItem('theme', state.theme);
   document.documentElement.setAttribute('data-theme', state.theme);
   renderSettings();
+}
+
+// ── Profile Personalization ────────────────────────────────────────────────
+function updateProfileUI() {
+  const el = document.getElementById('profile-name');
+  if (el) el.textContent = `${state.userName} 님`;
+}
+
+function editUserName() {
+  const newName = prompt('사용하실 이름을 입력해주세요:', state.userName);
+  if (newName === null) return;
+  const trimmed = newName.trim();
+  if (!trimmed) { showToast('이름을 입력해주세요'); return; }
+  if (trimmed.length > 10) { showToast('이름은 10자 이내로 입력해주세요'); return; }
+  
+  state.userName = trimmed;
+  localStorage.setItem('userName', trimmed);
+  updateProfileUI();
+  showToast(`반갑습니다, ${trimmed} 님!`);
 }
 
 // ── Toast ──────────────────────────────────────────────────────────────────
@@ -2279,6 +2300,9 @@ function setupEventListeners() {
   });
   document.getElementById('modal-cancel')?.addEventListener('click', closeModal);
   document.getElementById('modal-save')?.addEventListener('click', saveModal);
+
+  // Profile
+  document.getElementById('edit-name-btn')?.addEventListener('click', editUserName);
 
 
   // Portfolio modal
