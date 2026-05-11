@@ -117,7 +117,7 @@ const state = {
   newsLoaded: false,
   newsFilter: null,  // { symbol, name } 또는 null(전체)
   portfolioSort: { domestic: 'gainPct', foreign: 'gainPct' },
-  portfolioCollapsed: { domestic: false, foreign: false },
+  portfolioCollapsed: { domestic: true, foreign: true },
   portfolioUpdatedAt: null,
   sparklines: {},
   sparklinesUpdatedAt: null,
