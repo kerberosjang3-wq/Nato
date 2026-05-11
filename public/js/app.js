@@ -756,12 +756,12 @@ function renderSettings() {
     <div class="section-title">앱 정보</div>
     <div class="info-card">
       <div class="info-row">
-        <div class="info-row-label"><i class="ph ph-info info-row-icon"></i>NATO</div>
-        <div class="info-row-value">v1.1.0</div>
+        <div class="info-row-label"><i class="ph ph-info info-row-icon"></i>WillyStock</div>
+        <div class="info-row-value">v1.2.2</div>
       </div>
       <div class="info-row">
         <div class="info-row-label"><i class="ph ph-clock info-row-icon"></i>데이터 갱신</div>
-        <div class="info-row-value">2분마다</div>
+        <div class="info-row-value">실시간 (1분단위)</div>
       </div>
       <div class="info-row">
         <div class="info-row-label"><i class="ph ph-stack info-row-icon"></i>관심 종목</div>
@@ -770,11 +770,12 @@ function renderSettings() {
     </div>
     <div class="section-title">iOS 안내</div>
     <div class="info-card">
-      <div class="info-row" style="flex-direction:column;align-items:flex-start;gap:8px">
+      <div class="info-row" style="flex-direction:column;align-items:flex-start;gap:12px;padding:20px">
         <div class="info-row-label"><i class="ph ph-device-mobile info-row-icon"></i>홈 화면 추가 방법</div>
-        <div style="font-size:12px;color:var(--text-sub);line-height:1.6">
-          Safari → 공유 버튼(<i class="ph ph-export"></i>) → <strong style="color:var(--text)">홈 화면에 추가</strong> 를 탭하세요.<br>
-          iOS 16.4 이상에서 푸시 알림이 지원됩니다.
+        <div style="font-size:13px;color:var(--text-sub);line-height:1.6">
+          1. Safari 하단 <strong>공유</strong> 버튼(<i class="ph ph-export" style="color:var(--primary)"></i>)을 탭합니다.<br>
+          2. 리스트를 스크롤하여 <strong>홈 화면에 추가</strong>를 선택합니다.<br>
+          3. 우측 상단 <strong>추가</strong>를 탭하면 설치가 완료됩니다.
         </div>
       </div>
     </div>`;

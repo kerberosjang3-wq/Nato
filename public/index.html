@@ -28,7 +28,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
-  <link rel="stylesheet" href="/css/style.css?v=1.2.1">
+  <link rel="stylesheet" href="/css/style.css?v=1.2.2">
 </head>
 <body>
 <div id="app">
@@ -129,15 +129,27 @@
 
     <!-- 더보기 -->
     <section class="screen" id="screen-more">
+      <div class="screen-header">
+        <h1 class="screen-header-title">더보기</h1>
+      </div>
+
+      <div class="more-profile">
+        <div class="more-profile-icon"><i class="ph-fill ph-user"></i></div>
+        <div class="more-profile-info">
+          <div class="more-profile-name">사용자 님</div>
+          <div class="more-profile-desc">반갑습니다, 오늘도 성투하세요!</div>
+        </div>
+      </div>
+
       <div class="more-menu">
         <button class="more-menu-item" onclick="switchTab('portfolio')">
-          <i class="ph ph-wallet more-menu-icon"></i>
-          <span>보유종목</span>
+          <div class="more-menu-icon"><i class="ph-fill ph-wallet"></i></div>
+          <span>내 보유종목 관리</span>
           <i class="ph ph-caret-right more-caret"></i>
         </button>
         <button class="more-menu-item" onclick="switchTab('settings')">
-          <i class="ph ph-gear more-menu-icon"></i>
-          <span>설정</span>
+          <div class="more-menu-icon"><i class="ph-fill ph-gear"></i></div>
+          <span>앱 환경설정</span>
           <i class="ph ph-caret-right more-caret"></i>
         </button>
       </div>
@@ -158,10 +170,15 @@
 
     <!-- 설정 (accessible from 더보기) -->
     <section class="screen" id="screen-settings">
-      <button class="back-btn" onclick="switchTab('more')">
-        <i class="ph ph-arrow-left"></i> 더보기
-      </button>
-      <div id="settings-content"></div>
+      <div class="screen-header">
+        <div class="screen-header-left">
+          <button class="back-btn" onclick="switchTab('more')" style="padding:0; margin-right:8px;">
+            <i class="ph ph-arrow-left" style="font-size:24px;"></i>
+          </button>
+          <h1 class="screen-header-title">설정</h1>
+        </div>
+      </div>
+      <div id="settings-content" style="padding: 0 16px;"></div>
     </section>
 
   </main>
@@ -355,6 +372,6 @@
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
-<script src="/js/app.js?v=1.2.1"></script>
+<script src="/js/app.js?v=1.2.2"></script>
 </body>
 </html>
