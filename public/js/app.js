@@ -1114,7 +1114,7 @@ function renderPortfolioSummary() {
   })();
 
   return `
-  <div class="portfolio-summary">
+  <div class="portfolio-summary ${state.summaryExpanded ? 'expanded' : ''}">
     <div class="psummary-card">
       <div class="psummary-header-top">
         <div class="psummary-header-info">
@@ -1136,11 +1136,17 @@ function renderPortfolioSummary() {
           <span class="m-item us">🇺🇸 ${m.us}</span>
         </div>
       </div>
+
+      <button class="psummary-toggle-btn" onclick="event.stopPropagation();togglePortfolioSummary()">
+        <span>${state.summaryExpanded ? '간단히 보기' : '자산 구성 상세'}</span>
+        <i class="ph ph-caret-down"></i>
+      </button>
       
-      <div class="psummary-divider"></div>
-      
-      <div class="psummary-rows">
-        ${krwCol}${foreignCol}
+      <div class="psummary-expand-body">
+        <div class="psummary-divider"></div>
+        <div class="psummary-rows">
+          ${krwCol}${foreignCol}
+        </div>
       </div>
     </div>
   </div>`;
@@ -1290,8 +1296,7 @@ function handlePortfolioCardTap(symbol) {
 
 function togglePortfolioSummary() {
   state.summaryExpanded = !state.summaryExpanded;
-  const el = document.querySelector('.portfolio-summary');
-  if (el) el.classList.toggle('expanded', state.summaryExpanded);
+  renderPortfolioHoldings();
 }
 
 function toggleSummaryGroup(key) {
