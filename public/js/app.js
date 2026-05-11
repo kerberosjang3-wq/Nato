@@ -402,9 +402,10 @@ function formatVolumeKr(vol) {
   return n.toLocaleString() + '주';
 }
 
-function buildSparklineSvg(closes, h = 22, full = false) {
+function buildSparklineSvg(closes, h = 22, full = false, mini = false) {
   if (!closes || closes.length < 2) return '';
-  const VW = full ? 300 : 64, pad = 2;
+  const VW = mini ? 32 : (full ? 300 : 64);
+  const pad = mini ? 1 : 2;
   const min = Math.min(...closes);
   const max = Math.max(...closes);
   const range = max - min || 1;
@@ -416,8 +417,8 @@ function buildSparklineSvg(closes, h = 22, full = false) {
   const isUp = closes[closes.length - 1] >= closes[0];
   const color = isUp ? 'var(--stock-up)' : 'var(--stock-down)';
   const wAttr = full ? 'width="100%"' : `width="${VW}"`;
-  const sw = full ? '2.5' : '1.5';
-  const cls = full ? 'sparkline sparkline-detail' : 'sparkline';
+  const sw = mini ? '1.2' : (full ? '2.5' : '1.5');
+  const cls = mini ? 'sparkline mini' : (full ? 'sparkline sparkline-detail' : 'sparkline');
   return `<svg class="${cls}" viewBox="0 0 ${VW} ${h}" ${wAttr} height="${h}" preserveAspectRatio="none"><polyline points="${pts}" fill="none" stroke="${color}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 }
 
@@ -1159,6 +1160,8 @@ function renderPortfolioCard(item) {
   const currentPrice = displayPrice;
   const pct = displayPct;
   const volume = q?.regularMarketVolume;
+  const miniSpark = state.sparklines[item.symbol] ? 
+    `<div class="mini-sparkline-box">${buildSparklineSvg(state.sparklines[item.symbol], 12, false, true)}</div>` : '';
 
   const currentVal = currentPrice ? currentPrice * item.qty : null;
   const gain = currentVal !== null ? currentVal - invested : null;
@@ -1214,7 +1217,7 @@ function renderPortfolioCard(item) {
       <div class="port-row">
         <div class="port-info">
           <div class="port-name">${item.name || q?.korName || item.symbol}</div>
-          <div class="port-qty-row">${marketBadge}<span class="port-qty-num">${item.qty.toLocaleString('ko-KR')}주</span>${volNum ? `<span class="port-vol-group"><span class="port-vol-sep"> · </span><span class="port-vol-left">${volNum}</span></span>` : ''}${!isKR ? `<span class="port-vol-sep"> · </span><span class="port-ticker">${item.symbol}</span>` : ''}</div>
+          <div class="port-qty-row">${marketBadge}<span class="port-qty-num">${item.qty.toLocaleString('ko-KR')}주</span>${miniSpark}${volNum ? `<span class="port-vol-group"><span class="port-vol-sep"> · </span><span class="port-vol-left">${volNum}</span></span>` : ''}${!isKR ? `<span class="port-vol-sep"> · </span><span class="port-ticker">${item.symbol}</span>` : ''}</div>
           ${regularLineLeft}
         </div>
         <div class="port-price-col">
@@ -1229,7 +1232,6 @@ function renderPortfolioCard(item) {
         <button class="port-dots-btn" onclick="event.stopPropagation();handlePortfolioCardTap('${item.symbol}')"><i class="ph ph-dots-three-vertical"></i></button>
       </div>
       <div class="port-expand-body">
-        ${state.sparklines[item.symbol] ? `<div class="port-spark-wrap">${buildSparklineSvg(state.sparklines[item.symbol], 44, true)}</div>` : ''}
         <div class="port-gain-summary">
           <span class="port-gain-label">손익</span>
           <span class="port-gain-val ${gainClass}">${gainStr}</span>

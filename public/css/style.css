@@ -1384,6 +1384,23 @@ html, body {
   display: block;
   opacity: 0.85;
 }
+.sparkline.mini { opacity: 1; }
+
+.mini-sparkline-box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #FFFFFF;
+  border: 1px solid rgba(0,0,0,0.05);
+  border-radius: 4px;
+  width: 34px;
+  height: 18px;
+  padding: 1px;
+  margin-left: 6px;
+  vertical-align: middle;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
 
 /* 포트폴리오 카드 펼침 내 스파크라인 */
 .port-spark-wrap {
