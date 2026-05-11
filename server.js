@@ -790,9 +790,13 @@ app.get('/api/market', async (req, res) => {
 });
 
 // ── Market Ranking Fetchers ──────────────────────────────────────────────
-async function fetchNaverRanking(market = 'KOSPI', type = 'strength') {
+async function fetchNaverRanking(market = 'KOSPI', type = 'strength', category = '') {
   try {
-    const r = await _fetch(`https://m.stock.naver.com/api/stocks/marketValue/${market}?page=1&pageSize=10&stockExchangeType=${market}&rankingType=${type}`, {
+    const url = category 
+      ? `https://m.stock.naver.com/api/stocks/marketValue/${market}?page=1&pageSize=10&category=${category}`
+      : `https://m.stock.naver.com/api/stocks/marketValue/${market}?page=1&pageSize=10&stockExchangeType=${market}&rankingType=${type}`;
+    
+    const r = await _fetch(url, {
       headers: { Referer: 'https://m.stock.naver.com/' },
       timeout: 5000
     });
@@ -814,12 +818,9 @@ async function fetchNaverRanking(market = 'KOSPI', type = 'strength') {
 }
 
 app.get('/api/market-top', async (req, res) => {
-  let result = { indices: [], kr: [], us: [], scanner: [] };
+  let result = { kr: [], us: [], scanner: [] };
   try {
-    // 1. 국내 주요 지수
-    result.indices = await fetchNaverIndices();
-
-    // 2. 수급 스캐너 (체결강도 상위)
+    // 1. 수급 스캐너 (체결강도 상위)
     const [kospiStrength, kosdaqStrength] = await Promise.all([
       fetchNaverRanking('KOSPI', 'strength'),
       fetchNaverRanking('KOSDAQ', 'strength')
@@ -828,10 +829,10 @@ app.get('/api/market-top', async (req, res) => {
       .sort((a, b) => b.strength - a.strength)
       .slice(0, 10);
 
-    // 3. 국내 주식 거래량 TOP 5
+    // 2. 국내 주식 거래량 TOP 5 (category=trade_volume 사용)
     const [kospiVol, kosdaqVol] = await Promise.all([
-      fetchNaverRanking('KOSPI', 'volume'),
-      fetchNaverRanking('KOSDAQ', 'volume')
+      fetchNaverRanking('KOSPI', '', 'trade_volume'),
+      fetchNaverRanking('KOSDAQ', '', 'trade_volume')
     ]);
     result.kr = [...kospiVol, ...kosdaqVol]
       .sort((a, b) => {
