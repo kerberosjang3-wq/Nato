@@ -835,9 +835,8 @@ app.get('/api/market-top', async (req, res) => {
     ]);
     result.kr = [...kospiVol, ...kosdaqVol]
       .sort((a, b) => {
-        const va = parseInt(a.volume.replace(/,/g, '')) || 0;
-        const vb = parseInt(b.volume.replace(/,/g, '')) || 0;
-        return vb - va;
+        const getVal = (v) => typeof v === 'string' ? parseInt(v.replace(/,/g, '')) : (Number(v) || 0);
+        return getVal(b.volume) - getVal(a.volume);
       })
       .slice(0, 5);
 
