@@ -2099,3 +2099,52 @@ html, body {
 .mtop-right { text-align: right; flex-shrink: 0; }
 .mtop-price { font-size: 13px; font-weight: 700; color: var(--text); }
 .mtop-pct { font-size: 11px; font-weight: 600; margin-top: 2px; }
+
+/* ── 실시간 수급 스캐너 ── */
+.scanner-section {
+  background: linear-gradient(135deg, rgba(255, 107, 107, 0.08) 0%, rgba(62, 123, 250, 0.08) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.scanner-section .mtop-header i { color: #FF6B6B; animation: pulse 2s infinite; }
+@keyframes pulse {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.1); opacity: 0.8; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.scanner-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.scanner-item {
+  background: var(--bg-elevated);
+  border-radius: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+}
+
+.scanner-info {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 4px;
+}
+.scanner-name {
+  font-size: 12px; font-weight: 700; color: var(--text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.scanner-market {
+  font-size: 8px; font-weight: 800; color: var(--text-sub); opacity: 0.5;
+  background: var(--bg-card); padding: 0 3px; border-radius: 3px;
+}
+
+.scanner-data {
+  display: flex; align-items: baseline; justify-content: space-between;
+}
+.scanner-strength {
+  font-size: 13px; font-weight: 800;
+}
+.scanner-pct {
+  font-size: 10px; font-weight: 600;
+}

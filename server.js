@@ -789,31 +789,51 @@ app.get('/api/market', async (req, res) => {
   res.json(result);
 });
 
-// ── Market Top (Volume Top 5) ──────────────────────────────────────────────
-app.get('/api/market-top', async (req, res) => {
-  const result = { kr: [], us: [] };
+// ── Market Ranking Fetchers ──────────────────────────────────────────────
+async function fetchNaverRanking(market = 'KOSPI', type = 'strength') {
   try {
-    // 1. KR Top Volume (KOSPI + KOSDAQ)
-    const [kospiR, kosdaqR] = await Promise.all([
-      _fetch('https://m.stock.naver.com/api/stocks/marketValue/KOSPI?page=1&pageSize=10&category=trade_volume').then(r => r.json()).catch(() => ({ stocks: [] })),
-      _fetch('https://m.stock.naver.com/api/stocks/marketValue/KOSDAQ?page=1&pageSize=10&category=trade_volume').then(r => r.json()).catch(() => ({ stocks: [] })),
-    ]);
-
-    const formatKr = (market) => (s) => ({
+    const r = await _fetch(`https://m.stock.naver.com/api/stocks/marketValue/${market}?page=1&pageSize=10&stockExchangeType=${market}&rankingType=${type}`, {
+      headers: { Referer: 'https://m.stock.naver.com/' },
+      timeout: 5000
+    });
+    const d = await r.json();
+    return (d.stocks || []).map(s => ({
       symbol: s.itemCode,
       name: s.stockName,
-      market,
+      market: market,
       price: s.closePrice,
       diff: s.compareToPreviousClosePrice,
       pct: parseFloat(s.fluctuationsRatio),
+      strength: parseFloat(s.executionStrength || 0),
       volume: s.accumulatedTradingVolume || s.accumulatedTradingVolumeRaw || '0'
-    });
+    }));
+  } catch (e) {
+    console.warn(`Naver Ranking (${market}, ${type}) failed:`, e.message);
+    return [];
+  }
+}
 
-    const combined = [
-      ...(kospiR.stocks || []).map(formatKr('KOSPI')),
-      ...(kosdaqR.stocks || []).map(formatKr('KOSDAQ'))
-    ];
-    result.kr = combined
+app.get('/api/market-top', async (req, res) => {
+  let result = { indices: [], kr: [], us: [], scanner: [] };
+  try {
+    // 1. 국내 주요 지수
+    result.indices = await fetchNaverIndices();
+
+    // 2. 수급 스캐너 (체결강도 상위)
+    const [kospiStrength, kosdaqStrength] = await Promise.all([
+      fetchNaverRanking('KOSPI', 'strength'),
+      fetchNaverRanking('KOSDAQ', 'strength')
+    ]);
+    result.scanner = [...kospiStrength, ...kosdaqStrength]
+      .sort((a, b) => b.strength - a.strength)
+      .slice(0, 10);
+
+    // 3. 국내 주식 거래량 TOP 5
+    const [kospiVol, kosdaqVol] = await Promise.all([
+      fetchNaverRanking('KOSPI', 'volume'),
+      fetchNaverRanking('KOSDAQ', 'volume')
+    ]);
+    result.kr = [...kospiVol, ...kosdaqVol]
       .sort((a, b) => {
         const va = parseInt(a.volume.replace(/,/g, '')) || 0;
         const vb = parseInt(b.volume.replace(/,/g, '')) || 0;
@@ -821,9 +841,7 @@ app.get('/api/market-top', async (req, res) => {
       })
       .slice(0, 5);
 
-    console.log(`Final KR Top 5 count: ${result.kr.length}`);
-
-    // 2. US Top Volume (Yahoo Finance Most Actives)
+    // 4. 해외 주식 (미국) 거래량 TOP 5
     try {
       const { crumb, cookie } = await getYahooCrumb();
       const usR = await _fetch(`https://query1.finance.yahoo.com/v1/finance/screener/predefined/saved?screenerIds=most_actives&count=5&crumb=${encodeURIComponent(crumb)}`, {
@@ -843,7 +861,6 @@ app.get('/api/market-top', async (req, res) => {
         throw new Error('empty us');
       }
     } catch (_) { 
-      // Fallback: Use some major active tickers
       const SYMS = ['TSLA', 'NVDA', 'AAPL', 'AMD', 'MSFT'];
       const r = await fetchQuotesBatch(SYMS);
       result.us = r.map(s => ({

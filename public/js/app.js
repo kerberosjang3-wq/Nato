@@ -2082,7 +2082,32 @@ function renderMarketTrends() {
       `;
     };
 
+    const scannerHtml = state.marketTop.scanner?.length ? `
+      <div class="mtop-section scanner-section">
+        <div class="mtop-header"><i class="ph ph-fire-simple"></i> 실시간 수급 스캐너</div>
+        <div class="scanner-grid">
+          ${state.marketTop.scanner.map(s => {
+            const pctCls = getChangeClass(s.pct);
+            const strCls = s.strength >= 100 ? 'gain-up' : 'gain-down';
+            return `
+              <div class="scanner-item">
+                <div class="scanner-info">
+                  <span class="scanner-name">${s.name}</span>
+                  <span class="scanner-market">${s.market === 'KOSPI' ? 'P' : 'D'}</span>
+                </div>
+                <div class="scanner-data">
+                  <span class="scanner-strength ${strCls}">${s.strength.toFixed(0)}%</span>
+                  <span class="scanner-pct ${pctCls}">${s.pct > 0 ? '+' : ''}${s.pct}%</span>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    ` : '';
+
     topEl.innerHTML = `
+      ${scannerHtml}
       ${buildList('국내주식', 'ph-chart-line-up', state.marketTop.kr, true)}
       ${buildList('해외주식', 'ph-globe', state.marketTop.us, false)}
     `;
