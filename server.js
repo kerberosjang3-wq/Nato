@@ -838,7 +838,7 @@ app.get('/api/market-top', async (req, res) => {
           diff: s.regularMarketChange,
           pct: s.regularMarketChangePercent,
           volume: s.regularMarketVolume
-        }));
+        })).sort((a, b) => (b.volume || 0) - (a.volume || 0));
       } else {
         throw new Error('empty us');
       }
@@ -853,7 +853,7 @@ app.get('/api/market-top', async (req, res) => {
         diff: s.regularMarketChange,
         pct: s.regularMarketChangePercent,
         volume: s.regularMarketVolume
-      }));
+      })).sort((a, b) => (b.volume || 0) - (a.volume || 0));
     }
 
   } catch (err) {
