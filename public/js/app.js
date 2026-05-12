@@ -1581,9 +1581,7 @@ function toggleGroupCollapse(group) {
   if (caret) caret.classList.toggle('collapsed', collapsed);
 }
 
-// 단일탭 → 차트 모달 / 더블탭(300ms 이내 재탭) → 뉴스 / 헤더 탭 → 그룹 접기
-let _lastTap = { symbol: null, time: 0 };
-let _singleTapTimer = null;
+// 카드 탭 → 차트 모달 / 헤더 탭 → 그룹 접기
 function attachPortfolioDoubleTap(wrap) {
   wrap.addEventListener('click', e => {
     // 헤더 탭 — 그룹 접기/펼치기
@@ -1607,29 +1605,9 @@ function attachPortfolioDoubleTap(wrap) {
     }
 
     const symbol = card.dataset.symbol;
-    const now = Date.now();
-
-    if (_lastTap.symbol === symbol && now - _lastTap.time < 300) {
-      // 더블탭 → 뉴스
-      clearTimeout(_singleTapTimer);
-      _singleTapTimer = null;
-      _lastTap = { symbol: null, time: 0 };
-      const item = state.portfolio[symbol];
-      if (!item) return;
-      const q = state.portfolioPrices[symbol];
-      loadNewsForStock(symbol, item.name || q?.korName || symbol);
-    } else {
-      // 단일탭 확정 대기 (300ms)
-      _lastTap = { symbol, time: now };
-      clearTimeout(_singleTapTimer);
-      _singleTapTimer = setTimeout(() => {
-        _singleTapTimer = null;
-        _lastTap = { symbol: null, time: 0 };
-        const item = state.portfolio[symbol];
-        const q = state.portfolioPrices[symbol];
-        openChartModal(symbol, item?.name || q?.korName || symbol, null);
-      }, 300);
-    }
+    const item = state.portfolio[symbol];
+    const q = state.portfolioPrices[symbol];
+    openChartModal(symbol, item?.name || q?.korName || symbol, null);
   }, { capture: false });
 }
 
