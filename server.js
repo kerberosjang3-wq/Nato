@@ -879,6 +879,108 @@ app.get('/api/market-top', async (req, res) => {
   res.json(result);
 });
 
+// ── Volume Spikes (거래량 급증 스캐너) ───────────────────────────────────────
+app.get('/api/volume-spikes', async (req, res) => {
+  const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+  const result = { kr: [], us: [] };
+
+  // Yahoo crumb (one shot for both KR and US)
+  let crumb, cookie;
+  try {
+    ({ crumb, cookie } = await getYahooCrumb());
+  } catch (e) {
+    console.error('Volume spikes: crumb failed:', e.message);
+    return res.json(result);
+  }
+
+  const getVol = v => typeof v === 'string' ? parseInt(v.replace(/,/g, '')) : Number(v) || 0;
+
+  // ─ Korean market (KST = UTC+9), session 09:00–15:30 (390 min) ─
+  try {
+    const nowKST = new Date(Date.now() + 9 * 3600000);
+    const krMins = nowKST.getUTCHours() * 60 + nowKST.getUTCMinutes();
+    const krTimeRatio = Math.max(0.1, Math.min(1, (krMins - 540) / 390));
+
+    const [kospiVol, kosdaqVol] = await Promise.all([
+      fetchNaverRanking('KOSPI', '', 'trade_volume'),
+      fetchNaverRanking('KOSDAQ', '', 'trade_volume')
+    ]);
+    const krCandidates = [...kospiVol, ...kosdaqVol];
+
+    if (krCandidates.length > 0) {
+      const yahooSymbols = krCandidates.map(s => s.symbol + (s.market === 'KOSDAQ' ? '.KQ' : '.KS'));
+      const yR = await _fetch(
+        `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${yahooSymbols.map(encodeURIComponent).join(',')}&crumb=${encodeURIComponent(crumb)}&fields=averageDailyVolume3Month&lang=ko-KR&region=KR`,
+        { headers: { 'User-Agent': UA, 'Cookie': cookie }, timeout: 10000 }
+      );
+      const yData = await yR.json();
+      const avgMap = {};
+      (yData.quoteResponse?.result || []).forEach(q => {
+        const code = q.symbol.replace(/\.(KS|KQ)$/i, '');
+        if (q.averageDailyVolume3Month) avgMap[code] = q.averageDailyVolume3Month;
+      });
+
+      result.kr = krCandidates
+        .map(s => {
+          const curVol = getVol(s.volume);
+          const avgVol = avgMap[s.symbol];
+          if (!avgVol || !curVol) return null;
+          const ratio = Math.round(curVol / (avgVol * krTimeRatio) * 100);
+          return { symbol: s.symbol, name: s.name, market: s.market, price: s.price, diff: s.diff, pct: s.pct, curVol, avgVol, ratio };
+        })
+        .filter(Boolean)
+        .sort((a, b) => b.ratio - a.ratio)
+        .slice(0, 5);
+    }
+  } catch (e) {
+    console.error('Volume spikes KR error:', e.message);
+  }
+
+  // ─ US market (ET ≈ UTC-4 EDT), session 09:30–16:00 (390 min) ─
+  try {
+    const nowET = new Date(Date.now() - 4 * 3600000);
+    const etMins = nowET.getUTCHours() * 60 + nowET.getUTCMinutes();
+    const usTimeRatio = Math.max(0.1, Math.min(1, (etMins - 570) / 390));
+
+    const scrR = await _fetch(
+      `https://query1.finance.yahoo.com/v1/finance/screener/predefined/saved?screenerIds=most_actives&count=20&crumb=${encodeURIComponent(crumb)}`,
+      { headers: { 'User-Agent': UA, 'Cookie': cookie }, timeout: 10000 }
+    );
+    const scrData = await scrR.json();
+    const screenerSymbols = (scrData?.finance?.result?.[0]?.quotes || []).map(q => q.symbol);
+
+    if (screenerSymbols.length > 0) {
+      const qR = await _fetch(
+        `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${screenerSymbols.map(encodeURIComponent).join(',')}&crumb=${encodeURIComponent(crumb)}&fields=regularMarketVolume,averageDailyVolume3Month,shortName,regularMarketPrice,regularMarketChange,regularMarketChangePercent&lang=ko-KR&region=KR`,
+        { headers: { 'User-Agent': UA, 'Cookie': cookie }, timeout: 10000 }
+      );
+      const qData = await qR.json();
+      result.us = (qData.quoteResponse?.result || [])
+        .map(q => {
+          const curVol = q.regularMarketVolume || 0;
+          const avgVol = q.averageDailyVolume3Month || 0;
+          if (!avgVol || !curVol) return null;
+          const ratio = Math.round(curVol / (avgVol * usTimeRatio) * 100);
+          return {
+            symbol: q.symbol,
+            name: US_NAMES.get(q.symbol) || q.shortName || q.symbol,
+            price: q.regularMarketPrice,
+            diff: q.regularMarketChange,
+            pct: q.regularMarketChangePercent,
+            curVol, avgVol, ratio
+          };
+        })
+        .filter(Boolean)
+        .sort((a, b) => b.ratio - a.ratio)
+        .slice(0, 5);
+    }
+  } catch (e) {
+    console.error('Volume spikes US error:', e.message);
+  }
+
+  res.json(result);
+});
+
 app.get('/api/health', (req, res) => res.json({ status: 'ok', env: process.env.VERCEL ? 'vercel' : 'local' }));
 
 // Root route (Fallback)

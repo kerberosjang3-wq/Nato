@@ -2148,3 +2148,32 @@ html, body {
 .scanner-pct {
   font-size: 10px; font-weight: 600;
 }
+
+/* ── 거래량 급증 스캐너 ── */
+.vspike-section {
+  background: linear-gradient(135deg, rgba(255, 184, 0, 0.07) 0%, rgba(255, 107, 53, 0.07) 100%);
+  border: 1px solid rgba(255, 184, 0, 0.18);
+}
+.vspike-section .mtop-header i { color: #FFB800; }
+
+.vspike-live {
+  font-size: 9px; font-weight: 800; letter-spacing: 0.5px;
+  color: #FF5A5A;
+  margin-left: auto;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.vspike-desc {
+  font-size: 10px; color: var(--text-sub);
+  margin: 2px 0 6px 0;
+}
+
+.vspike-ratio {
+  font-size: 12px; font-weight: 800;
+  padding: 2px 7px; border-radius: 6px;
+  letter-spacing: -0.3px;
+  display: inline-block;
+}
+.vspike-ratio.spike-fire  { color: #FF3B3B; background: rgba(255, 59,  59,  0.13); }
+.vspike-ratio.spike-surge { color: #FF8C00; background: rgba(255, 140, 0,   0.13); }
+.vspike-ratio.spike-up    { color: #FFB800; background: rgba(255, 184, 0,   0.13); }

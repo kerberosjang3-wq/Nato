@@ -127,6 +127,7 @@ const state = {
   watchlistFetchingPrices: false,
   marketData: null,
   marketTop: null,
+  volumeSpikes: null,
   marketLoading: false,
   userName: localStorage.getItem('userName') || '사용자',
 };
@@ -1970,12 +1971,14 @@ async function loadMarketTrends() {
   renderMarketTrends();
 
   try {
-    const [m, t] = await Promise.all([
+    const [m, t, v] = await Promise.all([
       apiFetch('/api/market'),
-      apiFetch('/api/market-top')
+      apiFetch('/api/market-top'),
+      apiFetch('/api/volume-spikes')
     ]);
     state.marketData = m;
     state.marketTop = t;
+    state.volumeSpikes = v;
     state.marketLastUpdated = new Date();
   } catch (e) {
     console.error('Market load error:', e);
@@ -2111,6 +2114,65 @@ function renderMarketTrends() {
       ${buildList('국내주식', 'ph-chart-line-up', state.marketTop.kr, true)}
       ${buildList('해외주식', 'ph-globe', state.marketTop.us, false)}
     `;
+  }
+
+  // Volume Spikes
+  if (state.volumeSpikes) {
+    const spikeLabel = ratio => {
+      if (ratio >= 300) return { cls: 'spike-fire',  text: '거래량 폭발' };
+      if (ratio >= 200) return { cls: 'spike-surge', text: '거래량 폭발' };
+      return              { cls: 'spike-up',   text: '거래량 급증' };
+    };
+
+    const buildSpikeList = (title, icon, list, isKr) => {
+      if (!list?.length) return '';
+      const RANK_CLS2 = ['mtop-rank-1', 'mtop-rank-2', 'mtop-rank-3'];
+      return `
+        <div class="mtop-section vspike-section">
+          <div class="mtop-header">
+            <i class="ph ${icon}"></i> ${title} 거래량 급증
+            <span class="vspike-live">● LIVE</span>
+          </div>
+          <div class="vspike-desc">현재 거래량 ÷ 전일 동시간대 평균</div>
+          <div class="mtop-list">
+            ${list.map((s, idx) => {
+              const cls = getChangeClass(s.pct);
+              const sign = s.pct > 0 ? '+' : '';
+              const lbl = spikeLabel(s.ratio);
+              const rankCls = idx < 3 ? RANK_CLS2[idx] : '';
+              const vol = isKr ? formatVolumeKr(s.curVol) : formatVolume(s.curVol);
+              const avgVol = isKr ? formatVolumeKr(s.avgVol) : formatVolume(s.avgVol);
+              const badge = isKr && s.market
+                ? `<span class="mtop-market-badge">${s.market}</span>`
+                : `<span class="mtop-market-badge us">${s.symbol}</span>`;
+              return `
+                <div class="mtop-item">
+                  <div class="mtop-rank ${rankCls}">${idx + 1}</div>
+                  <div class="mtop-info">
+                    <div class="mtop-name-row">
+                      <span class="mtop-name">${s.name}</span>
+                      ${badge}
+                    </div>
+                    <div class="mtop-vol">현재 ${vol} · 평균 ${avgVol}</div>
+                  </div>
+                  <div class="mtop-right">
+                    <div class="vspike-ratio ${lbl.cls}">${s.ratio}%</div>
+                    <div class="mtop-pct ${cls}">${sign}${(s.pct ?? 0).toFixed(2)}%</div>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    };
+
+    const spikeEl = document.createElement('div');
+    spikeEl.innerHTML = `
+      ${buildSpikeList('국내주식', 'ph-lightning', state.volumeSpikes.kr, true)}
+      ${buildSpikeList('해외주식', 'ph-lightning', state.volumeSpikes.us, false)}
+    `;
+    topEl.appendChild(spikeEl);
   }
 }
 
