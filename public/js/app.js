@@ -2149,6 +2149,78 @@ function renderNews() {
 }
 
 // ── Market Trends ──────────────────────────────────────────────────────────
+function isKrMarketOpen() {
+  const now = new Date();
+  const kst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+  const day = kst.getUTCDay(); // 0=일, 6=토
+  if (day === 0 || day === 6) return false;
+  const mins = kst.getUTCHours() * 60 + kst.getUTCMinutes();
+  return mins >= 9 * 60 && mins < 15 * 60 + 30;
+}
+
+function computeSurgePicks() {
+  const scanner = state.marketTop?.scanner || [];
+  const spikes  = state.volumeSpikes?.kr   || [];
+
+  const spikeMap = {};
+  spikes.forEach(s => { spikeMap[s.symbol] = s; });
+
+  return scanner
+    .filter(s => s.pct > 0)
+    .map(s => {
+      const spike     = spikeMap[s.symbol];
+      const pctScore  = Math.min(s.pct * 3, 30);
+      const ratioScore = spike ? Math.min((spike.ratio / 100) * 10, 40) : 0;
+      const str       = s.strength ?? 100;
+      const strScore  = str > 100 ? Math.min((str - 100) / 6.67, 30) : 0;
+      return { ...s, spike, score: Math.round(pctScore + ratioScore + strScore) };
+    })
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 3);
+}
+
+function renderSurgePicks(picks) {
+  const RANK = ['1', '2', '3'];
+  const RANK_CLS = ['surge-rank-1', 'surge-rank-2', 'surge-rank-3'];
+  return `
+    <div class="surge-card">
+      <div class="surge-header">
+        <span class="surge-title"><i class="ph ph-rocket-launch"></i> 급등 가능 TOP 3</span>
+        <span class="surge-live-badge">● 장중</span>
+      </div>
+      <div class="surge-desc">거래량 · 등락률 · 체결강도 종합 분석</div>
+      <div class="surge-list">
+        ${picks.map((s, i) => {
+          const cls  = getChangeClass(s.pct);
+          const sign = s.pct > 0 ? '+' : '';
+          const barW = Math.min(s.score, 100);
+          const ratioTxt = s.spike ? `거래 ${s.spike.ratio}%` : '';
+          return `
+            <div class="surge-item market-clickable"
+                 data-code="${s.symbol}"
+                 data-name="${(s.name || '').replace(/"/g, '&quot;')}"
+                 data-market="${s.market}"
+                 onclick="openChartModal(this.dataset.code, this.dataset.name, this.dataset.market)">
+              <div class="surge-rank ${RANK_CLS[i]}">${RANK[i]}</div>
+              <div class="surge-info">
+                <div class="surge-name-row">
+                  <span class="surge-name">${s.name}</span>
+                  <span class="surge-mkt">${s.market === 'KOSPI' ? 'KOSPI' : 'KOSDAQ'}</span>
+                </div>
+                <div class="surge-bar-wrap"><div class="surge-bar" style="width:${barW}%"></div></div>
+              </div>
+              <div class="surge-right">
+                <span class="surge-pct ${cls}">${sign}${s.pct.toFixed(2)}%</span>
+                ${ratioTxt ? `<span class="surge-ratio">${ratioTxt}</span>` : ''}
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </div>
+  `;
+}
+
 async function loadMarketTrends() {
   if (state.marketLoading) return;
   state.marketLoading = true;
@@ -2175,6 +2247,7 @@ async function loadMarketTrends() {
 }
 
 function renderMarketTrends() {
+  const surgeEl  = document.getElementById('market-surge');
   const indicesEl = document.getElementById('market-indices');
   const topEl = document.getElementById('market-top-lists');
   const timeEl = document.getElementById('market-update-time');
@@ -2195,7 +2268,15 @@ function renderMarketTrends() {
   if (state.marketLoading && !state.marketData) {
     indicesEl.innerHTML = '<div class="news-loading"><i class="ph ph-spinner news-spin"></i><span>증시 정보를 불러오는 중...</span></div>';
     topEl.innerHTML = '';
+    if (surgeEl) surgeEl.innerHTML = '';
     return;
+  }
+
+  // Surge picks (장중 only)
+  if (surgeEl) {
+    const open = isKrMarketOpen();
+    const picks = open ? computeSurgePicks() : [];
+    surgeEl.innerHTML = picks.length ? renderSurgePicks(picks) : '';
   }
 
   // Indices
@@ -2291,7 +2372,7 @@ function renderMarketTrends() {
                    onclick="openChartModal(this.dataset.code, this.dataset.name, this.dataset.market)">
                 <div class="scanner-info">
                   <span class="scanner-name">${s.name}</span>
-                  <span class="scanner-market">${s.market === 'KOSPI' ? 'P' : 'D'}</span>
+                  <span class="scanner-market">${s.market === 'KOSPI' ? 'KOSPI' : 'KOSDAQ'}</span>
                 </div>
                 <div class="scanner-data">
                   <span class="scanner-strength ${strCls}">${sign}${s.pct}%</span>

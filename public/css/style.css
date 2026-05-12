@@ -2060,6 +2060,67 @@ html, body {
 .midx-price { font-size: 16px; font-weight: 800; color: var(--text); letter-spacing: -0.3px; }
 .midx-change { font-size: 11px; font-weight: 600; }
 
+/* ── 급등 가능 TOP 3 ── */
+.surge-card {
+  background: linear-gradient(135deg, rgba(255,100,50,0.08) 0%, rgba(255,180,0,0.06) 100%);
+  border: 1px solid rgba(255,120,50,0.2);
+  border-radius: 16px;
+  padding: 14px 14px 10px;
+  margin: 0 0 10px;
+}
+.surge-header {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px;
+}
+.surge-title {
+  font-size: 13px; font-weight: 800; color: var(--text);
+  display: flex; align-items: center; gap: 5px;
+}
+.surge-title i { color: #ff6432; font-size: 14px; }
+.surge-live-badge {
+  font-size: 10px; font-weight: 700; color: #22c55e;
+  background: rgba(34,197,94,0.12); border: 1px solid rgba(34,197,94,0.25);
+  border-radius: 20px; padding: 1px 7px; letter-spacing: 0.3px;
+}
+.surge-desc {
+  font-size: 10px; color: var(--text-sub); opacity: 0.6; margin-bottom: 10px;
+}
+.surge-list { display: flex; flex-direction: column; gap: 8px; }
+.surge-item {
+  display: flex; align-items: center; gap: 8px; cursor: pointer;
+  padding: 6px 4px; border-radius: 8px; transition: background 0.15s;
+}
+.surge-item:active { background: rgba(255,255,255,0.05); }
+.surge-rank {
+  width: 20px; height: 20px; border-radius: 6px; flex-shrink: 0;
+  font-size: 11px; font-weight: 900; display: flex; align-items: center; justify-content: center;
+}
+.surge-rank-1 { background: rgba(255,180,0,0.2); color: #f59e0b; }
+.surge-rank-2 { background: rgba(160,160,160,0.2); color: #9ca3af; }
+.surge-rank-3 { background: rgba(180,100,50,0.2); color: #cd7c50; }
+.surge-info { flex: 1; min-width: 0; }
+.surge-name-row { display: flex; align-items: center; gap: 5px; margin-bottom: 4px; }
+.surge-name {
+  font-size: 13px; font-weight: 700; color: var(--text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.surge-mkt {
+  font-size: 7px; font-weight: 800; color: var(--text-sub); opacity: 0.6;
+  background: var(--bg-elevated); padding: 0 3px; border-radius: 3px; letter-spacing: -0.3px; flex-shrink: 0;
+}
+.surge-bar-wrap {
+  height: 3px; background: rgba(255,255,255,0.08); border-radius: 2px; overflow: hidden;
+}
+.surge-bar {
+  height: 100%; border-radius: 2px;
+  background: linear-gradient(90deg, #ff6432, #f59e0b);
+  transition: width 0.4s ease;
+}
+.surge-right {
+  display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex-shrink: 0;
+}
+.surge-pct { font-size: 13px; font-weight: 800; }
+.surge-ratio { font-size: 10px; color: var(--text-sub); font-weight: 600; }
+
 .mtop-section {
   background: var(--bg-card);
   border-radius: 16px;
@@ -2143,8 +2204,8 @@ html, body {
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .scanner-market {
-  font-size: 8px; font-weight: 800; color: var(--text-sub); opacity: 0.5;
-  background: var(--bg-card); padding: 0 3px; border-radius: 3px;
+  font-size: 7px; font-weight: 800; color: var(--text-sub); opacity: 0.6;
+  background: var(--bg-card); padding: 0 3px; border-radius: 3px; letter-spacing: -0.3px;
 }
 
 .scanner-data {
