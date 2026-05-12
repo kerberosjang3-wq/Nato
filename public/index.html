@@ -367,6 +367,32 @@
   </div>
 </div>
 
+<!-- 차트 모달 -->
+<div class="chart-overlay" id="chart-overlay" onclick="if(event.target===this)closeChartModal()">
+  <div class="chart-sheet">
+    <div class="chart-sheet-header">
+      <div class="modal-handle"></div>
+      <div class="chart-title-row">
+        <div class="chart-title-info">
+          <div class="chart-stock-name" id="chart-stock-name">—</div>
+          <div class="chart-stock-sub" id="chart-stock-sub">—</div>
+        </div>
+        <button class="chart-close-btn" onclick="closeChartModal()">
+          <i class="ph ph-x"></i>
+        </button>
+      </div>
+    </div>
+    <div class="chart-iframe-wrap">
+      <iframe id="chart-iframe" src="" frameborder="0" allowfullscreen></iframe>
+    </div>
+    <div class="chart-footer">
+      <a id="chart-tv-link" href="#" target="_blank" rel="noopener noreferrer">
+        <i class="ph ph-arrow-square-out"></i> TradingView에서 자세히 보기
+      </a>
+    </div>
+  </div>
+</div>
+
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 

@@ -784,6 +784,30 @@ function renderSettings() {
     </div>`;
 }
 
+// ── Chart Modal ────────────────────────────────────────────────────────────
+function openChartModal(code, name, market) {
+  let tvSymbol;
+  if (market === 'KOSDAQ') tvSymbol = `KOSDAQ:${code}`;
+  else if (market === 'KOSPI') tvSymbol = `KRX:${code}`;
+  else tvSymbol = code; // US stocks — TradingView resolves TSLA, NVDA etc.
+
+  const theme = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+  const src = `https://s.tradingview.com/widgetembed/?hideideas=1&symbol=${encodeURIComponent(tvSymbol)}&interval=D&theme=${theme}&style=1&locale=ko&timezone=Asia%2FSeoul&hide_legend=0&save_image=0&hide_volume=0&withdateranges=1`;
+
+  document.getElementById('chart-stock-name').textContent = name;
+  document.getElementById('chart-stock-sub').textContent = `${tvSymbol} · ${market || 'US'}`;
+  document.getElementById('chart-iframe').src = src;
+  document.getElementById('chart-tv-link').href = `https://www.tradingview.com/chart/?symbol=${encodeURIComponent(tvSymbol)}`;
+  document.getElementById('chart-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeChartModal() {
+  document.getElementById('chart-overlay').classList.remove('open');
+  document.getElementById('chart-iframe').src = '';
+  document.body.style.overflow = '';
+}
+
 // ── Modal ──────────────────────────────────────────────────────────────────
 let modalData = {};
 
@@ -2063,8 +2087,13 @@ function renderMarketTrends() {
               const vol = isKr ? formatVolumeKr(s.volume) : formatVolume(s.volume);
               const badge = isKr && s.market ? `<span class="mtop-market-badge">${s.market}</span>` : `<span class="mtop-market-badge us">${s.symbol}</span>`;
               const rankCls = idx < 3 ? RANK_CLS[idx] : '';
+              const mkt = isKr ? (s.market || 'KOSPI') : 'US';
               return `
-                <div class="mtop-item">
+                <div class="mtop-item market-clickable"
+                     data-code="${s.symbol}"
+                     data-name="${(s.name || '').replace(/"/g, '&quot;')}"
+                     data-market="${mkt}"
+                     onclick="openChartModal(this.dataset.code, this.dataset.name, this.dataset.market)">
                   <div class="mtop-rank ${rankCls}">${idx + 1}</div>
                   <div class="mtop-info">
                     <div class="mtop-name-row">
@@ -2094,7 +2123,11 @@ function renderMarketTrends() {
             const sign = s.pct > 0 ? '+' : '';
             const vol = formatVolumeKr(s.volume);
             return `
-              <div class="scanner-item">
+              <div class="scanner-item market-clickable"
+                   data-code="${s.symbol}"
+                   data-name="${(s.name || '').replace(/"/g, '&quot;')}"
+                   data-market="${s.market}"
+                   onclick="openChartModal(this.dataset.code, this.dataset.name, this.dataset.market)">
                 <div class="scanner-info">
                   <span class="scanner-name">${s.name}</span>
                   <span class="scanner-market">${s.market === 'KOSPI' ? 'P' : 'D'}</span>
@@ -2146,8 +2179,13 @@ function renderMarketTrends() {
               const badge = isKr && s.market
                 ? `<span class="mtop-market-badge">${s.market}</span>`
                 : `<span class="mtop-market-badge us">${s.symbol}</span>`;
+              const mkt2 = isKr ? (s.market || 'KOSPI') : 'US';
               return `
-                <div class="mtop-item">
+                <div class="mtop-item market-clickable"
+                     data-code="${s.symbol}"
+                     data-name="${(s.name || '').replace(/"/g, '&quot;')}"
+                     data-market="${mkt2}"
+                     onclick="openChartModal(this.dataset.code, this.dataset.name, this.dataset.market)">
                   <div class="mtop-rank ${rankCls}">${idx + 1}</div>
                   <div class="mtop-info">
                     <div class="mtop-name-row">
@@ -2388,6 +2426,9 @@ function setupEventListeners() {
 
   document.getElementById('home-search-btn')?.addEventListener('click', triggerSearch);
   homeSearchInput?.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); triggerSearch(); } });
+
+  // Chart modal ESC
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeChartModal(); });
 
   // Modal
   document.getElementById('modal-overlay')?.addEventListener('click', e => {
