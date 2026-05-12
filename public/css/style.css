@@ -2197,10 +2197,13 @@ html, body {
   min-width: 0;
 }
 
+.scanner-name-row {
+  display: flex; align-items: center; gap: 5px; margin-bottom: 5px; min-width: 0;
+}
 .scanner-name {
   font-size: 12px; font-weight: 700; color: var(--text);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  display: block; margin-bottom: 5px;
+  flex: 1; min-width: 0;
 }
 .scanner-market {
   font-size: 7px; font-weight: 800; color: var(--text-sub); opacity: 0.6;
@@ -2212,7 +2215,7 @@ html, body {
   display: flex; align-items: baseline; justify-content: space-between; gap: 4px;
 }
 .scanner-strength {
-  font-size: 13px; font-weight: 800; flex: 1; min-width: 0;
+  font-size: 13px; font-weight: 800;
 }
 .scanner-pct {
   font-size: 10px; font-weight: 600; color: var(--text-sub);

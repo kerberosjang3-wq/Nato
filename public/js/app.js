@@ -2368,11 +2368,13 @@ function renderMarketTrends() {
                    data-name="${(s.name || '').replace(/"/g, '&quot;')}"
                    data-market="${s.market}"
                    onclick="openChartModal(this.dataset.code, this.dataset.name, this.dataset.market)">
-                <span class="scanner-name">${s.name}</span>
+                <div class="scanner-name-row">
+                  <span class="scanner-name">${s.name}</span>
+                  <span class="scanner-market">${s.market === 'KOSPI' ? 'KOSPI' : 'KOSDAQ'}</span>
+                </div>
                 <div class="scanner-data">
                   <span class="scanner-strength ${strCls}">${sign}${s.pct}%</span>
                   <span class="scanner-pct">${vol}</span>
-                  <span class="scanner-market">${s.market === 'KOSPI' ? 'KOSPI' : 'KOSDAQ'}</span>
                 </div>
               </div>
             `;
