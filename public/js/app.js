@@ -702,19 +702,38 @@ function renderSettings() {
 
 // ── Chart Modal ────────────────────────────────────────────────────────────
 function openChartModal(code, name, market) {
-  let tvSymbol;
-  if (market === 'KOSDAQ') tvSymbol = `KOSDAQ:${code}`;
-  else if (market === 'KOSPI') tvSymbol = `KRX:${code}`;
-  else tvSymbol = toTvSymbol(code);
+  const isKospi  = market === 'KOSPI'  || /\.KS$/i.test(code);
+  const isKosdaq = market === 'KOSDAQ' || /\.KQ$/i.test(code);
+  const isKorean = isKospi || isKosdaq;
+
+  // Yahoo Finance 심볼 (국내 주식 차트 데이터 요청용)
+  let yahooSymbol;
+  let displaySymbol;
+  if (isKospi) {
+    const raw = code.replace(/\.KS$/i, '');
+    yahooSymbol  = `${raw}.KS`;
+    displaySymbol = `KRX:${raw}`;
+  } else if (isKosdaq) {
+    const raw = code.replace(/\.KQ$/i, '');
+    yahooSymbol  = `${raw}.KQ`;
+    displaySymbol = `KOSDAQ:${raw}`;
+  } else {
+    displaySymbol = toTvSymbol(code);
+  }
 
   document.getElementById('chart-stock-name').textContent = name || code;
-  document.getElementById('chart-stock-sub').textContent = tvSymbol;
-  document.getElementById('chart-tv-link').href = `https://www.tradingview.com/chart/?symbol=${encodeURIComponent(tvSymbol)}`;
-
-  _spawnTvWidget(tvSymbol, 'chart-widget-wrap', false);
+  document.getElementById('chart-stock-sub').textContent = displaySymbol;
+  document.getElementById('chart-tv-link').href =
+    `https://www.tradingview.com/chart/?symbol=${encodeURIComponent(displaySymbol)}`;
 
   document.getElementById('chart-overlay').classList.add('open');
   document.body.style.overflow = 'hidden';
+
+  if (isKorean) {
+    renderKrChart(yahooSymbol, 'chart-widget-wrap');
+  } else {
+    _spawnTvWidget(displaySymbol, 'chart-widget-wrap', false);
+  }
 }
 
 function closeChartModal() {
@@ -1361,6 +1380,107 @@ function _spawnTvWidget(tvSymbol, containerId, hideVolume) {
 
 function renderTvChart(symbol, containerId) {
   _spawnTvWidget(toTvSymbol(symbol), containerId, true);
+}
+
+// ── Lightweight Charts (국내 주식 전용) ────────────────────────────────────
+let _lwcLoaded = false;
+let _lwcLoading = false;
+const _lwcQueue = [];
+
+function _loadLwc(cb) {
+  if (_lwcLoaded) { cb(); return; }
+  _lwcQueue.push(cb);
+  if (_lwcLoading) return;
+  _lwcLoading = true;
+  const s = document.createElement('script');
+  s.src = 'https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js';
+  s.async = true;
+  s.onload = () => { _lwcLoaded = true; _lwcLoading = false; _lwcQueue.forEach(f => f()); _lwcQueue.length = 0; };
+  s.onerror = () => { _lwcLoading = false; _lwcQueue.length = 0; };
+  document.head.appendChild(s);
+}
+
+const KR_CHART_RANGES = ['1mo', '3mo', '6mo', '1y'];
+
+async function renderKrChart(yahooSymbol, containerId, range = '3mo') {
+  const wrap = document.getElementById(containerId);
+  if (!wrap) return;
+
+  // 범위 선택 탭 + 로딩 상태 렌더링
+  const renderShell = (loadingMsg = '') => {
+    const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+    wrap.innerHTML = `
+      <div class="kr-chart-wrap" style="width:100%;height:100%;display:flex;flex-direction:column;">
+        <div class="kr-chart-ranges" style="display:flex;gap:6px;padding:8px 12px;background:${isDark?'#1a1a1a':'#fff'}">
+          ${KR_CHART_RANGES.map(r => `
+            <button class="kr-range-btn${r===range?' active':''}"
+              style="padding:4px 10px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:600;
+                     background:${r===range?(isDark?'#3a3a3a':'#e0e0e0'):'transparent'};
+                     color:${isDark?'#fff':'#333'}"
+              onclick="renderKrChart('${yahooSymbol}','${containerId}','${r}')">
+              ${{  '1mo':'1개월','3mo':'3개월','6mo':'6개월','1y':'1년'}[r]}
+            </button>`).join('')}
+        </div>
+        <div id="kr-chart-canvas" style="flex:1;position:relative;">
+          ${loadingMsg ? `<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--text-sub);font-size:14px">${loadingMsg}</div>` : ''}
+        </div>
+      </div>`;
+  };
+
+  renderShell('차트 로딩 중...');
+
+  let candles;
+  try {
+    const data = await apiFetch(`/api/chart?symbol=${encodeURIComponent(yahooSymbol)}&range=${range}`);
+    if (!data.candles?.length) throw new Error('no data');
+    candles = data.candles;
+  } catch {
+    renderShell('차트 데이터를 불러올 수 없습니다');
+    return;
+  }
+
+  renderShell(); // 로딩 메시지 없이 껍데기 재렌더
+
+  _loadLwc(() => requestAnimationFrame(() => {
+    const canvas = document.getElementById('kr-chart-canvas');
+    if (!canvas) return;
+    const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+
+    const chart = LightweightCharts.createChart(canvas, {
+      width: canvas.clientWidth,
+      height: canvas.clientHeight,
+      layout: {
+        background: { color: isDark ? '#1a1a1a' : '#ffffff' },
+        textColor: isDark ? '#aaaaaa' : '#555555',
+      },
+      grid: {
+        vertLines: { color: isDark ? '#2a2a2a' : '#f0f0f0' },
+        horzLines: { color: isDark ? '#2a2a2a' : '#f0f0f0' },
+      },
+      rightPriceScale: { borderColor: isDark ? '#2a2a2a' : '#e0e0e0' },
+      timeScale: { borderColor: isDark ? '#2a2a2a' : '#e0e0e0', timeVisible: false },
+      crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+    });
+
+    // 국내 주식 관례: 상승=빨강, 하락=파랑
+    const candleSeries = chart.addCandlestickSeries({
+      upColor:        '#f23645',
+      downColor:      '#1a88ff',
+      borderUpColor:  '#f23645',
+      borderDownColor:'#1a88ff',
+      wickUpColor:    '#f23645',
+      wickDownColor:  '#1a88ff',
+    });
+    candleSeries.setData(candles);
+    chart.timeScale().fitContent();
+
+    // 창 크기 변경 대응
+    const ro = new ResizeObserver(entries => {
+      const { width, height } = entries[0].contentRect;
+      chart.resize(width, height);
+    });
+    ro.observe(canvas);
+  }));
 }
 
 function clearDetailPanel() {

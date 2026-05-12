@@ -646,6 +646,43 @@ app.get('/api/spark', async (req, res) => {
   } catch (e) { res.status(502).json({ error: e.message }); }
 });
 
+// ── OHLC 캔들 차트 데이터 (국내 주식용) ──────────────────────────────────────
+app.get('/api/chart', async (req, res) => {
+  const symbol = (req.query.symbol || '').trim();
+  const range  = ['1mo','3mo','6mo','1y'].includes(req.query.range) ? req.query.range : '3mo';
+  if (!symbol) return res.status(400).json({ error: 'symbol required' });
+
+  const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+  try {
+    const { crumb, cookie } = await getYahooCrumb();
+    const r = await _fetch(
+      `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=${range}&interval=1d&crumb=${encodeURIComponent(crumb)}`,
+      { headers: { 'User-Agent': UA, 'Cookie': cookie }, timeout: 8000 }
+    );
+    if (!r.ok) return res.status(r.status).json({ error: `Yahoo ${r.status}` });
+    const data = await r.json();
+    const result = data.chart?.result?.[0];
+    if (!result) return res.status(404).json({ error: 'no data' });
+
+    const ts    = result.timestamp || [];
+    const q     = result.indicators?.quote?.[0] || {};
+    const candles = ts.map((t, i) => {
+      if (q.open[i] == null || q.close[i] == null) return null;
+      const d = new Date(t * 1000);
+      return {
+        time:   `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`,
+        open:   q.open[i],
+        high:   q.high[i],
+        low:    q.low[i],
+        close:  q.close[i],
+        volume: q.volume[i] || 0,
+      };
+    }).filter(Boolean);
+
+    res.json({ symbol, range, candles });
+  } catch (e) { res.status(502).json({ error: e.message }); }
+});
+
 // ── News (Google News RSS per portfolio holding) ───────────────────────────
 app.get('/api/news', async (req, res) => {
   const { clientId, symbol, name } = req.query;
