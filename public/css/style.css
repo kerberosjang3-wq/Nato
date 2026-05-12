@@ -2228,9 +2228,15 @@ html, body {
 
 .chart-iframe-wrap {
   flex: 1; overflow: hidden; background: var(--bg-page);
+  position: relative;
 }
-.chart-iframe-wrap iframe {
-  width: 100%; height: 100%; border: none; display: block;
+/* TradingView 위젯이 주입하는 자식 요소 대응 */
+.chart-iframe-wrap > div,
+.chart-iframe-wrap iframe,
+.chart-iframe-wrap .tradingview-widget-container,
+.chart-iframe-wrap .tradingview-widget-container__widget {
+  width: 100% !important; height: 100% !important;
+  border: none; display: block;
 }
 
 .chart-footer {

@@ -789,22 +789,48 @@ function openChartModal(code, name, market) {
   let tvSymbol;
   if (market === 'KOSDAQ') tvSymbol = `KOSDAQ:${code}`;
   else if (market === 'KOSPI') tvSymbol = `KRX:${code}`;
-  else tvSymbol = code; // US stocks — TradingView resolves TSLA, NVDA etc.
+  else tvSymbol = code; // US stocks (TSLA, NVDA 등 — TradingView 자동 해석)
 
   const theme = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
-  const src = `https://s.tradingview.com/widgetembed/?hideideas=1&symbol=${encodeURIComponent(tvSymbol)}&interval=D&theme=${theme}&style=1&locale=ko&timezone=Asia%2FSeoul&hide_legend=0&save_image=0&hide_volume=0&withdateranges=1`;
 
   document.getElementById('chart-stock-name').textContent = name;
   document.getElementById('chart-stock-sub').textContent = `${tvSymbol} · ${market || 'US'}`;
-  document.getElementById('chart-iframe').src = src;
   document.getElementById('chart-tv-link').href = `https://www.tradingview.com/chart/?symbol=${encodeURIComponent(tvSymbol)}`;
+
+  // TradingView Advanced Chart 위젯 주입 (currentScript 방식 — KRX 심볼 정상 지원)
+  const wrap = document.getElementById('chart-widget-wrap');
+  wrap.innerHTML = '';
+
+  const widgetDiv = document.createElement('div');
+  widgetDiv.style.cssText = 'height:100%;width:100%';
+  wrap.appendChild(widgetDiv);
+
+  const script = document.createElement('script');
+  script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
+  script.async = true;
+  script.textContent = JSON.stringify({
+    symbol: tvSymbol,
+    interval: 'D',
+    timezone: 'Asia/Seoul',
+    theme,
+    style: '1',
+    locale: 'ko',
+    allow_symbol_change: false,
+    save_image: false,
+    hide_volume: false,
+    withdateranges: true,
+    support_host: 'https://www.tradingview.com'
+  });
+  wrap.appendChild(script);
+
   document.getElementById('chart-overlay').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
 
 function closeChartModal() {
   document.getElementById('chart-overlay').classList.remove('open');
-  document.getElementById('chart-iframe').src = '';
+  // 위젯 정리 (다음 오픈 시 새로 주입)
+  document.getElementById('chart-widget-wrap').innerHTML = '';
   document.body.style.overflow = '';
 }
 
