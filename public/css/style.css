@@ -749,14 +749,15 @@ html, body {
 
 /* 정규장 row (pre/post market) — now in left info column */
 .port-regular-row {
-  display: flex; align-items: center;
+  display: flex; align-items: center; flex-wrap: nowrap;
   justify-content: flex-start; gap: 5px; margin-top: 1px;
+  overflow: hidden;
 }
 .port-regular-price {
   font-size: 10px; color: var(--text-sub);
-  font-variant-numeric: tabular-nums;
+  font-variant-numeric: tabular-nums; white-space: nowrap; flex-shrink: 0;
 }
-.port-regular-chg { font-size: 10px; font-variant-numeric: tabular-nums; }
+.port-regular-chg { font-size: 10px; font-variant-numeric: tabular-nums; white-space: nowrap; flex-shrink: 0; }
 .port-regular-chg.up   { color: var(--stock-up); }
 .port-regular-chg.down { color: var(--stock-down); }
 .port-regular-chg.flat { color: var(--text-sub); }
@@ -776,6 +777,7 @@ html, body {
 .mts-regular-label {
   font-size: 9px; font-weight: 700; color: var(--text-sub);
   background: var(--bg-elevated); border-radius: 3px; padding: 1px 4px;
+  white-space: nowrap; flex-shrink: 0;
 }
 
 .stock-card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1px; }
