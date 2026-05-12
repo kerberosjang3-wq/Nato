@@ -1208,13 +1208,11 @@ function renderPortfolioCard(item) {
         <div class="port-price-col">
           ${showKrx ? `
           <div class="port-line1">
-            ${isKR ? `<span class="ex-badge krx">KRX</span>` : ''}
             <span class="port-price ${krxChangeClass}">${krxPrice ? formatPrice(krxPrice, currency) : '—'}</span>
             <span class="port-tri-pct ${krxChangeClass}">${krxAbsPctStr}</span>
           </div>` : ''}
           ${showNxt ? `
           <div class="port-line1 nxt-line">
-            <span class="ex-badge nxt">NXT</span>
             <span class="port-price ${nxtChangeClass}">${formatPrice(nxtPrice, currency)}</span>
             <span class="port-tri-pct ${nxtChangeClass}">${nxtPctStr}</span>
           </div>` : ''}
@@ -2370,13 +2368,11 @@ function renderMarketTrends() {
                    data-name="${(s.name || '').replace(/"/g, '&quot;')}"
                    data-market="${s.market}"
                    onclick="openChartModal(this.dataset.code, this.dataset.name, this.dataset.market)">
-                <div class="scanner-info">
-                  <span class="scanner-name">${s.name}</span>
-                  <span class="scanner-market">${s.market === 'KOSPI' ? 'KOSPI' : 'KOSDAQ'}</span>
-                </div>
+                <span class="scanner-name">${s.name}</span>
                 <div class="scanner-data">
                   <span class="scanner-strength ${strCls}">${sign}${s.pct}%</span>
                   <span class="scanner-pct">${vol}</span>
+                  <span class="scanner-market">${s.market === 'KOSPI' ? 'KOSPI' : 'KOSDAQ'}</span>
                 </div>
               </div>
             `;

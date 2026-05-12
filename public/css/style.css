@@ -2193,29 +2193,29 @@ html, body {
   border-radius: 12px;
   padding: 10px 12px;
   border: 1px solid var(--border);
+  overflow: hidden;
+  min-width: 0;
 }
 
-.scanner-info {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 4px;
-}
 .scanner-name {
   font-size: 12px; font-weight: 700; color: var(--text);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  display: block; margin-bottom: 5px;
 }
 .scanner-market {
   font-size: 7px; font-weight: 800; color: var(--text-sub); opacity: 0.6;
   background: var(--bg-card); padding: 0 3px; border-radius: 3px; letter-spacing: -0.3px;
+  flex-shrink: 0;
 }
 
 .scanner-data {
-  display: flex; align-items: baseline; justify-content: space-between;
+  display: flex; align-items: baseline; justify-content: space-between; gap: 4px;
 }
 .scanner-strength {
-  font-size: 13px; font-weight: 800;
+  font-size: 13px; font-weight: 800; flex: 1; min-width: 0;
 }
 .scanner-pct {
-  font-size: 10px; font-weight: 600;
+  font-size: 10px; font-weight: 600; color: var(--text-sub);
 }
 
 /* ── 거래량 급증 스캐너 ── */
