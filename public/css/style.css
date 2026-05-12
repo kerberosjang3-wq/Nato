@@ -2227,7 +2227,8 @@ html, body {
 .chart-close-btn:active { background: var(--border); }
 
 .chart-iframe-wrap {
-  flex: 1; overflow: hidden; background: var(--bg-page);
+  flex: 1; min-height: 0; overflow: hidden; background: var(--bg-page);
+  display: flex; flex-direction: column;
 }
 /* TradingView 컨테이너가 wrap을 꽉 채우도록 */
 .chart-iframe-wrap .tradingview-widget-container {
