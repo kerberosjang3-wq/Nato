@@ -1259,11 +1259,59 @@ function toTvSymbol(symbol) {
 }
 
 // tv.js는 최초 1회만 로드하고 이후 TradingView.widget() API를 직접 호출한다.
-// embed-widget 스크립트 동적 주입 방식은 document.currentScript 의존성으로
-// 모바일 브라우저에서 신뢰성이 낮다.
 let _tvLibLoaded = false;
 let _tvLibLoading = false;
 const _tvLibQueue = [];
+
+// "TradingView에서만 제공되는 심볼" 확인 다이얼로그 자동 닫기
+// TV 위젯은 크로스 오리진 iframe을 사용하므로 세 가지 방어선을 동시 적용한다.
+let _tvDialogObs = null;
+function _setupTvDialogAutoDismiss() {
+  // 1) window.confirm 오버라이드 — 일부 버전이 네이티브 confirm을 사용하는 경우
+  if (!window._tvConfirmPatched) {
+    window._tvConfirmPatched = true;
+    const _orig = window.confirm;
+    window.confirm = function(msg) {
+      if (typeof msg === 'string' && /tradingview/i.test(msg)) return true;
+      return _orig.apply(this, arguments);
+    };
+  }
+
+  // 2) postMessage 수신 — TV iframe이 확인 요청을 postMessage로 중계하는 경우
+  if (!window._tvMessagePatched) {
+    window._tvMessagePatched = true;
+    window.addEventListener('message', e => {
+      if (typeof e.origin !== 'string' || !e.origin.includes('tradingview')) return;
+      try { e.source?.postMessage({ name: 'widgetReady' }, '*'); } catch (_) {}
+    });
+  }
+
+  // 3) MutationObserver — tv.js가 호스트 DOM에 다이얼로그 요소를 주입하는 경우
+  if (_tvDialogObs) _tvDialogObs.disconnect();
+  _tvDialogObs = new MutationObserver(() => {
+    // TV가 주입하는 다이얼로그의 알려진 클래스 패턴
+    const sel = [
+      '.tv-dialog .tv-button--primary',
+      '.tv-dialog__btn--primary',
+      '[class*="acceptButton"]',
+      '[class*="confirmButton"]',
+    ].join(',');
+    document.querySelectorAll(sel).forEach(btn => {
+      if (btn.offsetParent !== null) btn.click();
+    });
+    // 버튼 텍스트가 "확인"/"OK"/"Got it"인 버튼을 tv-dialog 컨테이너 안에서 탐색
+    document.querySelectorAll('.tv-dialog, [class*="tv-dialog"]').forEach(dlg => {
+      const btn = [...dlg.querySelectorAll('button')].find(b => {
+        const t = b.textContent.trim();
+        return t === '확인' || t === 'OK' || t === 'Got it' || t === '알겠습니다';
+      });
+      if (btn && btn.offsetParent !== null) btn.click();
+    });
+  });
+  _tvDialogObs.observe(document.body, { childList: true, subtree: true });
+  // 10초 후 해제 (차트 로드가 완료된 이후에는 불필요)
+  setTimeout(() => { _tvDialogObs?.disconnect(); _tvDialogObs = null; }, 10000);
+}
 
 function _loadTvLib(cb) {
   if (_tvLibLoaded) { cb(); return; }
@@ -1289,6 +1337,7 @@ function _spawnTvWidget(tvSymbol, containerId, hideVolume) {
   const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
   const widgetDivId = containerId + '-w';
   wrap.innerHTML = `<div id="${widgetDivId}" style="width:100%;height:100%"></div>`;
+  _setupTvDialogAutoDismiss();
   _loadTvLib(() => {
     if (!document.getElementById(widgetDivId)) return;
     new TradingView.widget({
@@ -1304,6 +1353,7 @@ function _spawnTvWidget(tvSymbol, containerId, hideVolume) {
       allow_symbol_change: false,
       save_image: false,
       hide_volume: hideVolume,
+      disabled_features: ['popup_hints'],
       container_id: widgetDivId,
     });
   });
