@@ -755,7 +755,8 @@ html, body {
 }
 .port-regular-price {
   font-size: 10px; color: var(--text-sub);
-  font-variant-numeric: tabular-nums; white-space: nowrap; flex-shrink: 0;
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+  flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis;
 }
 .port-regular-chg { font-size: 10px; font-variant-numeric: tabular-nums; white-space: nowrap; flex-shrink: 0; }
 .port-regular-chg.up   { color: var(--stock-up); }
