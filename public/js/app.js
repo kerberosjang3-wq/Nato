@@ -131,7 +131,7 @@ const state = {
   marketLoading: false,
   marketLastUpdated: null,
   userName: localStorage.getItem('userName') || '사용자',
-  domesticExchange: localStorage.getItem('domesticExchange') || 'BOTH', // KRX, NXT, BOTH
+  domesticExchange: localStorage.getItem('domesticExchange') || 'KRX', // KRX, NXT
 };
 
 // ── API ────────────────────────────────────────────────────────────────────
@@ -1191,8 +1191,8 @@ function renderPortfolioCard(item) {
   const badgeClass = isKR ? 'market-badge-kr' : 'market-badge-us';
   const marketBadge = `<span class="market-badge ${badgeClass}">${badgeLabel}</span>`;
 
-  const showKrx = !isKR || state.domesticExchange === 'BOTH' || state.domesticExchange === 'KRX';
-  const showNxt = isKR && (state.domesticExchange === 'BOTH' || state.domesticExchange === 'NXT') && nxtPrice;
+  const showKrx = !isKR || state.domesticExchange !== 'NXT';
+  const showNxt = isKR && state.domesticExchange === 'NXT' && nxtPrice;
 
   const cardClass = ['stock-card', dirClass, isExpanded ? 'expanded' : ''].filter(Boolean).join(' ');
 
@@ -1729,8 +1729,8 @@ function cycleSortMode(group) {
 }
 
 function cycleDomesticExchange() {
-  const modes = ['BOTH', 'KRX', 'NXT'];
-  const cur = state.domesticExchange || 'BOTH';
+  const modes = ['KRX', 'NXT'];
+  const cur = state.domesticExchange === 'NXT' ? 'NXT' : 'KRX';
   const next = modes[(modes.indexOf(cur) + 1) % modes.length];
   state.domesticExchange = next;
   localStorage.setItem('domesticExchange', next);
@@ -1804,10 +1804,9 @@ function renderPortfolioHoldings() {
   };
 
   const exchBtn = () => {
-    const exch = state.domesticExchange || 'BOTH';
-    const label = exch === 'BOTH' ? 'KRX+NXT' : exch;
+    const exch = state.domesticExchange === 'NXT' ? 'NXT' : 'KRX';
     return `<button class="port-exch-btn" onclick="event.stopPropagation();cycleDomesticExchange()">
-      <span class="ex-badge ${exch.toLowerCase()}">${label}</span>
+      <span class="ex-badge ${exch.toLowerCase()}">${exch}</span>
     </button>`;
   };
 
@@ -1819,8 +1818,8 @@ function renderPortfolioHoldings() {
       <span class="portfolio-section-label">국내주식</span>
       <span class="section-ud-wrap">${upDownBadges(domestic)}</span>
       <span class="portfolio-section-count kr">${domestic.length}</span>
-      ${exchBtn()}
       ${sortBtn('domestic')}
+      ${exchBtn()}
       <button class="port-dots-btn" onclick="event.stopPropagation();toggleGroupCollapse('domestic')">
         <i class="ph ph-dots-three-vertical"></i>
       </button>
