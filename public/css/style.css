@@ -701,10 +701,24 @@ html, body {
 .port-chg-abs.up   { color: var(--stock-up); }
 .port-chg-abs.down { color: var(--stock-down); }
 .port-chg-abs.flat { color: var(--text-sub); }
+.port-line1 { align-items: baseline; }
+.port-gain-side {
+  font-size: 11px; font-weight: 700;
+  font-variant-numeric: tabular-nums; margin-left: 4px;
+}
+.port-gain-side.gain-up   { color: var(--stock-up); }
+.port-gain-side.gain-down { color: var(--stock-down); }
+
 .port-line2 {
   display: flex; align-items: center;
-  justify-content: flex-end; gap: 4px;
+  justify-content: flex-end; gap: 4px; margin-top: 1px;
 }
+.port-diff {
+  font-size: 10px; font-weight: 600; font-variant-numeric: tabular-nums;
+}
+.port-diff.up   { color: var(--stock-up); }
+.port-diff.down { color: var(--stock-down); }
+.port-diff.flat { color: var(--text-sub); }
 .port-vol { font-size: 9px; color: var(--text-sub); font-variant-numeric: tabular-nums; }
 .port-tri-pct {
   font-size: 10px; font-weight: 600;
