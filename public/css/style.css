@@ -675,6 +675,8 @@ html, body {
 .ex-badge { font-size: 8px; font-weight: 800; padding: 1px 4px; border-radius: 4px; margin-right: 4px; line-height: 1.1; text-transform: uppercase; vertical-align: middle; }
 .ex-badge.krx { background: rgba(224, 102, 102, 0.15); color: var(--stock-up); border: 1px solid rgba(224, 102, 102, 0.2); }
 .ex-badge.nxt { background: rgba(96, 144, 216, 0.15); color: var(--stock-down); border: 1px solid rgba(96, 144, 216, 0.2); }
+.ex-badge.both { background: rgba(160, 120, 220, 0.15); color: #a878dc; border: 1px solid rgba(160, 120, 220, 0.2); }
+.port-exch-btn { display: inline-flex; align-items: center; justify-content: center; background: none; border: none; padding: 0 2px; cursor: pointer; flex-shrink: 0; }
 .nxt-line { margin-top: 2px; opacity: 0.85; }
 .nxt-line .port-price { font-size: 13px !important; }
 .nxt-line .port-tri-pct { font-size: 11px !important; }

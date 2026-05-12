@@ -131,6 +131,7 @@ const state = {
   marketLoading: false,
   marketLastUpdated: null,
   userName: localStorage.getItem('userName') || '사용자',
+  domesticExchange: localStorage.getItem('domesticExchange') || 'BOTH', // KRX, NXT, BOTH
 };
 
 // ── API ────────────────────────────────────────────────────────────────────
@@ -1119,17 +1120,28 @@ function renderPortfolioCard(item) {
   const q = state.portfolioPrices[item.symbol];
   const currency = q?.currency || item.currency || 'USD';
   const invested = (item.buyPrice || 0) * (item.qty || 0);
+  const isKR = currency === 'KRW';
 
-  // Extended-hours price: use post/pre market price when available
+  // KRX (정규장) 주가
   const isPost = q?.marketState === 'POST' && q?.postMarketPrice;
   const isPre  = q?.marketState === 'PRE'  && q?.preMarketPrice;
-  const displayPrice = isPost ? q.postMarketPrice  : isPre ? q.preMarketPrice  : q?.regularMarketPrice;
-  const displayPct   = isPost ? q.postMarketChangePercent : isPre ? q.preMarketChangePercent : q?.regularMarketChangePercent;
+  const krxPrice = isPost ? q.postMarketPrice  : isPre ? q.preMarketPrice  : q?.regularMarketPrice;
+  const krxPct   = isPost ? q.postMarketChangePercent : isPre ? q.preMarketChangePercent : q?.regularMarketChangePercent;
 
-  const currentPrice = displayPrice;
-  const pct = displayPct;
+  // NXT 데이터 처리
+  const nxtPrice = q?.nxtPrice;
+  const nxtPct = q?.nxtPct;
+  const nxtChangeClass = getChangeClass(nxtPct);
+  const nxtTriangle = nxtPct != null ? (nxtPct > 0 ? '▲' : nxtPct < 0 ? '▼' : '—') : '';
+  const nxtPctStr = nxtPct != null ? `${nxtTriangle} ${Math.abs(nxtPct).toFixed(2)}%` : '';
+
+  // 선택된 거래소 기준 주가 (손익 계산에 사용)
+  const useNxt = isKR && state.domesticExchange === 'NXT' && nxtPrice;
+  const currentPrice = useNxt ? nxtPrice : krxPrice;
+  const pct = useNxt ? nxtPct : krxPct;
+
   const volume = q?.regularMarketVolume;
-  const miniSpark = state.sparklines[item.symbol] ? 
+  const miniSpark = state.sparklines[item.symbol] ?
     `<div class="mini-sparkline-box">${buildSparklineSvg(state.sparklines[item.symbol], 10, false, true)}</div>` : '';
 
   const currentVal = currentPrice ? currentPrice * item.qty : null;
@@ -1154,9 +1166,11 @@ function renderPortfolioCard(item) {
   const changeClass = getChangeClass(pct);
   const dirClass = changeClass === 'up' ? 'dir-up' : changeClass === 'down' ? 'dir-down' : 'dir-flat';
 
-  // Triangle + absolute pct
-  const triangle = pct != null ? (pct > 0 ? '▲' : pct < 0 ? '▼' : '—') : '';
-  const absPctStr = pct != null ? `${triangle} ${Math.abs(pct).toFixed(2)}%` : '';
+  // KRX 표시용 변수
+  const krxChangeClass = getChangeClass(krxPct);
+  const krxTriangle = krxPct != null ? (krxPct > 0 ? '▲' : krxPct < 0 ? '▼' : '—') : '';
+  const krxAbsPctStr = krxPct != null ? `${krxTriangle} ${Math.abs(krxPct).toFixed(2)}%` : '';
+
   const volNum = volume ? volume.toLocaleString('ko-KR') : '';
 
   // 정규장 row — only during pre/post market, shown in LEFT info column
@@ -1173,17 +1187,12 @@ function renderPortfolioCard(item) {
       </div>`;
   }
 
-  const isKR = currency === 'KRW';
   const badgeLabel = isKR ? 'KR' : (currency === 'USD' ? 'US' : currency);
   const badgeClass = isKR ? 'market-badge-kr' : 'market-badge-us';
   const marketBadge = `<span class="market-badge ${badgeClass}">${badgeLabel}</span>`;
 
-  // NXT 데이터 처리
-  const nxtPrice = q?.nxtPrice;
-  const nxtPct = q?.nxtPct;
-  const nxtChangeClass = getChangeClass(nxtPct);
-  const nxtTriangle = nxtPct != null ? (nxtPct > 0 ? '▲' : nxtPct < 0 ? '▼' : '—') : '';
-  const nxtPctStr = nxtPct != null ? `${nxtTriangle} ${Math.abs(nxtPct).toFixed(2)}%` : '';
+  const showKrx = !isKR || state.domesticExchange === 'BOTH' || state.domesticExchange === 'KRX';
+  const showNxt = isKR && (state.domesticExchange === 'BOTH' || state.domesticExchange === 'NXT') && nxtPrice;
 
   const cardClass = ['stock-card', dirClass, isExpanded ? 'expanded' : ''].filter(Boolean).join(' ');
 
@@ -1197,12 +1206,13 @@ function renderPortfolioCard(item) {
           ${regularLineLeft}
         </div>
         <div class="port-price-col">
+          ${showKrx ? `
           <div class="port-line1">
-            ${nxtPrice ? `<span class="ex-badge krx">KRX</span>` : ''}
-            <span class="port-price ${changeClass}">${currentPrice ? formatPrice(currentPrice, currency) : '—'}</span>
-            <span class="port-tri-pct ${changeClass}">${absPctStr}</span>
-          </div>
-          ${nxtPrice ? `
+            ${isKR ? `<span class="ex-badge krx">KRX</span>` : ''}
+            <span class="port-price ${krxChangeClass}">${krxPrice ? formatPrice(krxPrice, currency) : '—'}</span>
+            <span class="port-tri-pct ${krxChangeClass}">${krxAbsPctStr}</span>
+          </div>` : ''}
+          ${showNxt ? `
           <div class="port-line1 nxt-line">
             <span class="ex-badge nxt">NXT</span>
             <span class="port-price ${nxtChangeClass}">${formatPrice(nxtPrice, currency)}</span>
@@ -1714,6 +1724,16 @@ function cycleSortMode(group) {
   const cur = state.portfolioSort[group];
   const next = SORT_MODES[(SORT_MODES.indexOf(cur) + 1) % SORT_MODES.length];
   state.portfolioSort[group] = next;
+  localStorage.setItem('portfolioSort', JSON.stringify(state.portfolioSort));
+  renderPortfolioHoldings();
+}
+
+function cycleDomesticExchange() {
+  const modes = ['BOTH', 'KRX', 'NXT'];
+  const cur = state.domesticExchange || 'BOTH';
+  const next = modes[(modes.indexOf(cur) + 1) % modes.length];
+  state.domesticExchange = next;
+  localStorage.setItem('domesticExchange', next);
   renderPortfolioHoldings();
 }
 
@@ -1783,6 +1803,14 @@ function renderPortfolioHoldings() {
     </button>`;
   };
 
+  const exchBtn = () => {
+    const exch = state.domesticExchange || 'BOTH';
+    const label = exch === 'BOTH' ? 'KRX+NXT' : exch;
+    return `<button class="port-exch-btn" onclick="event.stopPropagation();cycleDomesticExchange()">
+      <span class="ex-badge ${exch.toLowerCase()}">${label}</span>
+    </button>`;
+  };
+
   let html = summary;
   if (domestic.length) {
     const dcol = state.portfolioCollapsed.domestic;
@@ -1791,6 +1819,7 @@ function renderPortfolioHoldings() {
       <span class="portfolio-section-label">국내주식</span>
       <span class="section-ud-wrap">${upDownBadges(domestic)}</span>
       <span class="portfolio-section-count kr">${domestic.length}</span>
+      ${exchBtn()}
       ${sortBtn('domestic')}
       <button class="port-dots-btn" onclick="event.stopPropagation();toggleGroupCollapse('domestic')">
         <i class="ph ph-dots-three-vertical"></i>
