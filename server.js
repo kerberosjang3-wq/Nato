@@ -820,21 +820,20 @@ async function fetchNaverRanking(market = 'KOSPI', type = 'strength', category =
 app.get('/api/market-top', async (req, res) => {
   let result = { kr: [], us: [], scanner: [] };
   try {
-    // 1. 수급 스캐너 (체결강도 상위)
-    const [kospiStrength, kosdaqStrength] = await Promise.all([
-      fetchNaverRanking('KOSPI', 'strength'),
-      fetchNaverRanking('KOSDAQ', 'strength')
-    ]);
-    result.scanner = [...kospiStrength, ...kosdaqStrength]
-      .sort((a, b) => b.strength - a.strength)
-      .slice(0, 10);
-
-    // 2. 국내 주식 거래량 TOP 5 (category=trade_volume 사용)
+    // 1. 거래량 상위 종목 조회 (한 번만 → scanner + kr 공용)
     const [kospiVol, kosdaqVol] = await Promise.all([
       fetchNaverRanking('KOSPI', '', 'trade_volume'),
       fetchNaverRanking('KOSDAQ', '', 'trade_volume')
     ]);
-    result.kr = [...kospiVol, ...kosdaqVol]
+    const allVol = [...kospiVol, ...kosdaqVol];
+
+    // 수급 스캐너: 거래량 상위 종목 중 등락률 순 (모멘텀 대체)
+    result.scanner = [...allVol]
+      .sort((a, b) => b.pct - a.pct)
+      .slice(0, 10);
+
+    // 국내 주식 거래량 TOP 5
+    result.kr = [...allVol]
       .sort((a, b) => {
         const getVal = (v) => typeof v === 'string' ? parseInt(v.replace(/,/g, '')) : (Number(v) || 0);
         return getVal(b.volume) - getVal(a.volume);

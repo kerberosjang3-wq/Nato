@@ -2087,11 +2087,12 @@ function renderMarketTrends() {
 
     const scannerHtml = state.marketTop.scanner?.length ? `
       <div class="mtop-section scanner-section">
-        <div class="mtop-header"><i class="ph ph-fire-simple"></i> 실시간 수급 스캐너</div>
+        <div class="mtop-header"><i class="ph ph-fire-simple"></i> 거래량 상위 모멘텀</div>
         <div class="scanner-grid">
           ${state.marketTop.scanner.map(s => {
-            const pctCls = getChangeClass(s.pct);
-            const strCls = s.strength >= 100 ? 'gain-up' : 'gain-down';
+            const strCls = s.pct >= 0 ? 'gain-up' : 'gain-down';
+            const sign = s.pct > 0 ? '+' : '';
+            const vol = formatVolumeKr(s.volume);
             return `
               <div class="scanner-item">
                 <div class="scanner-info">
@@ -2099,8 +2100,8 @@ function renderMarketTrends() {
                   <span class="scanner-market">${s.market === 'KOSPI' ? 'P' : 'D'}</span>
                 </div>
                 <div class="scanner-data">
-                  <span class="scanner-strength ${strCls}">${s.strength.toFixed(0)}%</span>
-                  <span class="scanner-pct ${pctCls}">${s.pct > 0 ? '+' : ''}${s.pct}%</span>
+                  <span class="scanner-strength ${strCls}">${sign}${s.pct}%</span>
+                  <span class="scanner-pct">${vol}</span>
                 </div>
               </div>
             `;
