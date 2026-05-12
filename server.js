@@ -657,14 +657,14 @@ app.get('/api/chart', async (req, res) => {
 
   // 인트라데이: Yahoo는 1m 최대 7일, 유효 range 제한
   const range = isIntraday
-    ? (['1d', '2d', '5d'].includes(req.query.range) ? req.query.range : '1d')
+    ? (['1d', '2d', '5d'].includes(req.query.range) ? req.query.range : '5d')
     : (['1mo', '3mo', '6mo', '1y'].includes(req.query.range) ? req.query.range : '3mo');
 
   const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
   try {
     const { crumb, cookie } = await getYahooCrumb();
     const r = await _fetch(
-      `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=${range}&interval=${interval}&crumb=${encodeURIComponent(crumb)}`,
+      `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=${range}&interval=${interval}&crumb=${encodeURIComponent(crumb)}&region=KR&lang=ko-KR`,
       { headers: { 'User-Agent': UA, 'Cookie': cookie }, timeout: 8000 }
     );
     if (!r.ok) return res.status(r.status).json({ error: `Yahoo ${r.status}` });

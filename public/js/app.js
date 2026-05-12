@@ -1507,6 +1507,11 @@ async function renderKrChart(yahooSymbol, containerId, interval = '1d', range) {
       },
       localization: {
         priceFormatter: (p) => Math.round(p).toLocaleString(),
+        timeFormatter: (t) => {
+          if (typeof t !== 'number') return t;
+          const d = new Date(t * 1000);
+          return d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
+        },
       },
       crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
     });
