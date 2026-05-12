@@ -1444,23 +1444,25 @@ async function renderKrChart(yahooSymbol, containerId, interval = '1d', range) {
     const act = isDark ? '#3a3a3a' : '#e0e0e0';
     wrap.innerHTML = `
       <div style="flex:1;display:flex;flex-direction:column;min-height:0;">
-        <div style="display:flex;gap:4px;padding:8px 12px 4px;background:${bg}">
-          ${KR_INTERVALS.map(iv => `
-            <button style="padding:4px 12px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:600;
-                           background:${iv.key===interval?act:'transparent'};color:${col}"
-              onclick="renderKrChart('${yahooSymbol}','${containerId}','${iv.key}')">
-              ${iv.label}
-            </button>`).join('')}
+        <div style="display:flex;align-items:center;gap:6px;padding:8px 12px;background:${bg};border-bottom:1px solid ${isDark?'#2a2a2a':'#f0f0f0'}">
+          <div style="display:flex;gap:4px;border-right:1px solid ${isDark?'#333':'#eee'};padding-right:6px">
+            ${KR_INTERVALS.map(iv => `
+              <button style="padding:4px 10px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:600;
+                             background:${iv.key===interval?act:'transparent'};color:${iv.key===interval?col:'var(--text-sub)'}"
+                onclick="renderKrChart('${yahooSymbol}','${containerId}','${iv.key}')">
+                ${iv.label}
+              </button>`).join('')}
+          </div>
+          ${!isIntraday ? `
+          <div style="display:flex;gap:4px;padding-left:2px">
+            ${KR_DAY_RANGES.map(r => `
+              <button style="padding:4px 10px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:500;
+                             background:${r.key===range?act:'transparent'};color:${r.key===range?col:'var(--text-sub)'}"
+                onclick="renderKrChart('${yahooSymbol}','${containerId}','${interval}','${r.key}')">
+                ${r.label}
+              </button>`).join('')}
+          </div>` : ''}
         </div>
-        ${!isIntraday ? `
-        <div style="display:flex;gap:4px;padding:0 12px 8px;background:${bg}">
-          ${KR_DAY_RANGES.map(r => `
-            <button style="padding:3px 8px;border-radius:5px;border:none;cursor:pointer;font-size:11px;font-weight:500;
-                           background:${r.key===range?act:'transparent'};color:${col}"
-              onclick="renderKrChart('${yahooSymbol}','${containerId}','${interval}','${r.key}')">
-              ${r.label}
-            </button>`).join('')}
-        </div>` : '<div style="height:4px"></div>'}
         <div id="kr-chart-canvas" style="flex:1;position:relative;">
           ${loadingMsg ? `<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--text-sub);font-size:14px">${loadingMsg}</div>` : ''}
         </div>
@@ -1503,6 +1505,9 @@ async function renderKrChart(yahooSymbol, containerId, interval = '1d', range) {
         timeVisible: isIntraday,
         secondsVisible: false,
       },
+      localization: {
+        priceFormatter: (p) => Math.round(p).toLocaleString(),
+      },
       crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
     });
 
@@ -1513,6 +1518,10 @@ async function renderKrChart(yahooSymbol, containerId, interval = '1d', range) {
       borderDownColor: '#1a88ff',
       wickUpColor:     '#f23645',
       wickDownColor:   '#1a88ff',
+      priceFormat: {
+        type: 'custom',
+        formatter: (p) => Math.round(p).toLocaleString(),
+      },
     });
     candleSeries.setData(candles);
     chart.timeScale().fitContent();
