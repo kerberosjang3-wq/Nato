@@ -2228,16 +2228,13 @@ html, body {
 
 .chart-iframe-wrap {
   flex: 1; overflow: hidden; background: var(--bg-page);
-  position: relative;
 }
-/* TradingView 위젯이 주입하는 자식 요소 대응 */
-.chart-iframe-wrap > div,
-.chart-iframe-wrap iframe,
-.chart-iframe-wrap .tradingview-widget-container,
-.chart-iframe-wrap .tradingview-widget-container__widget {
-  width: 100% !important; height: 100% !important;
-  border: none; display: block;
+/* TradingView 컨테이너가 wrap을 꽉 채우도록 */
+.chart-iframe-wrap .tradingview-widget-container {
+  height: 100%; width: 100%;
 }
+/* TradingView 저작권 표기는 우리 footer로 대체 */
+.tradingview-widget-copyright { display: none; }
 
 .chart-footer {
   padding: 10px 16px calc(10px + var(--safe-bottom));

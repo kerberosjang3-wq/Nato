@@ -129,6 +129,7 @@ const state = {
   marketTop: null,
   volumeSpikes: null,
   marketLoading: false,
+  marketLastUpdated: null,
   userName: localStorage.getItem('userName') || '사용자',
 };
 
@@ -149,8 +150,10 @@ async function loadWatchlist() {
       throw new Error(data?.error || 'load error');
     }
   } catch {
-    const cached = localStorage.getItem('watchlist');
-    if (cached) state.watchlist = JSON.parse(cached);
+    try {
+      const cached = localStorage.getItem('watchlist');
+      if (cached) state.watchlist = JSON.parse(cached);
+    } catch (_) {}
   }
   // Sanitize: remove nulls or items without symbols
   for (const key in state.watchlist) {
@@ -203,8 +206,10 @@ async function loadPortfolio() {
       throw new Error(data?.error || 'load error');
     }
   } catch {
-    const cached = localStorage.getItem('portfolio');
-    if (cached) state.portfolio = JSON.parse(cached);
+    try {
+      const cached = localStorage.getItem('portfolio');
+      if (cached) state.portfolio = JSON.parse(cached);
+    } catch (_) {}
   }
   for (const key in state.portfolio) {
     if (!state.portfolio[key] || !state.portfolio[key].symbol) delete state.portfolio[key];
@@ -222,10 +227,12 @@ async function loadPortfolioPrices() {
     localStorage.setItem('portfolioPrices', JSON.stringify(state.portfolioPrices));
     localStorage.setItem('portfolioUpdatedAt', String(state.portfolioUpdatedAt));
   } catch {
-    const cached = localStorage.getItem('portfolioPrices');
-    if (cached) state.portfolioPrices = JSON.parse(cached);
-    const ts = localStorage.getItem('portfolioUpdatedAt');
-    if (ts) state.portfolioUpdatedAt = Number(ts);
+    try {
+      const cached = localStorage.getItem('portfolioPrices');
+      if (cached) state.portfolioPrices = JSON.parse(cached);
+      const ts = localStorage.getItem('portfolioUpdatedAt');
+      if (ts) state.portfolioUpdatedAt = Number(ts);
+    } catch (_) {}
   }
 }
 
@@ -253,49 +260,6 @@ async function deletePortfolioItem(symbol) {
   localStorage.setItem('portfolio', JSON.stringify(state.portfolio));
 }
 
-
-let searchTimer;
-async function doSearch(q) {
-  clearTimeout(searchTimer);
-  if (!q.trim()) { state.searchResults = []; renderSearchResults(); return; }
-  state.searching = true;
-  renderSearchResults();
-  searchTimer = setTimeout(async () => {
-    // 1단계: 종목 검색 결과 즉시 표시
-    try {
-      const data = await apiFetch(`/api/search?q=${encodeURIComponent(q)}`);
-      state.searchResults = (data.quotes || []).filter(r => r.quoteType === 'EQUITY' || r.quoteType === 'ETF');
-      state.searching = false;
-      renderSearchResults(); 
-    } catch (e) {
-      console.warn('Search failed:', e);
-      state.searchResults = [];
-      state.searching = false;
-      renderSearchResults();
-      return;
-    }
-
-    // 2단계: 주가 정보 추가 조회
-    if (state.searchResults.length > 0) {
-      state.fetchingPrices = true;
-      try {
-        const syms = state.searchResults.slice(0, 10).map(r => encodeURIComponent(r.symbol)).join(',');
-        const pd = await apiFetch(`/api/quote?symbols=${syms}`);
-        const priceMap = {};
-        (pd.quoteResponse?.result || []).forEach(p => {
-          if (p.symbol) priceMap[p.symbol.toUpperCase()] = p;
-        });
-        state.searchResults = state.searchResults.map(r => ({
-          ...r,
-          quote: priceMap[r.symbol.toUpperCase()]
-        }));
-      } catch (e) { console.warn('Search price fetch failed:', e); }
-      state.fetchingPrices = false;
-    }
-    state.searching = false;
-    renderSearchResults();
-  }, 400);
-}
 
 // ── Push Notifications ─────────────────────────────────────────────────────
 async function requestPushPermission() {
@@ -540,54 +504,6 @@ function renderHome() {
     .join('');
 }
 
-function renderSearchResults() {
-  const wrap = document.getElementById('search-results');
-  if (state.searching) {
-    wrap.innerHTML = [1, 2, 3].map(() => `<div class="skeleton" style="height:72px;border-radius:12px;margin-bottom:8px"></div>`).join('');
-    return;
-  }
-  const q = document.getElementById('search-input')?.value;
-  if (!q?.trim()) {
-    wrap.innerHTML = `
-      <div class="search-hint">
-        <div class="hint-icon"><i class="ph ph-magnifying-glass"></i></div>
-        <div>종목명 또는 티커를 입력하세요<br>
-        <span style="font-size:12px;color:var(--text-sub)">예: 삼성전자, AAPL, 카카오, TSLA</span></div>
-      </div>`;
-    return;
-  }
-  if (!state.searchResults.length) {
-    wrap.innerHTML = `<div class="search-hint"><div class="hint-icon"><i class="ph ph-smiley-blank"></i></div><div>검색 결과가 없습니다</div></div>`;
-    return;
-  }
-
-  wrap.innerHTML = state.searchResults.slice(0, 10).map(r => {
-    const q = r.quote;
-    const price = q?.regularMarketPrice;
-    const pct = q?.regularMarketChangePercent;
-    const currency = q?.currency || 'USD';
-    const cls = getChangeClass(pct);
-    const added = !!state.watchlist[r.symbol];
-    return `
-    <div class="result-item ${added ? 'added' : ''}" onclick="openAddModal('${r.symbol}','${(r.longname || r.shortname || r.symbol).replace(/'/g, '')}','${currency}')">
-      <div class="result-info">
-        <div class="result-name">${r.longname || r.shortname || r.symbol}</div>
-        <div class="result-meta">
-          <span class="result-exchange">${r.exchange || ''}</span>
-          <span>${r.symbol}</span>
-        </div>
-      </div>
-      <div class="result-right">
-        <div class="result-price">${price ? formatPrice(price, currency) : (state.fetchingPrices ? '<span style="font-size:11px;color:var(--primary);font-weight:500">가격 로딩 중...</span>' : '—')}</div>
-        <div class="result-change ${cls}">${getChangeStr(pct)}</div>
-      </div>
-      <button class="add-btn ${added ? 'added' : ''}" onclick="event.stopPropagation();openAddModal('${r.symbol}','${(r.longname || r.shortname || r.symbol).replace(/'/g, '')}','${currency}')">
-        ${added ? '<i class="ph ph-check"></i>' : '<i class="ph ph-plus"></i>'}
-      </button>
-    </div>`;
-  }).join('');
-}
-
 // ── Biometric Lock ─────────────────────────────────────────────────────────
 
 function isBiometricSupported() {
@@ -789,39 +705,13 @@ function openChartModal(code, name, market) {
   let tvSymbol;
   if (market === 'KOSDAQ') tvSymbol = `KOSDAQ:${code}`;
   else if (market === 'KOSPI') tvSymbol = `KRX:${code}`;
-  else tvSymbol = code; // US stocks (TSLA, NVDA 등 — TradingView 자동 해석)
+  else tvSymbol = toTvSymbol(code);
 
-  const theme = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
-
-  document.getElementById('chart-stock-name').textContent = name;
-  document.getElementById('chart-stock-sub').textContent = `${tvSymbol} · ${market || 'US'}`;
+  document.getElementById('chart-stock-name').textContent = name || code;
+  document.getElementById('chart-stock-sub').textContent = tvSymbol;
   document.getElementById('chart-tv-link').href = `https://www.tradingview.com/chart/?symbol=${encodeURIComponent(tvSymbol)}`;
 
-  // TradingView Advanced Chart 위젯 주입 (currentScript 방식 — KRX 심볼 정상 지원)
-  const wrap = document.getElementById('chart-widget-wrap');
-  wrap.innerHTML = '';
-
-  const widgetDiv = document.createElement('div');
-  widgetDiv.style.cssText = 'height:100%;width:100%';
-  wrap.appendChild(widgetDiv);
-
-  const script = document.createElement('script');
-  script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
-  script.async = true;
-  script.textContent = JSON.stringify({
-    symbol: tvSymbol,
-    interval: 'D',
-    timezone: 'Asia/Seoul',
-    theme,
-    style: '1',
-    locale: 'ko',
-    allow_symbol_change: false,
-    save_image: false,
-    hide_volume: false,
-    withdateranges: true,
-    support_host: 'https://www.tradingview.com'
-  });
-  wrap.appendChild(script);
+  _spawnTvWidget(tvSymbol, 'chart-widget-wrap', false);
 
   document.getElementById('chart-overlay').classList.add('open');
   document.body.style.overflow = 'hidden';
@@ -911,18 +801,20 @@ async function confirmDelete(event, symbol) {
 let isSwiping = false;
 
 function handleCardTap(symbol) {
-  if (isSwiping) {
-    console.log('Tap ignored due to swipe');
-    return;
-  }
-  
+  if (isSwiping) return;
+
   const card = document.querySelector(`.stock-card[data-symbol="${symbol}"]`);
   if (!card) return;
-  
+
   if (card.classList.contains('swiped')) {
     card.classList.remove('swiped');
     if (currentSwipedCard === card) currentSwipedCard = null;
+    return;
   }
+
+  const item = state.watchlist[symbol];
+  const q = state.prices[symbol];
+  openChartModal(symbol, item?.name || q?.korName || symbol, null);
 }
 
 // ── Swipe Logic ────────────────────────────────────────────────────────────
@@ -993,6 +885,7 @@ function setupSwipeForList(list) {
     const dy = Math.abs(swipeStart.y - e.clientY);
     if (dx > 30 && dy < 80) revealActions(card);
     else if (dx < -20 && card.classList.contains('swiped')) hideActions(card);
+    if (isSwiping) setTimeout(() => { isSwiping = false; }, 300);
   });
 }
 
@@ -1345,6 +1238,7 @@ function handlePortfolioCardTap(symbol) {
   }
 }
 
+
 function togglePortfolioSummary() {
   state.summaryExpanded = !state.summaryExpanded;
   renderPortfolioHoldings();
@@ -1389,15 +1283,12 @@ function _loadTvLib(cb) {
   document.head.appendChild(s);
 }
 
-function renderTvChart(symbol, containerId) {
+function _spawnTvWidget(tvSymbol, containerId, hideVolume) {
   const wrap = document.getElementById(containerId);
   if (!wrap) return;
-  const tvSymbol = toTvSymbol(symbol);
   const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
   const widgetDivId = containerId + '-w';
-
-  wrap.innerHTML = '<div id="' + widgetDivId + '" style="width:100%;height:100%"></div>';
-
+  wrap.innerHTML = `<div id="${widgetDivId}" style="width:100%;height:100%"></div>`;
   _loadTvLib(() => {
     if (!document.getElementById(widgetDivId)) return;
     new TradingView.widget({
@@ -1412,10 +1303,14 @@ function renderTvChart(symbol, containerId) {
       hide_legend: true,
       allow_symbol_change: false,
       save_image: false,
-      hide_volume: true,
+      hide_volume: hideVolume,
       container_id: widgetDivId,
     });
   });
+}
+
+function renderTvChart(symbol, containerId) {
+  _spawnTvWidget(toTvSymbol(symbol), containerId, true);
 }
 
 function clearDetailPanel() {
@@ -1457,10 +1352,10 @@ function renderDetailPanel(symbol) {
     </div>` : '';
 
   const name = item.name || q?.korName || item.symbol;
-  const isLandscape = window.matchMedia('(orientation: landscape)').matches;
+  const inLandscape = window.matchMedia('(orientation: landscape)').matches;
   detail.innerHTML = `
   <div class="ls-detail-content">
-    ${isLandscape ? `<div class="ls-detail-chart" id="ls-chart-wrap"></div>` : ''}
+    ${inLandscape ? `<div class="ls-detail-chart" id="ls-chart-wrap"></div>` : ''}
     <div class="ls-detail-header">
       <div>
         <div class="ls-detail-name">${name}</div>
@@ -1471,7 +1366,7 @@ function renderDetailPanel(symbol) {
         <div class="stock-change ${getChangeClass(pct)}">${getChangeStr(pct)}</div>
       </div>
     </div>
-    ${state.sparklines[symbol] && !isLandscape ? `<div class="ls-spark-wrap">${buildSparklineSvg(state.sparklines[symbol], 60, true)}</div>` : ''}
+    ${state.sparklines[symbol] && !inLandscape ? `<div class="ls-spark-wrap">${buildSparklineSvg(state.sparklines[symbol], 60, true)}</div>` : ''}
     <div class="ls-detail-divider"></div>
     <div class="ls-detail-stats">
       <div class="ls-detail-stat">
@@ -1510,7 +1405,7 @@ function renderDetailPanel(symbol) {
     </div>
   </div>`;
 
-  if (isLandscape) renderTvChart(symbol, 'ls-chart-wrap');
+  if (inLandscape) renderTvChart(symbol, 'ls-chart-wrap');
 
   document.querySelectorAll('#portfolio-holdings .stock-card').forEach(c => c.classList.remove('ls-selected'));
   const card = document.querySelector(`.stock-card[data-symbol="${symbol}"][data-portfolio="1"]`);
@@ -1686,39 +1581,60 @@ function toggleGroupCollapse(group) {
   if (caret) caret.classList.toggle('collapsed', collapsed);
 }
 
-// 더블탭으로 해당 종목 뉴스 열기 / 헤더 더블탭으로 그룹 접기
+// 단일탭 → 차트 모달 / 더블탭(300ms 이내 재탭) → 뉴스 / 헤더 탭 → 그룹 접기
 let _lastTap = { symbol: null, time: 0 };
-let _lastHeaderTap = { group: null, time: 0 };
+let _singleTapTimer = null;
 function attachPortfolioDoubleTap(wrap) {
   wrap.addEventListener('click', e => {
-    // 헤더 단일탭 — 그룹 접기/펼치기
+    // 헤더 탭 — 그룹 접기/펼치기
     const header = e.target.closest('.portfolio-section-header[data-group]');
     if (header && !e.target.closest('button')) {
       toggleGroupCollapse(header.dataset.group);
       return;
     }
 
-    // 카드 더블탭 — 뉴스 열기
+    // 카드 탭
     const card = e.target.closest('.stock-card[data-portfolio="1"]');
     if (!card) return;
     if (e.target.closest('button')) return;
+    if (isSwiping) return;
+
+    // 스와이프 열린 카드 닫기
+    if (card.classList.contains('swiped')) {
+      card.classList.remove('swiped');
+      if (currentSwipedCard === card) currentSwipedCard = null;
+      return;
+    }
+
     const symbol = card.dataset.symbol;
     const now = Date.now();
-    if (_lastTap.symbol === symbol && now - _lastTap.time < 350) {
+
+    if (_lastTap.symbol === symbol && now - _lastTap.time < 300) {
+      // 더블탭 → 뉴스
+      clearTimeout(_singleTapTimer);
+      _singleTapTimer = null;
       _lastTap = { symbol: null, time: 0 };
       const item = state.portfolio[symbol];
       if (!item) return;
       const q = state.portfolioPrices[symbol];
-      const name = item.name || q?.korName || symbol;
-      loadNewsForStock(symbol, name);
+      loadNewsForStock(symbol, item.name || q?.korName || symbol);
     } else {
+      // 단일탭 확정 대기 (300ms)
       _lastTap = { symbol, time: now };
+      clearTimeout(_singleTapTimer);
+      _singleTapTimer = setTimeout(() => {
+        _singleTapTimer = null;
+        _lastTap = { symbol: null, time: 0 };
+        const item = state.portfolio[symbol];
+        const q = state.portfolioPrices[symbol];
+        openChartModal(symbol, item?.name || q?.korName || symbol, null);
+      }, 300);
     }
   }, { capture: false });
 }
 
 // ── Portfolio Search ───────────────────────────────────────────────────────
-function setPortfolioSearchBtnLoading(loading) {
+function setSearchBtnLoading(loading) {
   const icon = document.querySelector('#home-search-btn i');
   if (!icon) return;
   icon.className = loading ? 'ph ph-circle-notch spinning' : 'ph ph-magnifying-glass';
@@ -1727,9 +1643,9 @@ function setPortfolioSearchBtnLoading(loading) {
 let portfolioSearchTimer;
 async function doPortfolioSearch(q) {
   clearTimeout(portfolioSearchTimer);
-  if (!q.trim()) { state.portfolioSearchResults = []; renderPortfolioSearch(); setPortfolioSearchBtnLoading(false); return; }
+  if (!q.trim()) { state.portfolioSearchResults = []; renderPortfolioSearch(); setSearchBtnLoading(false); return; }
   state.portfolioSearching = true;
-  setPortfolioSearchBtnLoading(true);
+  setSearchBtnLoading(true);
   renderPortfolioSearch();
   portfolioSearchTimer = setTimeout(async () => {
     try {
@@ -1754,16 +1670,11 @@ async function doPortfolioSearch(q) {
       state.portfolioFetchingPrices = false;
       renderPortfolioSearch();
     }
-    setPortfolioSearchBtnLoading(false);
+    setSearchBtnLoading(false);
   }, 400);
 }
 
 // ── Watchlist Inline Search ────────────────────────────────────────────────
-function setWatchlistSearchBtnLoading(loading) {
-  const icon = document.querySelector('#home-search-btn i');
-  if (!icon) return;
-  icon.className = loading ? 'ph ph-circle-notch spinning' : 'ph ph-magnifying-glass';
-}
 
 function renderWatchlistSearch() {
   const wrap = document.getElementById('home-search-results');
@@ -1805,9 +1716,9 @@ function renderWatchlistSearch() {
 let watchlistSearchTimer;
 async function doWatchlistSearch(q) {
   clearTimeout(watchlistSearchTimer);
-  if (!q.trim()) { state.watchlistSearchResults = []; renderWatchlistSearch(); setWatchlistSearchBtnLoading(false); return; }
+  if (!q.trim()) { state.watchlistSearchResults = []; renderWatchlistSearch(); setSearchBtnLoading(false); return; }
   state.watchlistSearching = true;
-  setWatchlistSearchBtnLoading(true);
+  setSearchBtnLoading(true);
   renderWatchlistSearch();
   watchlistSearchTimer = setTimeout(async () => {
     try {
@@ -1831,7 +1742,7 @@ async function doWatchlistSearch(q) {
       state.watchlistFetchingPrices = false;
       renderWatchlistSearch();
     }
-    setWatchlistSearchBtnLoading(false);
+    setSearchBtnLoading(false);
   }, 400);
 }
 
@@ -2179,9 +2090,9 @@ function renderMarketTrends() {
   // Volume Spikes
   if (state.volumeSpikes) {
     const spikeLabel = ratio => {
-      if (ratio >= 300) return { cls: 'spike-fire',  text: '거래량 폭발' };
-      if (ratio >= 200) return { cls: 'spike-surge', text: '거래량 폭발' };
-      return              { cls: 'spike-up',   text: '거래량 급증' };
+      if (ratio >= 300) return 'spike-fire';
+      if (ratio >= 200) return 'spike-surge';
+      return 'spike-up';
     };
 
     const buildSpikeList = (title, icon, list, isKr) => {
@@ -2221,7 +2132,7 @@ function renderMarketTrends() {
                     <div class="mtop-vol">현재 ${vol} · 평균 ${avgVol}</div>
                   </div>
                   <div class="mtop-right">
-                    <div class="vspike-ratio ${lbl.cls}">${s.ratio}%</div>
+                    <div class="vspike-ratio ${lbl}">${s.ratio}%</div>
                     <div class="mtop-pct ${cls}">${sign}${(s.pct ?? 0).toFixed(2)}%</div>
                   </div>
                 </div>
@@ -2312,11 +2223,8 @@ function showToast(msg) {
 
 // ── Refresh ────────────────────────────────────────────────────────────────
 async function refreshPrices() {
-  const btn = document.getElementById('refresh-btn');
-  if (btn) btn.querySelector('i').classList.add('spinning');
   await loadPrices();
   renderHome();
-  if (btn) btn.querySelector('i').classList.remove('spinning');
 }
 
 // ── Auto refresh ───────────────────────────────────────────────────────────
@@ -2418,11 +2326,11 @@ function setupEventListeners() {
     homeSearchClear?.classList.toggle('visible', !!v);
     if (state.currentTab === 'portfolio') {
       state.portfolioSearchQ = v;
-      if (!v) { state.portfolioSearchResults = []; renderPortfolioSearch(); setPortfolioSearchBtnLoading(false); return; }
+      if (!v) { state.portfolioSearchResults = []; renderPortfolioSearch(); setSearchBtnLoading(false); return; }
       doPortfolioSearch(v);
     } else {
       state.watchlistSearchQ = v;
-      if (!v) { state.watchlistSearchResults = []; renderWatchlistSearch(); setWatchlistSearchBtnLoading(false); return; }
+      if (!v) { state.watchlistSearchResults = []; renderWatchlistSearch(); setSearchBtnLoading(false); return; }
       doWatchlistSearch(v);
     }
   });
@@ -2432,12 +2340,12 @@ function setupEventListeners() {
     if (state.currentTab === 'portfolio') {
       state.portfolioSearchResults = [];
       state.portfolioSearchQ = '';
-      setPortfolioSearchBtnLoading(false);
+      setSearchBtnLoading(false);
       renderPortfolioSearch();
     } else {
       state.watchlistSearchResults = [];
       state.watchlistSearchQ = '';
-      setWatchlistSearchBtnLoading(false);
+      setSearchBtnLoading(false);
       renderWatchlistSearch();
     }
     homeSearchInput?.focus();
@@ -2486,7 +2394,6 @@ function setupEventListeners() {
   document.getElementById('portfolio-qty')?.addEventListener('input', formatNumberInput);
 
   // Refresh
-  document.getElementById('refresh-btn')?.addEventListener('click', refreshPrices);
   document.getElementById('market-refresh-btn')?.addEventListener('click', loadMarketTrends);
 
   // Notification banner
