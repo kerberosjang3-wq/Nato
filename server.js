@@ -160,6 +160,31 @@ async function fetchNaverPrice(code) {
   } catch (_) { return null; }
 }
 
+async function fetchNaverNxt(code) {
+  try {
+    const url = `https://polling.finance.naver.com/api/realtime/domestic/stock/${code}`;
+    const r = await _fetch(url, { 
+      timeout: 5000,
+      headers: { 'Referer': 'https://finance.naver.com/' }
+    });
+    if (!r.ok) return null;
+    const d = await r.json();
+    const root = d.datas ? d.datas[0] : (d.result?.datas ? d.result.datas[0] : null);
+    const info = root?.overMarketPriceInfo; 
+    const toNum = s => Number(String(s ?? '').replace(/,/g, '')) || 0;
+    const nxtPrice = info ? toNum(info.overPrice) : 0;
+    if (!nxtPrice) return null;
+    
+    return {
+      nxtPrice:  nxtPrice,
+      nxtChange: toNum(info.compareToPreviousClosePrice),
+      nxtPct:    parseFloat(info.fluctuationsRatio) || 0
+    };
+  } catch (e) { 
+    return null; 
+  }
+}
+
 async function checkPrices() {
   const store = await getStore();
   const allSymbols = new Set();
@@ -172,16 +197,21 @@ async function checkPrices() {
     quotes = {};
     results.forEach(q => { quotes[q.symbol] = q; });
 
-    // 국내 주식은 네이버 금융 실시간 가격으로 보정 (Yahoo는 데이터 품질 불량)
+    // 국내 주식 보정 (KRX + NXT)
     const krSymbols = results.filter(q => /\.(KS|KQ)$/i.test(q.symbol));
     await Promise.all(krSymbols.map(async q => {
       const code = q.symbol.replace(/\.(KS|KQ)$/i, '');
-      const naver = await fetchNaverPrice(code);
+      const [naver, nxt] = await Promise.all([fetchNaverPrice(code), fetchNaverNxt(code)]);
       if (naver) {
         quotes[q.symbol].regularMarketPrice         = naver.regularMarketPrice;
         quotes[q.symbol].regularMarketChange        = naver.regularMarketChange;
         quotes[q.symbol].regularMarketChangePercent = naver.regularMarketChangePercent;
         if (naver.regularMarketVolume) quotes[q.symbol].regularMarketVolume = naver.regularMarketVolume;
+      }
+      if (nxt) {
+        quotes[q.symbol].nxtPrice  = nxt.nxtPrice;
+        quotes[q.symbol].nxtChange = nxt.nxtChange;
+        quotes[q.symbol].nxtPct    = nxt.nxtPct;
       }
     }));
   } catch (e) {
@@ -538,27 +568,32 @@ app.get('/api/search', async (req, res) => {
 
 app.get('/api/quote', async (req, res) => {
   try {
-    const symbols = req.query.symbols.split(',');
+    const symbols = (req.query.symbols || '').split(',').map(s => s.trim()).filter(Boolean);
+    if (!symbols.length) return res.json({ quoteResponse: { result: [] } });
+    
     const yahooResult = await fetchQuotesBatch(symbols);
 
     const enriched = await Promise.all(yahooResult.map(async q => {
-      // 한글명 보강
-      // 국내주식(KS/KQ)은 KR_STOCKS_MAP만 사용 — Yahoo 이름은 부정확한 경우가 많음
       const isKR = /\.(KS|KQ)$/i.test(q.symbol);
       const rawKorName = /[가-힣]/.test(q.shortName) ? q.shortName : (/[가-힣]/.test(q.longName) ? q.longName : null);
       const yahooKorName = rawKorName ? rawKorName.replace(/^\(주\)\s*/g, '').replace(/\s*주식회사\s*$/g, '').trim() || rawKorName : null;
       const korName = KR_STOCKS_MAP.get(q.symbol) || (isKR ? null : yahooKorName) || US_NAMES.get(q.symbol) || null;
       let result = { ...q, ...(korName ? { korName } : {}) };
 
-      // 국내 주식(KS/KQ)은 네이버 금융 실시간 가격으로 덮어씀
-      if (/\.(KS|KQ)$/i.test(q.symbol)) {
+      // 국내 주식(KS/KQ)은 네이버 금융 실시간 가격으로 덮어씀 (KRX + NXT)
+      if (isKR) {
         const code = q.symbol.replace(/\.(KS|KQ)$/i, '');
-        const naver = await fetchNaverPrice(code);
+        const [naver, nxt] = await Promise.all([fetchNaverPrice(code), fetchNaverNxt(code)]);
         if (naver) {
           result.regularMarketPrice         = naver.regularMarketPrice;
           result.regularMarketChange        = naver.regularMarketChange;
           result.regularMarketChangePercent = naver.regularMarketChangePercent;
           if (naver.regularMarketVolume) result.regularMarketVolume = naver.regularMarketVolume;
+        }
+        if (nxt) {
+          result.nxtPrice  = nxt.nxtPrice;
+          result.nxtChange = nxt.nxtChange;
+          result.nxtPct    = nxt.nxtPct;
         }
       }
 

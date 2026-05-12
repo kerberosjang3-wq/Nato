@@ -1178,6 +1178,13 @@ function renderPortfolioCard(item) {
   const badgeClass = isKR ? 'market-badge-kr' : 'market-badge-us';
   const marketBadge = `<span class="market-badge ${badgeClass}">${badgeLabel}</span>`;
 
+  // NXT 데이터 처리
+  const nxtPrice = q?.nxtPrice;
+  const nxtPct = q?.nxtPct;
+  const nxtChangeClass = getChangeClass(nxtPct);
+  const nxtTriangle = nxtPct != null ? (nxtPct > 0 ? '▲' : nxtPct < 0 ? '▼' : '—') : '';
+  const nxtPctStr = nxtPct != null ? `${nxtTriangle} ${Math.abs(nxtPct).toFixed(2)}%` : '';
+
   const cardClass = ['stock-card', dirClass, isExpanded ? 'expanded' : ''].filter(Boolean).join(' ');
 
   return `
@@ -1191,9 +1198,16 @@ function renderPortfolioCard(item) {
         </div>
         <div class="port-price-col">
           <div class="port-line1">
+            ${nxtPrice ? `<span class="ex-badge krx">KRX</span>` : ''}
             <span class="port-price ${changeClass}">${currentPrice ? formatPrice(currentPrice, currency) : '—'}</span>
             <span class="port-tri-pct ${changeClass}">${absPctStr}</span>
           </div>
+          ${nxtPrice ? `
+          <div class="port-line1 nxt-line">
+            <span class="ex-badge nxt">NXT</span>
+            <span class="port-price ${nxtChangeClass}">${formatPrice(nxtPrice, currency)}</span>
+            <span class="port-tri-pct ${nxtChangeClass}">${nxtPctStr}</span>
+          </div>` : ''}
           <div class="port-line2">
             <span class="port-gain-inline ${gainClass}">${gain !== null ? `${gainSign}${formatPrice(Math.abs(gain), currency)}` : '—'}</span>
           </div>
