@@ -1181,7 +1181,7 @@ function renderPortfolioCard(item) {
   const cardClass = ['stock-card', dirClass, isExpanded ? 'expanded' : ''].filter(Boolean).join(' ');
 
   return `
-  <div class="${cardClass}" data-symbol="${item.symbol}" data-portfolio="1">
+  <div class="${cardClass}" data-symbol="${item.symbol}" data-portfolio="1" onclick="handlePortfolioItemClick('${item.symbol}')">
     <div class="stock-card-main">
       <div class="port-row">
         <div class="port-info">
@@ -1254,6 +1254,27 @@ function handlePortfolioCardTap(symbol) {
     const expanded = card.classList.toggle('expanded');
     if (expanded) state.expandedPortfolioCards.add(symbol);
     else state.expandedPortfolioCards.delete(symbol);
+  }
+}
+
+function handlePortfolioItemClick(symbol) {
+  if (isSwiping) return;
+  const card = document.querySelector(`.stock-card[data-symbol="${symbol}"][data-portfolio="1"]`);
+  if (!card) return;
+
+  // 스와이프 열린 카드 닫기
+  if (card.classList.contains('swiped')) {
+    card.classList.remove('swiped');
+    if (currentSwipedCard === card) currentSwipedCard = null;
+    return;
+  }
+
+  if (isLandscape()) {
+    renderDetailPanel(symbol);
+  } else {
+    const item = state.portfolio[symbol];
+    const q = state.portfolioPrices[symbol];
+    openChartModal(symbol, item?.name || q?.korName || symbol, null);
   }
 }
 
@@ -1407,8 +1428,6 @@ const KR_INTERVALS = [
 const KR_DAY_RANGES = [
   { key: '1mo', label: '1개월' },
   { key: '3mo', label: '3개월' },
-  { key: '6mo', label: '6개월' },
-  { key: '1y',  label: '1년'   },
 ];
 
 async function renderKrChart(yahooSymbol, containerId, interval = '1d', range) {
@@ -1424,7 +1443,7 @@ async function renderKrChart(yahooSymbol, containerId, interval = '1d', range) {
     const col = isDark ? '#fff' : '#333';
     const act = isDark ? '#3a3a3a' : '#e0e0e0';
     wrap.innerHTML = `
-      <div style="width:100%;height:100%;display:flex;flex-direction:column;">
+      <div style="flex:1;display:flex;flex-direction:column;min-height:0;">
         <div style="display:flex;gap:4px;padding:8px 12px 4px;background:${bg}">
           ${KR_INTERVALS.map(iv => `
             <button style="padding:4px 12px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:600;
@@ -1468,8 +1487,8 @@ async function renderKrChart(yahooSymbol, containerId, interval = '1d', range) {
     const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
 
     const chart = LightweightCharts.createChart(canvas, {
-      width: canvas.clientWidth,
-      height: canvas.clientHeight,
+      width: canvas.clientWidth || canvas.offsetWidth || 300,
+      height: canvas.clientHeight || canvas.offsetHeight || 300,
       layout: {
         background: { color: isDark ? '#1a1a1a' : '#ffffff' },
         textColor: isDark ? '#aaaaaa' : '#555555',
@@ -1598,7 +1617,15 @@ function renderDetailPanel(symbol) {
     </div>
   </div>`;
 
-  if (inLandscape) renderTvChart(symbol, 'ls-chart-wrap');
+  if (inLandscape) {
+    const isKospi  = /\.KS$/i.test(symbol);
+    const isKosdaq = /\.KQ$/i.test(symbol);
+    if (isKospi || isKosdaq) {
+      renderKrChart(symbol, 'ls-chart-wrap');
+    } else {
+      renderTvChart(symbol, 'ls-chart-wrap');
+    }
+  }
 
   document.querySelectorAll('#portfolio-holdings .stock-card').forEach(c => c.classList.remove('ls-selected'));
   const card = document.querySelector(`.stock-card[data-symbol="${symbol}"][data-portfolio="1"]`);
@@ -1731,7 +1758,7 @@ function renderPortfolioHoldings() {
   let html = summary;
   if (domestic.length) {
     const dcol = state.portfolioCollapsed.domestic;
-    html += `<div class="portfolio-section-header" data-group="domestic">
+    html += `<div class="portfolio-section-header" data-group="domestic" onclick="toggleGroupCollapse('domestic')">
       <span class="portfolio-section-flag">🇰🇷</span>
       <span class="portfolio-section-label">국내주식</span>
       <span class="section-ud-wrap">${upDownBadges(domestic)}</span>
@@ -1747,7 +1774,7 @@ function renderPortfolioHoldings() {
   }
   if (foreign.length) {
     const fcol = state.portfolioCollapsed.foreign;
-    html += `<div class="portfolio-section-header" data-group="foreign">
+    html += `<div class="portfolio-section-header" data-group="foreign" onclick="toggleGroupCollapse('foreign')">
       <span class="portfolio-section-flag">🇺🇸</span>
       <span class="portfolio-section-label">해외주식</span>
       <span class="section-ud-wrap">${upDownBadges(foreign)}</span>
@@ -1762,7 +1789,6 @@ function renderPortfolioHoldings() {
     </div>`;
   }
   wrap.innerHTML = html;
-  attachPortfolioDoubleTap(wrap);
 }
 
 function toggleGroupCollapse(group) {
@@ -1774,35 +1800,6 @@ function toggleGroupCollapse(group) {
   if (caret) caret.classList.toggle('collapsed', collapsed);
 }
 
-// 카드 탭 → 차트 모달 / 헤더 탭 → 그룹 접기
-function attachPortfolioDoubleTap(wrap) {
-  wrap.addEventListener('click', e => {
-    // 헤더 탭 — 그룹 접기/펼치기
-    const header = e.target.closest('.portfolio-section-header[data-group]');
-    if (header && !e.target.closest('button')) {
-      toggleGroupCollapse(header.dataset.group);
-      return;
-    }
-
-    // 카드 탭
-    const card = e.target.closest('.stock-card[data-portfolio="1"]');
-    if (!card) return;
-    if (e.target.closest('button')) return;
-    if (isSwiping) return;
-
-    // 스와이프 열린 카드 닫기
-    if (card.classList.contains('swiped')) {
-      card.classList.remove('swiped');
-      if (currentSwipedCard === card) currentSwipedCard = null;
-      return;
-    }
-
-    const symbol = card.dataset.symbol;
-    const item = state.portfolio[symbol];
-    const q = state.portfolioPrices[symbol];
-    openChartModal(symbol, item?.name || q?.korName || symbol, null);
-  }, { capture: false });
-}
 
 // ── Portfolio Search ───────────────────────────────────────────────────────
 function setSearchBtnLoading(loading) {
