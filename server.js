@@ -649,14 +649,22 @@ app.get('/api/spark', async (req, res) => {
 // ── OHLC 캔들 차트 데이터 (국내 주식용) ──────────────────────────────────────
 app.get('/api/chart', async (req, res) => {
   const symbol = (req.query.symbol || '').trim();
-  const range  = ['1mo','3mo','6mo','1y'].includes(req.query.range) ? req.query.range : '3mo';
   if (!symbol) return res.status(400).json({ error: 'symbol required' });
+
+  const VALID_INTERVALS = ['1m', '5m', '15m', '30m', '60m', '1d', '1wk'];
+  const interval = VALID_INTERVALS.includes(req.query.interval) ? req.query.interval : '1d';
+  const isIntraday = !['1d', '1wk'].includes(interval);
+
+  // 인트라데이: Yahoo는 1m 최대 7일, 유효 range 제한
+  const range = isIntraday
+    ? (['1d', '2d', '5d'].includes(req.query.range) ? req.query.range : '1d')
+    : (['1mo', '3mo', '6mo', '1y'].includes(req.query.range) ? req.query.range : '3mo');
 
   const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
   try {
     const { crumb, cookie } = await getYahooCrumb();
     const r = await _fetch(
-      `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=${range}&interval=1d&crumb=${encodeURIComponent(crumb)}`,
+      `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=${range}&interval=${interval}&crumb=${encodeURIComponent(crumb)}`,
       { headers: { 'User-Agent': UA, 'Cookie': cookie }, timeout: 8000 }
     );
     if (!r.ok) return res.status(r.status).json({ error: `Yahoo ${r.status}` });
@@ -664,22 +672,19 @@ app.get('/api/chart', async (req, res) => {
     const result = data.chart?.result?.[0];
     if (!result) return res.status(404).json({ error: 'no data' });
 
-    const ts    = result.timestamp || [];
-    const q     = result.indicators?.quote?.[0] || {};
+    const ts = result.timestamp || [];
+    const q  = result.indicators?.quote?.[0] || {};
     const candles = ts.map((t, i) => {
       if (q.open[i] == null || q.close[i] == null) return null;
-      const d = new Date(t * 1000);
-      return {
-        time:   `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`,
-        open:   q.open[i],
-        high:   q.high[i],
-        low:    q.low[i],
-        close:  q.close[i],
-        volume: q.volume[i] || 0,
-      };
+      // 인트라데이: Unix 초 그대로 반환 (LWC가 로컬 타임존으로 표시)
+      // 일봉: YYYY-MM-DD 문자열 (UTC 기준)
+      const time = isIntraday
+        ? t
+        : (() => { const d = new Date(t * 1000); return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`; })();
+      return { time, open: q.open[i], high: q.high[i], low: q.low[i], close: q.close[i], volume: q.volume[i] || 0 };
     }).filter(Boolean);
 
-    res.json({ symbol, range, candles });
+    res.json({ symbol, interval, range, candles });
   } catch (e) { res.status(502).json({ error: e.message }); }
 });
 

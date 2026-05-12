@@ -1400,27 +1400,48 @@ function _loadLwc(cb) {
   document.head.appendChild(s);
 }
 
-const KR_CHART_RANGES = ['1mo', '3mo', '6mo', '1y'];
+const KR_INTERVALS = [
+  { key: '1m',  label: '1분',  defaultRange: '1d'  },
+  { key: '1d',  label: '일봉', defaultRange: '3mo' },
+];
+const KR_DAY_RANGES = [
+  { key: '1mo', label: '1개월' },
+  { key: '3mo', label: '3개월' },
+  { key: '6mo', label: '6개월' },
+  { key: '1y',  label: '1년'   },
+];
 
-async function renderKrChart(yahooSymbol, containerId, range = '3mo') {
+async function renderKrChart(yahooSymbol, containerId, interval = '1d', range) {
+  if (!range) range = KR_INTERVALS.find(iv => iv.key === interval)?.defaultRange ?? '3mo';
   const wrap = document.getElementById(containerId);
   if (!wrap) return;
 
-  // 범위 선택 탭 + 로딩 상태 렌더링
+  const isIntraday = interval === '1m';
+
   const renderShell = (loadingMsg = '') => {
     const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+    const bg  = isDark ? '#1a1a1a' : '#fff';
+    const col = isDark ? '#fff' : '#333';
+    const act = isDark ? '#3a3a3a' : '#e0e0e0';
     wrap.innerHTML = `
-      <div class="kr-chart-wrap" style="width:100%;height:100%;display:flex;flex-direction:column;">
-        <div class="kr-chart-ranges" style="display:flex;gap:6px;padding:8px 12px;background:${isDark?'#1a1a1a':'#fff'}">
-          ${KR_CHART_RANGES.map(r => `
-            <button class="kr-range-btn${r===range?' active':''}"
-              style="padding:4px 10px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:600;
-                     background:${r===range?(isDark?'#3a3a3a':'#e0e0e0'):'transparent'};
-                     color:${isDark?'#fff':'#333'}"
-              onclick="renderKrChart('${yahooSymbol}','${containerId}','${r}')">
-              ${{  '1mo':'1개월','3mo':'3개월','6mo':'6개월','1y':'1년'}[r]}
+      <div style="width:100%;height:100%;display:flex;flex-direction:column;">
+        <div style="display:flex;gap:4px;padding:8px 12px 4px;background:${bg}">
+          ${KR_INTERVALS.map(iv => `
+            <button style="padding:4px 12px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:600;
+                           background:${iv.key===interval?act:'transparent'};color:${col}"
+              onclick="renderKrChart('${yahooSymbol}','${containerId}','${iv.key}')">
+              ${iv.label}
             </button>`).join('')}
         </div>
+        ${!isIntraday ? `
+        <div style="display:flex;gap:4px;padding:0 12px 8px;background:${bg}">
+          ${KR_DAY_RANGES.map(r => `
+            <button style="padding:3px 8px;border-radius:5px;border:none;cursor:pointer;font-size:11px;font-weight:500;
+                           background:${r.key===range?act:'transparent'};color:${col}"
+              onclick="renderKrChart('${yahooSymbol}','${containerId}','${interval}','${r.key}')">
+              ${r.label}
+            </button>`).join('')}
+        </div>` : '<div style="height:4px"></div>'}
         <div id="kr-chart-canvas" style="flex:1;position:relative;">
           ${loadingMsg ? `<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--text-sub);font-size:14px">${loadingMsg}</div>` : ''}
         </div>
@@ -1431,7 +1452,7 @@ async function renderKrChart(yahooSymbol, containerId, range = '3mo') {
 
   let candles;
   try {
-    const data = await apiFetch(`/api/chart?symbol=${encodeURIComponent(yahooSymbol)}&range=${range}`);
+    const data = await apiFetch(`/api/chart?symbol=${encodeURIComponent(yahooSymbol)}&interval=${interval}&range=${range}`);
     if (!data.candles?.length) throw new Error('no data');
     candles = data.candles;
   } catch {
@@ -1439,7 +1460,7 @@ async function renderKrChart(yahooSymbol, containerId, range = '3mo') {
     return;
   }
 
-  renderShell(); // 로딩 메시지 없이 껍데기 재렌더
+  renderShell();
 
   _loadLwc(() => requestAnimationFrame(() => {
     const canvas = document.getElementById('kr-chart-canvas');
@@ -1458,23 +1479,25 @@ async function renderKrChart(yahooSymbol, containerId, range = '3mo') {
         horzLines: { color: isDark ? '#2a2a2a' : '#f0f0f0' },
       },
       rightPriceScale: { borderColor: isDark ? '#2a2a2a' : '#e0e0e0' },
-      timeScale: { borderColor: isDark ? '#2a2a2a' : '#e0e0e0', timeVisible: false },
+      timeScale: {
+        borderColor: isDark ? '#2a2a2a' : '#e0e0e0',
+        timeVisible: isIntraday,
+        secondsVisible: false,
+      },
       crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
     });
 
-    // 국내 주식 관례: 상승=빨강, 하락=파랑
     const candleSeries = chart.addCandlestickSeries({
-      upColor:        '#f23645',
-      downColor:      '#1a88ff',
-      borderUpColor:  '#f23645',
-      borderDownColor:'#1a88ff',
-      wickUpColor:    '#f23645',
-      wickDownColor:  '#1a88ff',
+      upColor:         '#f23645',
+      downColor:       '#1a88ff',
+      borderUpColor:   '#f23645',
+      borderDownColor: '#1a88ff',
+      wickUpColor:     '#f23645',
+      wickDownColor:   '#1a88ff',
     });
     candleSeries.setData(candles);
     chart.timeScale().fitContent();
 
-    // 창 크기 변경 대응
     const ro = new ResizeObserver(entries => {
       const { width, height } = entries[0].contentRect;
       chart.resize(width, height);
