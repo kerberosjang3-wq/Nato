@@ -668,6 +668,27 @@ html, body {
 .port-qty-num { font-weight: 500; color: #555; }
 .port-vol-sep { color: var(--border); }
 .port-vol-left { color: var(--text-sub); }
+
+/* ── 지지선 row ── */
+.port-support-row {
+  display: flex; align-items: center; gap: 5px; margin-top: 3px;
+}
+.port-support-spark { flex-shrink: 0; line-height: 0; }
+.port-support-label {
+  font-size: 8px; font-weight: 800;
+  color: #e6b800; background: rgba(240,192,64,0.12);
+  border: 1px solid rgba(240,192,64,0.3);
+  border-radius: 3px; padding: 0 3px; flex-shrink: 0;
+}
+.port-support-price {
+  font-size: 10px; font-weight: 600; color: var(--text-sub);
+  font-variant-numeric: tabular-nums; flex-shrink: 0;
+}
+.port-support-dist {
+  font-size: 10px; font-weight: 700; color: var(--text-sub);
+  font-variant-numeric: tabular-nums;
+}
+.port-support-dist.broken { color: var(--stock-down); font-size: 9px; }
 .port-vol-group { display: none; }
 .port-ticker { color: var(--text-sub); font-size: 11px; font-weight: 600; letter-spacing: 0.3px; }
 

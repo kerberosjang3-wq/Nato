@@ -388,6 +388,24 @@ function buildSparklineSvg(closes, h = 22, full = false, mini = false) {
   return `<svg class="${cls}" viewBox="0 0 ${VW} ${h}" ${wAttr} height="${h}" preserveAspectRatio="none"><polyline points="${pts}" fill="none" stroke="${color}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 }
 
+function buildSupportSparkSvg(closes) {
+  if (!closes || closes.length < 2) return '';
+  const h = 26, w = 52, pad = 2;
+  const min = Math.min(...closes);
+  const max = Math.max(...closes);
+  const range = max - min || 1;
+  const toY = v => (pad + (1 - (v - min) / range) * (h - pad * 2)).toFixed(1);
+  const pts = closes.map((c, i) => {
+    const x = (pad + (i / (closes.length - 1)) * (w - pad * 2)).toFixed(1);
+    return `${x},${toY(c)}`;
+  }).join(' ');
+  const supportY = toY(min);
+  return `<svg viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" preserveAspectRatio="none" style="display:block">
+    <polyline points="${pts}" fill="none" stroke="var(--stock-down)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <line x1="${pad}" y1="${supportY}" x2="${w - pad}" y2="${supportY}" stroke="#f0c040" stroke-width="1" stroke-dasharray="2,2" opacity="0.85"/>
+  </svg>`;
+}
+
 async function loadSparklines() {
   const symbols = [...new Set([...Object.keys(state.watchlist), ...Object.keys(state.portfolio)])];
   if (!symbols.length) return;
@@ -1141,8 +1159,29 @@ function renderPortfolioCard(item) {
   const pct = useNxt ? nxtPct : krxPct;
 
   const volume = q?.regularMarketVolume;
-  const miniSpark = state.sparklines[item.symbol] ?
-    `<div class="mini-sparkline-box">${buildSparklineSvg(state.sparklines[item.symbol], 10, false, true)}</div>` : '';
+  const sparkData = state.sparklines[item.symbol];
+
+  // 지지선: 하락 종목 + 스파크라인 데이터 있을 때만
+  const showSupport = pct < 0 && sparkData?.length >= 2 && currentPrice;
+  let portSupportRow = '';
+  if (showSupport) {
+    const supportLevel = Math.min(...sparkData);
+    const isBroken = currentPrice < supportLevel;
+    const dropPct = isBroken ? null : ((currentPrice - supportLevel) / currentPrice) * 100;
+    const distEl = isBroken
+      ? `<span class="port-support-dist broken">지지 이탈</span>`
+      : `<span class="port-support-dist">↓ ${dropPct.toFixed(1)}%</span>`;
+    portSupportRow = `
+      <div class="port-support-row">
+        <div class="port-support-spark">${buildSupportSparkSvg(sparkData)}</div>
+        <span class="port-support-label">지지</span>
+        <span class="port-support-price">${formatPrice(Math.round(supportLevel), currency)}</span>
+        ${distEl}
+      </div>`;
+  }
+
+  const miniSpark = !showSupport && sparkData
+    ? `<div class="mini-sparkline-box">${buildSparklineSvg(sparkData, 10, false, true)}</div>` : '';
 
   const currentVal = currentPrice ? currentPrice * item.qty : null;
   const gain = currentVal !== null ? currentVal - invested : null;
@@ -1208,6 +1247,7 @@ function renderPortfolioCard(item) {
         <div class="port-info">
           <div class="port-name">${item.name || q?.korName || item.symbol}</div>
           <div class="port-qty-row">${marketBadge}<span class="port-qty-num">${item.qty.toLocaleString('ko-KR')}주</span>${miniSpark}${volNum ? `<span class="port-vol-group"><span class="port-vol-sep"> · </span><span class="port-vol-left">${volNum}</span></span>` : ''}${!isKR ? `<span class="port-vol-sep"> · </span><span class="port-ticker">${item.symbol}</span>` : ''}</div>
+          ${portSupportRow}
           ${regularLineLeft}
         </div>
         <div class="port-price-col">
