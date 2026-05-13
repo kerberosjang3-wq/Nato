@@ -1724,13 +1724,14 @@ function renderDetailPanel(symbol) {
   if (!item) { clearDetailPanel(); return; }
 
   // 국내 종목인데 수급 데이터 없으면 즉시 fetch 후 재렌더
-  const isKRsym = /\.(KS|KQ)$/i.test(symbol);
-  if (isKRsym && !state.supplyData[symbol]) {
+  if (/\.(KS|KQ)$/i.test(symbol) && !state.supplyData[symbol]) {
     const code = symbol.replace(/\.(KS|KQ)$/i, '');
-    apiFetch(`/api/supply?code=${code}`).then(data => {
+    apiFetch('/api/supply?code=' + code).then(data => {
       if (data && !data.error) {
         state.supplyData[symbol] = data;
-        renderDetailPanel(symbol);
+        // 패널이 여전히 이 종목을 보여주고 있을 때만 재렌더
+        const sel = document.querySelector('#portfolio-holdings .stock-card.ls-selected');
+        if (sel && sel.dataset.symbol === symbol) renderDetailPanel(symbol);
       }
     }).catch(() => {});
   }
@@ -1758,6 +1759,38 @@ function renderDetailPanel(symbol) {
         ${gainKrw !== null ? `<span class="${gainKrw >= 0 ? 'gain-up' : 'gain-down'}">${gainKrw >= 0 ? '+' : ''}${formatPrice(Math.abs(gainKrw), 'KRW')}</span>` : ''}
       </div>
     </div>` : '';
+
+  const sd = /\.(KS|KQ)$/i.test(symbol) ? (state.supplyData[symbol] || null) : null;
+  let supplyBlock = '';
+  if (sd) {
+    const fDir = sd.foreignDir, iDir = sd.institutionDir;
+    const fUp = fDir === 'buy', iUp = iDir === 'buy';
+    const fDown = fDir === 'sell', iDown = iDir === 'sell';
+    const cls = (fUp && iUp) ? 'supply-bull' : (fDown && iDown) ? 'supply-bear' : 'supply-mixed';
+    const fLabel = fUp ? '외↑' : fDown ? '외↓' : '외—';
+    const iLabel = iUp ? '기↑' : iDown ? '기↓' : '기—';
+    const fNet = typeof sd.foreignNet === 'number' ? sd.foreignNet.toLocaleString('ko-KR') : '—';
+    const iNet = typeof sd.institutionNet === 'number' ? sd.institutionNet.toLocaleString('ko-KR') : '—';
+    const fSign = fUp ? '+' : '';
+    const iSign = iUp ? '+' : '';
+    supplyBlock = `<div class="ls-detail-divider"></div>
+    <div class="ls-supply-section">
+      <div class="ls-supply-title">외인/기관 수급 <span class="ls-supply-days">(최근 ${sd.days || 5}거래일 누적)</span></div>
+      <div class="ls-supply-row">
+        <span class="port-supply-badge ${cls}">${fLabel}${iLabel}</span>
+        <div class="ls-supply-vals">
+          <div class="ls-supply-item ${fUp ? 'gain-up' : fDown ? 'gain-down' : ''}">
+            <span class="ls-supply-label">외국인</span>
+            <span class="ls-supply-val">${fSign}${fNet}주</span>
+          </div>
+          <div class="ls-supply-item ${iUp ? 'gain-up' : iDown ? 'gain-down' : ''}">
+            <span class="ls-supply-label">기관</span>
+            <span class="ls-supply-val">${iSign}${iNet}주</span>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }
 
   const name = item.name || q?.korName || item.symbol;
   const inLandscape = window.matchMedia('(orientation: landscape)').matches;
@@ -1807,40 +1840,7 @@ function renderDetailPanel(symbol) {
       </div>
     </div>
     ${krwBlock}
-    ${(() => {
-      const isKR = /\.(KS|KQ)$/i.test(symbol);
-      const sd = isKR ? state.supplyData[symbol] : null;
-      if (!sd) return '';
-      const fDir = sd.foreignDir, iDir = sd.institutionDir;
-      const fUp = fDir === 'buy', iUp = iDir === 'buy';
-      const fDown = fDir === 'sell', iDown = iDir === 'sell';
-      const bothBuy = fUp && iUp, bothSell = fDown && iDown;
-      const cls = bothBuy ? 'supply-bull' : bothSell ? 'supply-bear' : 'supply-mixed';
-      const fLabel = fUp ? '외↑' : fDown ? '외↓' : '외—';
-      const iLabel = iUp ? '기↑' : iDown ? '기↓' : '기—';
-      const fNet = sd.foreignNet?.toLocaleString('ko-KR') ?? '—';
-      const iNet = sd.institutionNet?.toLocaleString('ko-KR') ?? '—';
-      const fSign = fUp ? '+' : '';
-      const iSign = iUp ? '+' : '';
-      return `
-    <div class="ls-detail-divider"></div>
-    <div class="ls-supply-section">
-      <div class="ls-supply-title">외인/기관 수급 <span class="ls-supply-days">(최근 ${sd.days || 5}거래일 누적)</span></div>
-      <div class="ls-supply-row">
-        <span class="port-supply-badge ${cls}">${fLabel}${iLabel}</span>
-        <div class="ls-supply-vals">
-          <div class="ls-supply-item ${fUp ? 'gain-up' : fDown ? 'gain-down' : ''}">
-            <span class="ls-supply-label">외국인</span>
-            <span class="ls-supply-val">${fSign}${fNet}주</span>
-          </div>
-          <div class="ls-supply-item ${iUp ? 'gain-up' : iDown ? 'gain-down' : ''}">
-            <span class="ls-supply-label">기관</span>
-            <span class="ls-supply-val">${iSign}${iNet}주</span>
-          </div>
-        </div>
-      </div>
-    </div>`;
-    })()}
+    ${supplyBlock}
     <div class="ls-detail-actions">
       <button class="btn-cancel" style="flex:1" onclick="openPortfolioEditModal(event,'${symbol}')">수정</button>
       <button class="ls-detail-del" onclick="confirmDeletePortfolio(event,'${symbol}')">삭제</button>
