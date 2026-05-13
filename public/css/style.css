@@ -668,26 +668,34 @@ html, body {
 .port-vol-sep { color: var(--border); }
 .port-vol-left { color: var(--text-sub); }
 
-/* ── 지지선 row ── */
-.port-support-label {
-  font-size: 8px; font-weight: 800;
-  color: #e6b800; background: rgba(240,192,64,0.12);
-  border: 1px solid rgba(240,192,64,0.3);
-  border-radius: 3px; padding: 0 3px; flex-shrink: 0;
+/* ── 지지선 통합 배지 ── */
+.port-support-badge {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 8px; font-weight: 700; white-space: nowrap;
+  padding: 2px 5px; border-radius: 4px; border: 1px solid;
+  flex-shrink: 0; line-height: 1.4;
 }
-.port-support-label.trend-bear  { color: var(--stock-down); background: rgba(96,144,216,0.1); border-color: rgba(96,144,216,0.3); }
-.port-support-label.trend-bull  { color: var(--stock-up);   background: rgba(224,102,102,0.1); border-color: rgba(224,102,102,0.3); }
-.port-support-label.trend-mixed { color: var(--text-sub);   background: rgba(128,128,128,0.1); border-color: rgba(128,128,128,0.25); }
-.port-support-price {
-  font-size: 10px; font-weight: 600; color: var(--text-sub);
-  font-variant-numeric: tabular-nums; flex-shrink: 0;
+.port-support-badge i { font-size: 11px; line-height: 1; }
+.port-support-amt {
+  font-size: 10px; font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
-.port-support-icon {
-  font-size: 13px; flex-shrink: 0; line-height: 1;
+/* 데이터 부족 — 회색 */
+.port-support-badge.trend-none {
+  color: var(--text-sub); background: rgba(128,128,128,0.07); border-color: rgba(128,128,128,0.18);
 }
-.port-support-icon.trend-bear  { color: var(--stock-down); }
-.port-support-icon.trend-bull  { color: var(--stock-up); }
-.port-support-icon.trend-mixed { color: var(--text-sub); }
+/* 역배열 — 파랑 */
+.port-support-badge.trend-bear {
+  color: var(--stock-down); background: rgba(96,144,216,0.07); border-color: rgba(96,144,216,0.2);
+}
+/* 정배열 — 빨강 */
+.port-support-badge.trend-bull {
+  color: var(--stock-up); background: rgba(224,102,102,0.07); border-color: rgba(224,102,102,0.2);
+}
+/* 혼조 — 노랑 */
+.port-support-badge.trend-mixed {
+  color: #e6b800; background: rgba(240,192,64,0.07); border-color: rgba(240,192,64,0.2);
+}
 .port-vol-group { display: none; }
 .port-ticker { color: var(--text-sub); font-size: 11px; font-weight: 600; letter-spacing: 0.3px; }
 

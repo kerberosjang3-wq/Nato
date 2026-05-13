@@ -1161,17 +1161,22 @@ function renderPortfolioCard(item) {
   const volume = q?.regularMarketVolume;
   const sparkData = state.sparklines[item.symbol];
 
-  // 지지선: 하락 종목 + 충분한 스파크라인 데이터 있을 때만
-  // 오늘(마지막) 미완결 데이터를 제외한 과거 closes에서 최저가를 지지선으로 사용
+  // 지지선: 하락 종목, 1년 데이터 기준
+  // 최근 10거래일(현재 하락 구간) 제외 → 이전 60일 내 최저가 = 하락 전 바닥
   const showSupport = pct < 0 && sparkData?.length >= 5 && currentPrice;
   let supportLevel = null;
   if (showSupport) {
-    const historicalCloses = sparkData.slice(0, -1); // 오늘 제외
-    supportLevel = Math.min(...historicalCloses);
+    const closes = sparkData.slice(0, -1); // 오늘 미완결 제외
+    const bufferEnd = closes.length - 10;
+    const bufferStart = Math.max(0, bufferEnd - 60);
+    const supportWin = closes.slice(bufferStart, bufferEnd);
+    supportLevel = supportWin.length > 0
+      ? Math.min(...supportWin)
+      : Math.min(...closes);
   }
 
-  // 장기 이평선 기울기 → 지지 배지 라벨·아이콘·색상 결정
-  let maLabel = '지지', maIconClass = '', maTrendClass = '';
+  // 장기 이평선 기울기 → 지지 배지 색상·아이콘 결정
+  let maIconClass = '', maTrendClass = 'trend-none';
   if (showSupport && sparkData && sparkData.length >= 70) {
     const n = sparkData.length;
     const maAvg = (period, offset = 0) => {
@@ -1184,13 +1189,13 @@ function renderPortfolioCard(item) {
     };
     const dirs = [maDir(60), n >= 130 ? maDir(120) : null, n >= 210 ? maDir(200) : null].filter(v => v !== null);
     const allDown = dirs.every(d => d < 0), allUp = dirs.every(d => d > 0);
-    if (allDown)      { maLabel = '지지선'; maIconClass = 'ph ph-trend-down'; maTrendClass = 'trend-bear'; }
-    else if (allUp)   { maLabel = '지지';   maIconClass = 'ph ph-trend-up';   maTrendClass = 'trend-bull'; }
-    else              { maLabel = '혼조';   maIconClass = 'ph ph-minus';       maTrendClass = 'trend-mixed'; }
+    if (allDown)    { maIconClass = 'ph ph-trend-down'; maTrendClass = 'trend-bear'; }
+    else if (allUp) { maIconClass = 'ph ph-trend-up';   maTrendClass = 'trend-bull'; }
+    else            { maIconClass = 'ph ph-minus';       maTrendClass = 'trend-mixed'; }
   }
 
   const supportInline = showSupport && supportLevel !== null
-    ? `<span class="port-support-price">${formatPrice(Math.round(supportLevel), currency)}</span><span class="port-support-label ${maTrendClass}">${maLabel}</span>${maIconClass ? `<i class="${maIconClass} port-support-icon ${maTrendClass}"></i>` : ''}`
+    ? `<span class="port-support-badge ${maTrendClass}">지지선 <span class="port-support-amt">${formatPrice(Math.round(supportLevel), currency)}</span>${maIconClass ? `<i class="${maIconClass}"></i>` : ''}</span>`
     : '';
 
   // miniSpark는 최근 22봉(1달)만 사용
