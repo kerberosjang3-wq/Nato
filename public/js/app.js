@@ -1164,16 +1164,14 @@ function renderPortfolioCard(item) {
   // 지지선: 하락 종목 + 1개월 스파크라인 데이터 있을 때만
   // 오늘(마지막) 미완결 데이터를 제외한 과거 closes에서 최저가를 지지선으로 사용
   const showSupport = pct < 0 && sparkData?.length >= 5 && currentPrice;
-  let portSupportRow = '';
+  let supportLevel = null;
   if (showSupport) {
     const historicalCloses = sparkData.slice(0, -1); // 오늘 제외
-    const supportLevel = Math.min(...historicalCloses);
-    portSupportRow = `
-      <div class="port-support-row">
-        <span class="port-support-label">지지</span>
-        <span class="port-support-price">${formatPrice(Math.round(supportLevel), currency)}</span>
-      </div>`;
+    supportLevel = Math.min(...historicalCloses);
   }
+  const supportInline = showSupport && supportLevel !== null
+    ? `<span class="port-support-label">지지</span><span class="port-support-price">${formatPrice(Math.round(supportLevel), currency)}</span>`
+    : '';
 
   const miniSpark = sparkData
     ? `<div class="mini-sparkline-box">${buildSparklineSvg(sparkData, 10, false, true)}</div>` : '';
@@ -1247,25 +1245,27 @@ function renderPortfolioCard(item) {
         <div class="port-price-col">
           ${showKrx ? `
           <div class="port-line1">
-            <span class="port-price ${krxChangeClass}">${krxPrice ? formatPrice(krxPrice, currency) : '—'}</span>
             ${gain !== null ? `<span class="port-gain-side ${gainClass}">${gainSign}${formatPrice(Math.abs(gain), currency)}</span>` : ''}
+            <span class="port-price ${krxChangeClass}">${krxPrice ? formatPrice(krxPrice, currency) : '—'}</span>
+            <button class="port-dots-btn" onclick="event.stopPropagation();handlePortfolioCardTap('${item.symbol}')"><i class="ph ph-dots-three-vertical"></i></button>
           </div>
           <div class="port-line2">
+            ${supportInline}
             ${fmtChange(krxChange, currency) ? `<span class="port-diff ${krxChangeClass}">${fmtChange(krxChange, currency)}</span>` : ''}
             <span class="port-tri-pct ${krxChangeClass}">${krxAbsPctStr}</span>
           </div>` : ''}
           ${showNxt ? `
           <div class="port-line1 nxt-line">
-            <span class="port-price ${nxtChangeClass}">${formatPrice(nxtPrice, currency)}</span>
             ${useNxt && gain !== null ? `<span class="port-gain-side ${gainClass}">${gainSign}${formatPrice(Math.abs(gain), currency)}</span>` : ''}
+            <span class="port-price ${nxtChangeClass}">${formatPrice(nxtPrice, currency)}</span>
+            <button class="port-dots-btn" onclick="event.stopPropagation();handlePortfolioCardTap('${item.symbol}')"><i class="ph ph-dots-three-vertical"></i></button>
           </div>
           <div class="port-line2 nxt-line">
+            ${supportInline}
             ${fmtChange(nxtChange, currency) ? `<span class="port-diff ${nxtChangeClass}">${fmtChange(nxtChange, currency)}</span>` : ''}
             <span class="port-tri-pct ${nxtChangeClass}">${nxtPctStr}</span>
           </div>` : ''}
-          ${portSupportRow}
         </div>
-        <button class="port-dots-btn" onclick="event.stopPropagation();handlePortfolioCardTap('${item.symbol}')"><i class="ph ph-dots-three-vertical"></i></button>
       </div>
       <div class="port-expand-body">
         <div class="port-gain-summary">

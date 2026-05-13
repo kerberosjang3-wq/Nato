@@ -670,9 +670,6 @@ html, body {
 .port-vol-left { color: var(--text-sub); }
 
 /* ── 지지선 row ── */
-.port-support-row {
-  display: flex; align-items: center; justify-content: flex-end; gap: 5px; margin-top: 3px;
-}
 .port-support-label {
   font-size: 8px; font-weight: 800;
   color: #e6b800; background: rgba(240,192,64,0.12);
@@ -700,7 +697,7 @@ html, body {
   align-items: flex-end; gap: 2px; min-width: 100px;
 }
 .port-line1 {
-  display: flex; align-items: baseline;
+  display: flex; align-items: center;
   justify-content: flex-end; gap: 5px; width: 100%;
 }
 .port-price {
@@ -716,10 +713,9 @@ html, body {
 .port-chg-abs.up   { color: var(--stock-up); }
 .port-chg-abs.down { color: var(--stock-down); }
 .port-chg-abs.flat { color: var(--text-sub); }
-.port-line1 { align-items: baseline; }
 .port-gain-side {
   font-size: 11px; font-weight: 700;
-  font-variant-numeric: tabular-nums; margin-left: 4px;
+  font-variant-numeric: tabular-nums;
 }
 .port-gain-side.gain-up   { color: var(--stock-up); }
 .port-gain-side.gain-down { color: var(--stock-down); }
@@ -755,7 +751,7 @@ html, body {
   flex-shrink: 0;
   background: none; border: none; cursor: pointer;
   color: var(--text-sub); font-size: 20px;
-  padding: 8px 4px; line-height: 1;
+  padding: 2px 0 2px 4px; line-height: 1;
   display: flex; align-items: center; justify-content: center;
   -webkit-tap-highlight-color: transparent;
   transition: color 0.15s, transform 0.15s;
@@ -1655,7 +1651,7 @@ html, body {
 
 .port-line1 {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: flex-end;
   gap: 6px;
 }
@@ -1684,8 +1680,7 @@ html, body {
   border: none;
   color: var(--text-sub);
   font-size: 18px;
-  padding: 8px 4px;
-  margin-right: -10px; /* Pull to the very edge */
+  padding: 2px 0 2px 4px;
   cursor: pointer;
   opacity: 0.7;
   flex-shrink: 0;
