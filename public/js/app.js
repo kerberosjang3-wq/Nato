@@ -415,7 +415,7 @@ async function loadSparklines() {
     if (data.result && Object.keys(data.result).length) {
       state.sparklines = data.result;
       state.sparklinesUpdatedAt = Date.now();
-      localStorage.setItem('sparklines_v2', JSON.stringify({ data: state.sparklines, ts: state.sparklinesUpdatedAt }));
+      localStorage.setItem('sparklines_v3', JSON.stringify({ data: state.sparklines, ts: state.sparklinesUpdatedAt }));
       if (state.currentTab === 'home') renderHome();
       if (state.currentTab === 'portfolio') renderPortfolioHoldings();
     }
@@ -1161,7 +1161,7 @@ function renderPortfolioCard(item) {
   const volume = q?.regularMarketVolume;
   const sparkData = state.sparklines[item.symbol];
 
-  // 지지선: 하락 종목 + 1개월 스파크라인 데이터 있을 때만
+  // 지지선: 하락 종목 + 충분한 스파크라인 데이터 있을 때만
   // 오늘(마지막) 미완결 데이터를 제외한 과거 closes에서 최저가를 지지선으로 사용
   const showSupport = pct < 0 && sparkData?.length >= 5 && currentPrice;
   let supportLevel = null;
@@ -1173,8 +1173,38 @@ function renderPortfolioCard(item) {
     ? `<span class="port-support-label">지지</span><span class="port-support-price">${formatPrice(Math.round(supportLevel), currency)}</span>`
     : '';
 
-  const miniSpark = sparkData
-    ? `<div class="mini-sparkline-box">${buildSparklineSvg(sparkData, 10, false, true)}</div>` : '';
+  // 장기 이동평균선 방향 배지 (60/120/200일, 하락 종목에서만)
+  let maBadge = '';
+  if (showSupport && sparkData.length >= 70) {
+    const maAvg = (arr, period, offset = 0) => {
+      const sl = arr.slice(-(period + offset), offset > 0 ? -offset : undefined);
+      return sl.length >= period ? sl.reduce((a, b) => a + b, 0) / sl.length : null;
+    };
+    const n = sparkData.length;
+    const maDir = (period) => {
+      if (n < period + 10) return 0;
+      const cur = maAvg(sparkData, period);
+      const prev = maAvg(sparkData, period, 10);
+      if (cur === null || prev === null) return 0;
+      return cur > prev ? 1 : cur < prev ? -1 : 0;
+    };
+    const d60  = n >= 70  ? maDir(60)  : 0;
+    const d120 = n >= 130 ? maDir(120) : 0;
+    const d200 = n >= 210 ? maDir(200) : 0;
+    const arr  = (d) => d > 0 ? '<span class="ma-up">↑</span>' : d < 0 ? '<span class="ma-dn">↓</span>' : '<span class="ma-flat">–</span>';
+    const availDirs = [d60, n >= 130 ? d120 : null, n >= 210 ? d200 : null].filter(v => v !== null);
+    const allDown = availDirs.every(d => d < 0);
+    const allUp   = availDirs.every(d => d > 0);
+    const trendClass = allDown ? 'ma-bear' : allUp ? 'ma-bull' : 'ma-mixed';
+    const trendLabel = allDown ? '재하락경고' : allUp ? '반등우호' : '혼조';
+    const arrowStr = `60${arr(d60)}${n >= 130 ? ` 120${arr(d120)}` : ''}${n >= 210 ? ` 200${arr(d200)}` : ''}`;
+    maBadge = `<span class="port-ma-arrows ${trendClass}">${arrowStr}</span><span class="port-ma-label ${trendClass}">${trendLabel}</span>`;
+  }
+
+  // miniSpark는 최근 22봉(1달)만 사용
+  const sparkRecent = sparkData ? sparkData.slice(-22) : null;
+  const miniSpark = sparkRecent
+    ? `<div class="mini-sparkline-box">${buildSparklineSvg(sparkRecent, 10, false, true)}</div>` : '';
 
   const currentVal = currentPrice ? currentPrice * item.qty : null;
   const gain = currentVal !== null ? currentVal - invested : null;
@@ -1247,7 +1277,7 @@ function renderPortfolioCard(item) {
             ${fmtChange(krxChange, currency) ? `<span class="port-diff ${krxChangeClass}">${fmtChange(krxChange, currency)}</span>` : ''}
             <span class="port-tri-pct ${krxChangeClass}">${krxAbsPctStr}</span>
           </div>
-          ${supportInline ? `<div class="port-line3">${supportInline}</div>` : ''}` : ''}
+          ${supportInline ? `<div class="port-line3">${maBadge}${supportInline}</div>` : ''}` : ''}
           ${showNxt ? `
           <div class="port-line1 nxt-line">
             <span class="port-price ${nxtChangeClass}">${formatPrice(nxtPrice, currency)}</span>
@@ -2823,7 +2853,7 @@ async function init() {
 
     // 스파크라인 캐시 복원 (4시간 이내)
     try {
-      const _sp = localStorage.getItem('sparklines_v2');
+      const _sp = localStorage.getItem('sparklines_v3');
       if (_sp) {
         const { data, ts } = JSON.parse(_sp);
         if (Date.now() - ts < 4 * 60 * 60 * 1000) { state.sparklines = data || {}; state.sparklinesUpdatedAt = ts; }
