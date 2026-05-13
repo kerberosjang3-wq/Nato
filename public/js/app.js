@@ -1271,9 +1271,9 @@ function renderPortfolioCard(item) {
     ? `<span class="port-support-badge ${maTrendClass}">지지선 <span class="port-support-amt">${formatPrice(Math.round(supportLevel), currency)}</span>${maIconClass ? `<i class="${maIconClass}"></i>` : ''}</span>`
     : '';
 
-  // 외인/기관 수급 배지 (국내 하락 종목, 지지선 있을 때)
+  // 외인/기관 수급 배지 (국내 하락 종목이면 항상 — 지지선 유무 무관)
   let supplyBadge = '';
-  if (showSupport && supportLevel !== null && isKR) {
+  if (pct < 0 && isKR) {
     const sd = state.supplyData[item.symbol];
     if (sd) {
       const fDir = sd.foreignDir, iDir = sd.institutionDir;
@@ -1374,7 +1374,7 @@ function renderPortfolioCard(item) {
             ${fmtChange(krxChange, currency) ? `<span class="port-diff ${krxChangeClass}">${fmtChange(krxChange, currency)}</span>` : ''}
             <span class="port-tri-pct ${krxChangeClass}">${krxAbsPctStr}</span>
           </div>
-          ${supportInline ? `<div class="port-line3">${supplyBadge}${divergenceBadge}${supportInline}</div>` : ''}` : ''}
+          ${(supplyBadge || divergenceBadge || supportInline) ? `<div class="port-line3">${supplyBadge}${divergenceBadge}${supportInline}</div>` : ''}` : ''}
           ${showNxt ? `
           <div class="port-line1 nxt-line">
             <span class="port-price ${nxtChangeClass}">${formatPrice(nxtPrice, currency)}</span>
@@ -1383,7 +1383,7 @@ function renderPortfolioCard(item) {
             ${fmtChange(nxtChange, currency) ? `<span class="port-diff ${nxtChangeClass}">${fmtChange(nxtChange, currency)}</span>` : ''}
             <span class="port-tri-pct ${nxtChangeClass}">${nxtPctStr}</span>
           </div>
-          ${supportInline ? `<div class="port-line3">${supplyBadge}${divergenceBadge}${supportInline}</div>` : ''}` : ''}
+          ${(supplyBadge || divergenceBadge || supportInline) ? `<div class="port-line3">${supplyBadge}${divergenceBadge}${supportInline}</div>` : ''}` : ''}
         </div>
         <button class="port-dots-btn" onclick="event.stopPropagation();handlePortfolioCardTap('${item.symbol}')"><i class="ph ph-dots-three-vertical"></i></button>
       </div>
