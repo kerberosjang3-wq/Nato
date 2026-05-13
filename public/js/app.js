@@ -1723,6 +1723,18 @@ function renderDetailPanel(symbol) {
   const item = state.portfolio[symbol];
   if (!item) { clearDetailPanel(); return; }
 
+  // 국내 종목인데 수급 데이터 없으면 즉시 fetch 후 재렌더
+  const isKRsym = /\.(KS|KQ)$/i.test(symbol);
+  if (isKRsym && !state.supplyData[symbol]) {
+    const code = symbol.replace(/\.(KS|KQ)$/i, '');
+    apiFetch(`/api/supply?code=${code}`).then(data => {
+      if (data && !data.error) {
+        state.supplyData[symbol] = data;
+        renderDetailPanel(symbol);
+      }
+    }).catch(() => {});
+  }
+
   const q = state.portfolioPrices[symbol];
   const currentPrice = getDisplayPrice(q);
   const pct = q ? (q.marketState === 'POST' && q.postMarketChangePercent ? q.postMarketChangePercent : q.marketState === 'PRE' && q.preMarketChangePercent ? q.preMarketChangePercent : q.regularMarketChangePercent) : null;
@@ -2785,7 +2797,11 @@ function setupPullToRefresh() {
     icon.style.transform = '';
     try {
       await Promise.all([loadPortfolioPrices(), fetchFxRates()]);
-      fetchSupplyData().then(() => { if (state.currentTab === 'portfolio') renderPortfolioHoldings(); }).catch(() => {});
+      fetchSupplyData().then(() => {
+        if (state.currentTab === 'portfolio') renderPortfolioHoldings();
+        const sel = document.querySelector('#portfolio-holdings .stock-card.ls-selected');
+        if (sel) renderDetailPanel(sel.dataset.symbol);
+      }).catch(() => {});
       if (state.currentTab === 'portfolio') renderPortfolioHoldings();
       showToast('최신 정보로 갱신되었습니다');
     } finally {
@@ -2984,7 +3000,11 @@ async function init() {
     await loadPortfolioPrices();
     await fetchFxRates();
     await loadSparklines();
-    fetchSupplyData().then(() => renderPortfolioHoldings()).catch(() => {});
+    fetchSupplyData().then(() => {
+      renderPortfolioHoldings();
+      const sel = document.querySelector('#portfolio-holdings .stock-card.ls-selected');
+      if (sel) renderDetailPanel(sel.dataset.symbol);
+    }).catch(() => {});
     state.loading = false;
     renderHome();
 
