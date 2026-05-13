@@ -1173,34 +1173,6 @@ function renderPortfolioCard(item) {
     ? `<span class="port-support-label">지지</span><span class="port-support-price">${formatPrice(Math.round(supportLevel), currency)}</span>`
     : '';
 
-  // 장기 이동평균선 방향 배지 (60/120/200일, 하락 종목에서만)
-  let maBadge = '';
-  if (showSupport && sparkData.length >= 70) {
-    const maAvg = (arr, period, offset = 0) => {
-      const sl = arr.slice(-(period + offset), offset > 0 ? -offset : undefined);
-      return sl.length >= period ? sl.reduce((a, b) => a + b, 0) / sl.length : null;
-    };
-    const n = sparkData.length;
-    const maDir = (period) => {
-      if (n < period + 10) return 0;
-      const cur = maAvg(sparkData, period);
-      const prev = maAvg(sparkData, period, 10);
-      if (cur === null || prev === null) return 0;
-      return cur > prev ? 1 : cur < prev ? -1 : 0;
-    };
-    const d60  = n >= 70  ? maDir(60)  : 0;
-    const d120 = n >= 130 ? maDir(120) : 0;
-    const d200 = n >= 210 ? maDir(200) : 0;
-    const arr  = (d) => d > 0 ? '<span class="ma-up">↑</span>' : d < 0 ? '<span class="ma-dn">↓</span>' : '<span class="ma-flat">–</span>';
-    const availDirs = [d60, n >= 130 ? d120 : null, n >= 210 ? d200 : null].filter(v => v !== null);
-    const allDown = availDirs.every(d => d < 0);
-    const allUp   = availDirs.every(d => d > 0);
-    const trendClass = allDown ? 'ma-bear' : allUp ? 'ma-bull' : 'ma-mixed';
-    const trendLabel = allDown ? '재하락경고' : allUp ? '반등우호' : '혼조';
-    const arrowStr = `60${arr(d60)}${n >= 130 ? ` 120${arr(d120)}` : ''}${n >= 210 ? ` 200${arr(d200)}` : ''}`;
-    maBadge = `<span class="port-ma-arrows ${trendClass}">${arrowStr}</span><span class="port-ma-label ${trendClass}">${trendLabel}</span>`;
-  }
-
   // miniSpark는 최근 22봉(1달)만 사용
   const sparkRecent = sparkData ? sparkData.slice(-22) : null;
   const miniSpark = sparkRecent
@@ -1277,7 +1249,7 @@ function renderPortfolioCard(item) {
             ${fmtChange(krxChange, currency) ? `<span class="port-diff ${krxChangeClass}">${fmtChange(krxChange, currency)}</span>` : ''}
             <span class="port-tri-pct ${krxChangeClass}">${krxAbsPctStr}</span>
           </div>
-          ${supportInline ? `<div class="port-line3">${maBadge}${supportInline}</div>` : ''}` : ''}
+          ${supportInline ? `<div class="port-line3">${supportInline}</div>` : ''}` : ''}
           ${showNxt ? `
           <div class="port-line1 nxt-line">
             <span class="port-price ${nxtChangeClass}">${formatPrice(nxtPrice, currency)}</span>

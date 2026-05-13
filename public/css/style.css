@@ -668,30 +668,6 @@ html, body {
 .port-vol-sep { color: var(--border); }
 .port-vol-left { color: var(--text-sub); }
 
-/* ── 이동평균선 방향 배지 ── */
-.port-ma-arrows {
-  font-size: 7px; font-weight: 700; letter-spacing: 0.5px;
-  padding: 1px 4px; border-radius: 3px; flex-shrink: 0;
-  font-variant-numeric: tabular-nums; white-space: nowrap;
-}
-.port-ma-label {
-  font-size: 8px; font-weight: 800;
-  padding: 1px 0; border-radius: 3px; flex-shrink: 0;
-  width: 52px; text-align: center; white-space: nowrap;
-}
-.port-ma-arrows.ma-bear, .port-ma-label.ma-bear {
-  color: #ff6b6b; background: rgba(255,107,107,0.12); border: 1px solid rgba(255,107,107,0.3);
-}
-.port-ma-arrows.ma-bull, .port-ma-label.ma-bull {
-  color: #51cf66; background: rgba(81,207,102,0.12); border: 1px solid rgba(81,207,102,0.3);
-}
-.port-ma-arrows.ma-mixed, .port-ma-label.ma-mixed {
-  color: var(--text-sub); background: rgba(128,128,128,0.1); border: 1px solid rgba(128,128,128,0.25);
-}
-.ma-up   { color: #51cf66; }
-.ma-dn   { color: #ff6b6b; }
-.ma-flat { color: var(--text-sub); }
-
 /* ── 지지선 row ── */
 .port-support-label {
   font-size: 8px; font-weight: 800;
