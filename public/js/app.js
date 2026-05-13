@@ -121,6 +121,7 @@ const state = {
   portfolioUpdatedAt: null,
   sparklines: {},
   sparklinesUpdatedAt: null,
+  supplyData: {},
   watchlistSearchResults: [],
   watchlistSearchQ: '',
   watchlistSearching: false,
@@ -245,6 +246,19 @@ async function fetchFxRates() {
       state.fxRatesUpdatedAt = Date.now();
     }
   } catch (_) {}
+}
+
+async function fetchSupplyData() {
+  // 국내 보유종목(KS/KQ)에 대해서만 외인/기관 수급 데이터 조회
+  const krSymbols = Object.keys(state.portfolio).filter(s => /\.(KS|KQ)$/i.test(s));
+  if (!krSymbols.length) return;
+  await Promise.all(krSymbols.map(async sym => {
+    const code = sym.replace(/\.(KS|KQ)$/i, '');
+    try {
+      const data = await apiFetch(`/api/supply?code=${code}`);
+      if (data && !data.error) state.supplyData[sym] = data;
+    } catch (_) {}
+  }));
 }
 
 async function savePortfolioItem(symbol, name, buyPrice, qty, currency, broker) {
@@ -1257,6 +1271,23 @@ function renderPortfolioCard(item) {
     ? `<span class="port-support-badge ${maTrendClass}">지지선 <span class="port-support-amt">${formatPrice(Math.round(supportLevel), currency)}</span>${maIconClass ? `<i class="${maIconClass}"></i>` : ''}</span>`
     : '';
 
+  // 외인/기관 수급 배지 (국내 하락 종목, 지지선 있을 때)
+  let supplyBadge = '';
+  if (showSupport && supportLevel !== null && isKR) {
+    const sd = state.supplyData[item.symbol];
+    if (sd) {
+      const fDir = sd.foreignDir, iDir = sd.institutionDir;
+      const fUp = fDir === 'buy', iUp = iDir === 'buy';
+      const fDown = fDir === 'sell', iDown = iDir === 'sell';
+      const bothBuy = fUp && iUp;
+      const bothSell = fDown && iDown;
+      const fLabel = fUp ? '외↑' : fDown ? '외↓' : '외—';
+      const iLabel = iUp ? '기↑' : iDown ? '기↓' : '기—';
+      const cls = bothBuy ? 'supply-bull' : bothSell ? 'supply-bear' : 'supply-mixed';
+      supplyBadge = `<span class="port-supply-badge ${cls}">${fLabel}${iLabel}</span>`;
+    }
+  }
+
   // RSI 상승 다이버전스 감지 (지지선 있을 때만)
   let divergenceBadge = '';
   if (showSupport && supportLevel !== null && sparkData && sparkData.length >= 30) {
@@ -1343,7 +1374,7 @@ function renderPortfolioCard(item) {
             ${fmtChange(krxChange, currency) ? `<span class="port-diff ${krxChangeClass}">${fmtChange(krxChange, currency)}</span>` : ''}
             <span class="port-tri-pct ${krxChangeClass}">${krxAbsPctStr}</span>
           </div>
-          ${supportInline ? `<div class="port-line3">${divergenceBadge}${supportInline}</div>` : ''}` : ''}
+          ${supportInline ? `<div class="port-line3">${supplyBadge}${divergenceBadge}${supportInline}</div>` : ''}` : ''}
           ${showNxt ? `
           <div class="port-line1 nxt-line">
             <span class="port-price ${nxtChangeClass}">${formatPrice(nxtPrice, currency)}</span>
@@ -1352,7 +1383,7 @@ function renderPortfolioCard(item) {
             ${fmtChange(nxtChange, currency) ? `<span class="port-diff ${nxtChangeClass}">${fmtChange(nxtChange, currency)}</span>` : ''}
             <span class="port-tri-pct ${nxtChangeClass}">${nxtPctStr}</span>
           </div>
-          ${supportInline ? `<div class="port-line3">${supportInline}</div>` : ''}` : ''}
+          ${supportInline ? `<div class="port-line3">${supplyBadge}${divergenceBadge}${supportInline}</div>` : ''}` : ''}
         </div>
         <button class="port-dots-btn" onclick="event.stopPropagation();handlePortfolioCardTap('${item.symbol}')"><i class="ph ph-dots-three-vertical"></i></button>
       </div>
@@ -2737,6 +2768,7 @@ function setupPullToRefresh() {
     icon.style.transform = '';
     try {
       await Promise.all([loadPortfolioPrices(), fetchFxRates()]);
+      fetchSupplyData().then(() => { if (state.currentTab === 'portfolio') renderPortfolioHoldings(); }).catch(() => {});
       if (state.currentTab === 'portfolio') renderPortfolioHoldings();
       showToast('최신 정보로 갱신되었습니다');
     } finally {
@@ -2935,6 +2967,7 @@ async function init() {
     await loadPortfolioPrices();
     await fetchFxRates();
     await loadSparklines();
+    fetchSupplyData().then(() => renderPortfolioHoldings()).catch(() => {});
     state.loading = false;
     renderHome();
 

@@ -696,6 +696,25 @@ html, body {
 .port-support-badge.trend-mixed {
   color: #e6b800; background: rgba(240,192,64,0.07); border-color: rgba(240,192,64,0.2);
 }
+/* ── 외인/기관 수급 배지 ── */
+.port-supply-badge {
+  display: inline-flex; align-items: center; gap: 0;
+  font-size: 8px; font-weight: 800; white-space: nowrap;
+  padding: 2px 5px; border-radius: 4px; border: 1px solid;
+  flex-shrink: 0; line-height: 1.4; letter-spacing: 0.2px;
+}
+/* 쌍매수 — 빨강 */
+.port-supply-badge.supply-bull {
+  color: var(--stock-up); background: rgba(224,102,102,0.1); border-color: rgba(224,102,102,0.3);
+}
+/* 쌍매도 — 파랑 */
+.port-supply-badge.supply-bear {
+  color: var(--stock-down); background: rgba(96,144,216,0.1); border-color: rgba(96,144,216,0.3);
+}
+/* 혼조 — 회색 */
+.port-supply-badge.supply-mixed {
+  color: var(--text-sub); background: rgba(128,128,128,0.08); border-color: rgba(128,128,128,0.2);
+}
 /* ── RSI 상승 다이버전스 배지 ── */
 .port-div-badge {
   display: inline-flex; align-items: center; gap: 3px;

@@ -1057,6 +1057,55 @@ app.get('/api/volume-spikes', async (req, res) => {
   res.json(result);
 });
 
+// ── 외인/기관 수급 (네이버 금융 스크래핑) ──────────────────────────────────────
+app.get('/api/supply', async (req, res) => {
+  const code = (req.query.code || '').replace(/\D/g, '').slice(0, 6);
+  if (!code || code.length !== 6) return res.status(400).json({ error: 'invalid code' });
+
+  const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+  try {
+    // 네이버 금융 투자자별 매매동향 (최근 5거래일)
+    const url = `https://finance.naver.com/item/frgn.naver?code=${code}`;
+    const r = await _fetch(url, {
+      timeout: 8000,
+      headers: { 'User-Agent': UA, 'Referer': 'https://finance.naver.com/', 'Accept-Language': 'ko-KR,ko;q=0.9' }
+    });
+    if (!r.ok) return res.status(502).json({ error: `Naver ${r.status}` });
+    const html = await r.text();
+
+    // 외국인 / 기관 순매수 파싱 — frgn.naver 테이블
+    // 외국인 순매수: id="frgn_sise" 테이블의 첫 5행, "외국인" 열
+    // 기관 순매수: 동일 테이블의 "기관합계" 열
+    let foreignNet = 0, institutionNet = 0, parsed = 0;
+
+    const rowRe = /<tr[^>]*class="(line_darken|line_left)"[^>]*>([\s\S]*?)<\/tr>/g;
+    let m;
+    while ((m = rowRe.exec(html)) !== null && parsed < 5) {
+      const cells = m[2].match(/<td[^>]*>([\s\S]*?)<\/td>/g) || [];
+      const getText = (td) => (td || '').replace(/<[^>]+>/g, '').replace(/,/g, '').trim();
+      // 컬럼 순서: 날짜(0) 종가(1) 전일대비(2) 외국인(3) ... 기관합계(*)
+      // 외국인: 인덱스 3, 기관합계: 인덱스 7 (페이지 구조)
+      const fVal = parseInt(getText(cells[3]), 10);
+      const iVal = parseInt(getText(cells[7]), 10);
+      if (!isNaN(fVal)) foreignNet += fVal;
+      if (!isNaN(iVal)) institutionNet += iVal;
+      parsed++;
+    }
+
+    if (parsed === 0) return res.status(502).json({ error: 'parse failed' });
+
+    res.json({
+      code,
+      foreignNet,
+      institutionNet,
+      foreignDir: foreignNet > 0 ? 'buy' : foreignNet < 0 ? 'sell' : 'flat',
+      institutionDir: institutionNet > 0 ? 'buy' : institutionNet < 0 ? 'sell' : 'flat',
+    });
+  } catch (e) {
+    res.status(502).json({ error: e.message });
+  }
+});
+
 app.get('/api/health', (req, res) => res.json({ status: 'ok', env: process.env.VERCEL ? 'vercel' : 'local' }));
 
 // Root route (Fallback)
