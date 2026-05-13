@@ -1169,8 +1169,28 @@ function renderPortfolioCard(item) {
     const historicalCloses = sparkData.slice(0, -1); // 오늘 제외
     supportLevel = Math.min(...historicalCloses);
   }
+
+  // 장기 이평선 기울기 → 지지 배지 라벨·아이콘·색상 결정
+  let maLabel = '지지', maIconClass = '', maTrendClass = '';
+  if (showSupport && sparkData && sparkData.length >= 70) {
+    const n = sparkData.length;
+    const maAvg = (period, offset = 0) => {
+      const sl = sparkData.slice(-(period + offset), offset > 0 ? -offset : undefined);
+      return sl.length >= period ? sl.reduce((a, b) => a + b, 0) / sl.length : null;
+    };
+    const maDir = (period) => {
+      const cur = maAvg(period), prev = maAvg(period, 10);
+      return (cur !== null && prev !== null) ? (cur > prev ? 1 : cur < prev ? -1 : 0) : 0;
+    };
+    const dirs = [maDir(60), n >= 130 ? maDir(120) : null, n >= 210 ? maDir(200) : null].filter(v => v !== null);
+    const allDown = dirs.every(d => d < 0), allUp = dirs.every(d => d > 0);
+    if (allDown)      { maLabel = '지지선'; maIconClass = 'ph ph-trend-down'; maTrendClass = 'trend-bear'; }
+    else if (allUp)   { maLabel = '지지';   maIconClass = 'ph ph-trend-up';   maTrendClass = 'trend-bull'; }
+    else              { maLabel = '혼조';   maIconClass = 'ph ph-minus';       maTrendClass = 'trend-mixed'; }
+  }
+
   const supportInline = showSupport && supportLevel !== null
-    ? `<span class="port-support-label">지지</span><span class="port-support-price">${formatPrice(Math.round(supportLevel), currency)}</span>`
+    ? `<span class="port-support-price">${formatPrice(Math.round(supportLevel), currency)}</span><span class="port-support-label ${maTrendClass}">${maLabel}</span>${maIconClass ? `<i class="${maIconClass} port-support-icon ${maTrendClass}"></i>` : ''}`
     : '';
 
   // miniSpark는 최근 22봉(1달)만 사용
