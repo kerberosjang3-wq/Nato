@@ -2016,6 +2016,18 @@ html, body {
   .ls-detail-krw-vals .gain-up { color: var(--stock-up); }
   .ls-detail-krw-vals .gain-down { color: var(--stock-down); }
 
+  /* 외인/기관 수급 섹션 */
+  .ls-supply-section { padding: 12px 0 4px; }
+  .ls-supply-title { font-size: 11px; font-weight: 600; color: var(--text-sub); margin-bottom: 8px; }
+  .ls-supply-days { font-weight: 400; }
+  .ls-supply-row { display: flex; align-items: center; gap: 10px; }
+  .ls-supply-vals { display: flex; gap: 16px; flex: 1; }
+  .ls-supply-item { display: flex; flex-direction: column; gap: 2px; }
+  .ls-supply-label { font-size: 10px; color: var(--text-sub); font-weight: 500; }
+  .ls-supply-val { font-size: 13px; font-weight: 700; }
+  .ls-supply-item.gain-up .ls-supply-val { color: var(--stock-up); }
+  .ls-supply-item.gain-down .ls-supply-val { color: var(--stock-down); }
+
   .ls-detail-actions {
     display: flex; gap: 8px; margin-top: auto; padding-top: 4px;
   }

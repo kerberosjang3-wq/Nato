@@ -1271,23 +1271,6 @@ function renderPortfolioCard(item) {
     ? `<span class="port-support-badge ${maTrendClass}">지지선 <span class="port-support-amt">${formatPrice(Math.round(supportLevel), currency)}</span>${maIconClass ? `<i class="${maIconClass}"></i>` : ''}</span>`
     : '';
 
-  // 외인/기관 수급 배지 (국내 하락 종목이면 항상 — 지지선 유무 무관)
-  let supplyBadge = '';
-  if (pct < 0 && isKR) {
-    const sd = state.supplyData[item.symbol];
-    if (sd) {
-      const fDir = sd.foreignDir, iDir = sd.institutionDir;
-      const fUp = fDir === 'buy', iUp = iDir === 'buy';
-      const fDown = fDir === 'sell', iDown = iDir === 'sell';
-      const bothBuy = fUp && iUp;
-      const bothSell = fDown && iDown;
-      const fLabel = fUp ? '외↑' : fDown ? '외↓' : '외—';
-      const iLabel = iUp ? '기↑' : iDown ? '기↓' : '기—';
-      const cls = bothBuy ? 'supply-bull' : bothSell ? 'supply-bear' : 'supply-mixed';
-      supplyBadge = `<span class="port-supply-badge ${cls}">${fLabel}${iLabel}</span>`;
-    }
-  }
-
   // RSI 상승 다이버전스 감지 (지지선 있을 때만)
   let divergenceBadge = '';
   if (showSupport && supportLevel !== null && sparkData && sparkData.length >= 30) {
@@ -1374,7 +1357,7 @@ function renderPortfolioCard(item) {
             ${fmtChange(krxChange, currency) ? `<span class="port-diff ${krxChangeClass}">${fmtChange(krxChange, currency)}</span>` : ''}
             <span class="port-tri-pct ${krxChangeClass}">${krxAbsPctStr}</span>
           </div>
-          ${(supplyBadge || divergenceBadge || supportInline) ? `<div class="port-line3">${supplyBadge}${divergenceBadge}${supportInline}</div>` : ''}` : ''}
+          ${(divergenceBadge || supportInline) ? `<div class="port-line3">${divergenceBadge}${supportInline}</div>` : ''}` : ''}
           ${showNxt ? `
           <div class="port-line1 nxt-line">
             <span class="port-price ${nxtChangeClass}">${formatPrice(nxtPrice, currency)}</span>
@@ -1383,7 +1366,7 @@ function renderPortfolioCard(item) {
             ${fmtChange(nxtChange, currency) ? `<span class="port-diff ${nxtChangeClass}">${fmtChange(nxtChange, currency)}</span>` : ''}
             <span class="port-tri-pct ${nxtChangeClass}">${nxtPctStr}</span>
           </div>
-          ${(supplyBadge || divergenceBadge || supportInline) ? `<div class="port-line3">${supplyBadge}${divergenceBadge}${supportInline}</div>` : ''}` : ''}
+          ${(divergenceBadge || supportInline) ? `<div class="port-line3">${divergenceBadge}${supportInline}</div>` : ''}` : ''}
         </div>
         <button class="port-dots-btn" onclick="event.stopPropagation();handlePortfolioCardTap('${item.symbol}')"><i class="ph ph-dots-three-vertical"></i></button>
       </div>
@@ -1812,6 +1795,40 @@ function renderDetailPanel(symbol) {
       </div>
     </div>
     ${krwBlock}
+    ${(() => {
+      const isKR = /\.(KS|KQ)$/i.test(symbol);
+      const sd = isKR ? state.supplyData[symbol] : null;
+      if (!sd) return '';
+      const fDir = sd.foreignDir, iDir = sd.institutionDir;
+      const fUp = fDir === 'buy', iUp = iDir === 'buy';
+      const fDown = fDir === 'sell', iDown = iDir === 'sell';
+      const bothBuy = fUp && iUp, bothSell = fDown && iDown;
+      const cls = bothBuy ? 'supply-bull' : bothSell ? 'supply-bear' : 'supply-mixed';
+      const fLabel = fUp ? '외↑' : fDown ? '외↓' : '외—';
+      const iLabel = iUp ? '기↑' : iDown ? '기↓' : '기—';
+      const fNet = sd.foreignNet?.toLocaleString('ko-KR') ?? '—';
+      const iNet = sd.institutionNet?.toLocaleString('ko-KR') ?? '—';
+      const fSign = fUp ? '+' : '';
+      const iSign = iUp ? '+' : '';
+      return `
+    <div class="ls-detail-divider"></div>
+    <div class="ls-supply-section">
+      <div class="ls-supply-title">외인/기관 수급 <span class="ls-supply-days">(최근 ${sd.days || 5}거래일 누적)</span></div>
+      <div class="ls-supply-row">
+        <span class="port-supply-badge ${cls}">${fLabel}${iLabel}</span>
+        <div class="ls-supply-vals">
+          <div class="ls-supply-item ${fUp ? 'gain-up' : fDown ? 'gain-down' : ''}">
+            <span class="ls-supply-label">외국인</span>
+            <span class="ls-supply-val">${fSign}${fNet}주</span>
+          </div>
+          <div class="ls-supply-item ${iUp ? 'gain-up' : iDown ? 'gain-down' : ''}">
+            <span class="ls-supply-label">기관</span>
+            <span class="ls-supply-val">${iSign}${iNet}주</span>
+          </div>
+        </div>
+      </div>
+    </div>`;
+    })()}
     <div class="ls-detail-actions">
       <button class="btn-cancel" style="flex:1" onclick="openPortfolioEditModal(event,'${symbol}')">수정</button>
       <button class="ls-detail-del" onclick="confirmDeletePortfolio(event,'${symbol}')">삭제</button>
