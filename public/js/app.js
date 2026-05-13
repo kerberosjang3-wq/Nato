@@ -1173,7 +1173,6 @@ function renderPortfolioCard(item) {
       : `<span class="port-support-dist">↓ ${dropPct.toFixed(1)}%</span>`;
     portSupportRow = `
       <div class="port-support-row">
-        <div class="port-support-spark">${buildSupportSparkSvg(sparkData)}</div>
         <span class="port-support-label">지지</span>
         <span class="port-support-price">${formatPrice(Math.round(supportLevel), currency)}</span>
         ${distEl}

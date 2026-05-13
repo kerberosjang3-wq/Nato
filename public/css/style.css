@@ -673,7 +673,6 @@ html, body {
 .port-support-row {
   display: flex; align-items: center; gap: 5px; margin-top: 3px;
 }
-.port-support-spark { flex-shrink: 0; line-height: 0; }
 .port-support-label {
   font-size: 8px; font-weight: 800;
   color: #e6b800; background: rgba(240,192,64,0.12);
