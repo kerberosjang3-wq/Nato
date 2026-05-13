@@ -683,11 +683,6 @@ html, body {
   font-size: 10px; font-weight: 600; color: var(--text-sub);
   font-variant-numeric: tabular-nums; flex-shrink: 0;
 }
-.port-support-dist {
-  font-size: 10px; font-weight: 700; color: var(--text-sub);
-  font-variant-numeric: tabular-nums;
-}
-.port-support-dist.broken { color: var(--stock-down); font-size: 9px; }
 .port-vol-group { display: none; }
 .port-ticker { color: var(--text-sub); font-size: 11px; font-weight: 600; letter-spacing: 0.3px; }
 

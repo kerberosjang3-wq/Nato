@@ -1168,16 +1168,10 @@ function renderPortfolioCard(item) {
   if (showSupport) {
     const historicalCloses = sparkData.slice(0, -1); // 오늘 제외
     const supportLevel = Math.min(...historicalCloses);
-    const isBroken = currentPrice < supportLevel;
-    const dropPct = isBroken ? null : ((currentPrice - supportLevel) / currentPrice) * 100;
-    const distEl = isBroken
-      ? `<span class="port-support-dist broken">지지 이탈</span>`
-      : `<span class="port-support-dist">↓ ${dropPct.toFixed(1)}%</span>`;
     portSupportRow = `
       <div class="port-support-row">
         <span class="port-support-label">지지</span>
         <span class="port-support-price">${formatPrice(Math.round(supportLevel), currency)}</span>
-        ${distEl}
       </div>`;
   }
 
