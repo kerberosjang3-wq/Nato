@@ -1134,6 +1134,42 @@ function renderPortfolioSummary() {
   </div>`;
 }
 
+// Wilder's smoothing RSI — closes 배열과 동일 길이, 앞은 null 패딩
+function calcRSI(closes, period = 14) {
+  const result = new Array(closes.length).fill(null);
+  if (closes.length < period + 1) return result;
+  let avgGain = 0, avgLoss = 0;
+  for (let i = 1; i <= period; i++) {
+    const d = closes[i] - closes[i - 1];
+    if (d > 0) avgGain += d; else avgLoss -= d;
+  }
+  avgGain /= period; avgLoss /= period;
+  result[period] = 100 - 100 / (1 + avgGain / (avgLoss || 1e-10));
+  for (let i = period + 1; i < closes.length; i++) {
+    const d = closes[i] - closes[i - 1];
+    avgGain = (avgGain * (period - 1) + Math.max(d, 0)) / period;
+    avgLoss = (avgLoss * (period - 1) + Math.max(-d, 0)) / period;
+    result[i] = 100 - 100 / (1 + avgGain / (avgLoss || 1e-10));
+  }
+  return result;
+}
+
+// 상승 다이버전스: 가격 저점↓ + RSI 저점↑ (최근 60봉 내 swing low 2개 비교)
+function detectBullishDivergence(closes, rsi) {
+  const wing = 3, lookback = 60;
+  const start = Math.max(wing, closes.length - lookback);
+  const lows = [];
+  for (let i = start; i < closes.length - wing; i++) {
+    if (rsi[i] === null) continue;
+    const leftOK  = closes.slice(i - wing, i).every(v => v >= closes[i]);
+    const rightOK = closes.slice(i + 1, i + wing + 1).every(v => v >= closes[i]);
+    if (leftOK && rightOK) lows.push({ price: closes[i], rsi: rsi[i] });
+  }
+  if (lows.length < 2) return false;
+  const a = lows[lows.length - 2], b = lows[lows.length - 1];
+  return b.price < a.price && b.rsi > a.rsi;
+}
+
 function renderPortfolioCard(item) {
   const q = state.portfolioPrices[item.symbol];
   const currency = q?.currency || item.currency || 'USD';
@@ -1221,6 +1257,16 @@ function renderPortfolioCard(item) {
     ? `<span class="port-support-badge ${maTrendClass}">지지선 <span class="port-support-amt">${formatPrice(Math.round(supportLevel), currency)}</span>${maIconClass ? `<i class="${maIconClass}"></i>` : ''}</span>`
     : '';
 
+  // RSI 상승 다이버전스 감지 (지지선 있을 때만)
+  let divergenceBadge = '';
+  if (showSupport && supportLevel !== null && sparkData && sparkData.length >= 30) {
+    const validCloses = sparkData.filter(v => v != null && !isNaN(v) && v > 0);
+    const rsi = calcRSI(validCloses);
+    if (detectBullishDivergence(validCloses, rsi)) {
+      divergenceBadge = `<span class="port-div-badge"><i class="ph ph-arrows-merge"></i> 반전신호</span>`;
+    }
+  }
+
   // miniSpark는 최근 22봉(1달)만 사용
   const sparkRecent = sparkData ? sparkData.slice(-22) : null;
   const miniSpark = sparkRecent
@@ -1297,7 +1343,7 @@ function renderPortfolioCard(item) {
             ${fmtChange(krxChange, currency) ? `<span class="port-diff ${krxChangeClass}">${fmtChange(krxChange, currency)}</span>` : ''}
             <span class="port-tri-pct ${krxChangeClass}">${krxAbsPctStr}</span>
           </div>
-          ${supportInline ? `<div class="port-line3">${supportInline}</div>` : ''}` : ''}
+          ${supportInline ? `<div class="port-line3">${divergenceBadge}${supportInline}</div>` : ''}` : ''}
           ${showNxt ? `
           <div class="port-line1 nxt-line">
             <span class="port-price ${nxtChangeClass}">${formatPrice(nxtPrice, currency)}</span>
