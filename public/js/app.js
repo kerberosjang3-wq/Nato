@@ -415,7 +415,7 @@ async function loadSparklines() {
     if (data.result && Object.keys(data.result).length) {
       state.sparklines = data.result;
       state.sparklinesUpdatedAt = Date.now();
-      localStorage.setItem('sparklines', JSON.stringify({ data: state.sparklines, ts: state.sparklinesUpdatedAt }));
+      localStorage.setItem('sparklines_v2', JSON.stringify({ data: state.sparklines, ts: state.sparklinesUpdatedAt }));
       if (state.currentTab === 'home') renderHome();
       if (state.currentTab === 'portfolio') renderPortfolioHoldings();
     }
@@ -1161,11 +1161,13 @@ function renderPortfolioCard(item) {
   const volume = q?.regularMarketVolume;
   const sparkData = state.sparklines[item.symbol];
 
-  // 지지선: 하락 종목 + 스파크라인 데이터 있을 때만
-  const showSupport = pct < 0 && sparkData?.length >= 2 && currentPrice;
+  // 지지선: 하락 종목 + 1개월 스파크라인 데이터 있을 때만
+  // 오늘(마지막) 미완결 데이터를 제외한 과거 closes에서 최저가를 지지선으로 사용
+  const showSupport = pct < 0 && sparkData?.length >= 5 && currentPrice;
   let portSupportRow = '';
   if (showSupport) {
-    const supportLevel = Math.min(...sparkData);
+    const historicalCloses = sparkData.slice(0, -1); // 오늘 제외
+    const supportLevel = Math.min(...historicalCloses);
     const isBroken = currentPrice < supportLevel;
     const dropPct = isBroken ? null : ((currentPrice - supportLevel) / currentPrice) * 100;
     const distEl = isBroken
@@ -1179,7 +1181,7 @@ function renderPortfolioCard(item) {
       </div>`;
   }
 
-  const miniSpark = !showSupport && sparkData
+  const miniSpark = sparkData
     ? `<div class="mini-sparkline-box">${buildSparklineSvg(sparkData, 10, false, true)}</div>` : '';
 
   const currentVal = currentPrice ? currentPrice * item.qty : null;
@@ -2834,7 +2836,7 @@ async function init() {
 
     // 스파크라인 캐시 복원 (4시간 이내)
     try {
-      const _sp = localStorage.getItem('sparklines');
+      const _sp = localStorage.getItem('sparklines_v2');
       if (_sp) {
         const { data, ts } = JSON.parse(_sp);
         if (Date.now() - ts < 4 * 60 * 60 * 1000) { state.sparklines = data || {}; state.sparklinesUpdatedAt = ts; }

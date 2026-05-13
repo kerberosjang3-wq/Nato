@@ -662,7 +662,7 @@ app.get('/api/spark', async (req, res) => {
     const fetchOne = async (symbol) => {
       try {
         const r = await _fetch(
-          `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=5d&interval=1d&crumb=${encodeURIComponent(crumb)}`,
+          `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=1mo&interval=1d&crumb=${encodeURIComponent(crumb)}`,
           { headers: { 'User-Agent': UA, 'Cookie': cookie }, timeout: 6000 }
         );
         if (!r.ok) return null;
