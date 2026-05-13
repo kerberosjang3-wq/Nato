@@ -671,7 +671,7 @@ html, body {
 
 /* ── 지지선 row ── */
 .port-support-row {
-  display: flex; align-items: center; gap: 5px; margin-top: 3px;
+  display: flex; align-items: center; justify-content: flex-end; gap: 5px; margin-top: 3px;
 }
 .port-support-label {
   font-size: 8px; font-weight: 800;
@@ -692,7 +692,7 @@ html, body {
 .ex-badge.nxt { background: rgba(96, 144, 216, 0.15); color: var(--stock-down); border: 1px solid rgba(96, 144, 216, 0.2); }
 .port-exch-btn { display: inline-flex; align-items: center; justify-content: center; background: none; border: none; padding: 0 2px; cursor: pointer; flex-shrink: 0; }
 .nxt-line { margin-top: 2px; opacity: 0.85; }
-.nxt-line .port-price { font-size: 13px !important; }
+.nxt-line .port-price { font-size: 12px !important; }
 .nxt-line .port-tri-pct { font-size: 11px !important; }
 
 .port-price-col {
@@ -704,7 +704,7 @@ html, body {
   justify-content: flex-end; gap: 5px; width: 100%;
 }
 .port-price {
-  font-size: 14px; font-weight: 800;
+  font-size: 13px; font-weight: 700;
   font-variant-numeric: tabular-nums; color: var(--text);
 }
 .port-price.up   { color: var(--stock-up); }
