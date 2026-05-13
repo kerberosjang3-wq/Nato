@@ -1162,17 +1162,31 @@ function renderPortfolioCard(item) {
   const sparkData = state.sparklines[item.symbol];
 
   // 지지선: 하락 종목, 1년 데이터 기준
-  // 최근 10거래일(현재 하락 구간) 제외 → 이전 60일 내 최저가 = 하락 전 바닥
   const showSupport = pct < 0 && sparkData?.length >= 5 && currentPrice;
   let supportLevel = null;
   if (showSupport) {
-    const closes = sparkData.slice(0, -1); // 오늘 미완결 제외
-    const bufferEnd = closes.length - 10;
-    const bufferStart = Math.max(0, bufferEnd - 60);
-    const supportWin = closes.slice(bufferStart, bufferEnd);
-    supportLevel = supportWin.length > 0
-      ? Math.min(...supportWin)
-      : Math.min(...closes);
+    // null/NaN 제거 후 오늘 미완결 + 최근 5일 노이즈 제외
+    const closes = sparkData
+      .slice(0, -1)
+      .filter(v => v != null && !isNaN(v) && v > 0);
+    const hist = closes.slice(0, closes.length - 5); // 최근 5거래일 제외
+
+    // 지지선은 반드시 현재가 이하여야 함
+    // swing low 탐색: 좌우 3봉보다 낮고 현재가 미만인 가장 최근 지점
+    const wing = 3;
+    let swingLow = null;
+    for (let i = hist.length - 1; i >= wing; i--) {
+      if (hist[i] >= currentPrice) continue;
+      const leftOK  = hist.slice(i - wing, i).every(v => v >= hist[i]);
+      const rightOK = hist.slice(i + 1, Math.min(hist.length, i + wing + 1)).every(v => v >= hist[i]);
+      if (leftOK && rightOK) { swingLow = hist[i]; break; }
+    }
+    // swing low 없으면 현재가 이하 closes의 최저값으로 대체
+    if (swingLow === null) {
+      const below = hist.filter(v => v < currentPrice);
+      swingLow = below.length >= 3 ? Math.min(...below) : null;
+    }
+    supportLevel = swingLow;
   }
 
   // 장기 이평선 기울기 → 지지 배지 색상·아이콘 결정
