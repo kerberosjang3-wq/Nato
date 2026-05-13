@@ -1224,10 +1224,6 @@ function renderPortfolioCard(item) {
       </div>`;
   }
 
-  const badgeLabel = isKR ? 'KR' : (currency === 'USD' ? 'US' : currency);
-  const badgeClass = isKR ? 'market-badge-kr' : 'market-badge-us';
-  const marketBadge = `<span class="market-badge ${badgeClass}">${badgeLabel}</span>`;
-
   const showKrx = !isKR || state.domesticExchange !== 'NXT';
   const showNxt = isKR && state.domesticExchange === 'NXT' && nxtPrice;
 
@@ -1239,29 +1235,25 @@ function renderPortfolioCard(item) {
       <div class="port-row">
         <div class="port-info">
           <div class="port-name">${item.name || q?.korName || item.symbol}</div>
-          <div class="port-qty-row">${marketBadge}<span class="port-qty-num">${item.qty.toLocaleString('ko-KR')}주</span>${miniSpark}${volNum ? `<span class="port-vol-group"><span class="port-vol-sep"> · </span><span class="port-vol-left">${volNum}</span></span>` : ''}${!isKR ? `<span class="port-vol-sep"> · </span><span class="port-ticker">${item.symbol}</span>` : ''}</div>
+          <div class="port-qty-row">${gain !== null ? `<span class="port-gain-side ${gainClass}">${gainSign}${formatPrice(Math.abs(gain), currency)}</span>` : ''}${supportInline}${miniSpark}${volNum ? `<span class="port-vol-group"><span class="port-vol-sep"> · </span><span class="port-vol-left">${volNum}</span></span>` : ''}${!isKR ? `<span class="port-vol-sep"> · </span><span class="port-ticker">${item.symbol}</span>` : ''}</div>
           ${regularLineLeft}
         </div>
         <div class="port-price-col">
           ${showKrx ? `
           <div class="port-line1">
-            ${gain !== null ? `<span class="port-gain-side ${gainClass}">${gainSign}${formatPrice(Math.abs(gain), currency)}</span>` : ''}
             <span class="port-price ${krxChangeClass}">${krxPrice ? formatPrice(krxPrice, currency) : '—'}</span>
             <button class="port-dots-btn" onclick="event.stopPropagation();handlePortfolioCardTap('${item.symbol}')"><i class="ph ph-dots-three-vertical"></i></button>
           </div>
           <div class="port-line2">
-            ${supportInline}
             ${fmtChange(krxChange, currency) ? `<span class="port-diff ${krxChangeClass}">${fmtChange(krxChange, currency)}</span>` : ''}
             <span class="port-tri-pct ${krxChangeClass}">${krxAbsPctStr}</span>
           </div>` : ''}
           ${showNxt ? `
           <div class="port-line1 nxt-line">
-            ${useNxt && gain !== null ? `<span class="port-gain-side ${gainClass}">${gainSign}${formatPrice(Math.abs(gain), currency)}</span>` : ''}
             <span class="port-price ${nxtChangeClass}">${formatPrice(nxtPrice, currency)}</span>
             <button class="port-dots-btn" onclick="event.stopPropagation();handlePortfolioCardTap('${item.symbol}')"><i class="ph ph-dots-three-vertical"></i></button>
           </div>
           <div class="port-line2 nxt-line">
-            ${supportInline}
             ${fmtChange(nxtChange, currency) ? `<span class="port-diff ${nxtChangeClass}">${fmtChange(nxtChange, currency)}</span>` : ''}
             <span class="port-tri-pct ${nxtChangeClass}">${nxtPctStr}</span>
           </div>` : ''}
