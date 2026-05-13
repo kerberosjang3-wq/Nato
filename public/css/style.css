@@ -724,6 +724,11 @@ html, body {
   justify-content: flex-end; gap: 4px; margin-top: 1px;
   width: 100%;
 }
+.port-line3 {
+  display: flex; align-items: center;
+  justify-content: flex-end; gap: 4px; margin-top: 2px;
+  width: 100%;
+}
 .port-diff {
   font-size: 10px; font-weight: 600; font-variant-numeric: tabular-nums;
 }
