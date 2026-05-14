@@ -2125,13 +2125,31 @@ html, body {
   .ls-supply-section { padding: 12px 0 4px; }
   .ls-supply-title { font-size: 11px; font-weight: 600; color: var(--text-sub); margin-bottom: 8px; }
   .ls-supply-days { font-weight: 400; }
-  .ls-supply-row { display: flex; align-items: center; gap: 10px; }
-  .ls-supply-vals { display: flex; gap: 16px; flex: 1; }
-  .ls-supply-item { display: flex; flex-direction: column; gap: 2px; }
-  .ls-supply-label { font-size: 10px; color: var(--text-sub); font-weight: 500; }
-  .ls-supply-val { font-size: 13px; font-weight: 700; }
-  .ls-supply-item.gain-up .ls-supply-val { color: var(--stock-up); }
-  .ls-supply-item.gain-down .ls-supply-val { color: var(--stock-down); }
+  .ls-supply-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .ls-supply-card {
+    border-radius: 10px; padding: 10px 12px;
+    display: flex; flex-direction: column; gap: 6px;
+    border: 1px solid transparent;
+  }
+  .ls-supply-card.sup-buy  { background: rgba(212,128,106,0.10); border-color: rgba(212,128,106,0.25); }
+  .ls-supply-card.sup-sell { background: rgba(96,144,216,0.10);  border-color: rgba(96,144,216,0.25); }
+  .ls-supply-card.sup-flat { background: rgba(128,128,128,0.06); border-color: rgba(128,128,128,0.15); }
+  .ls-supply-card-head { display: flex; align-items: center; gap: 5px; }
+  .ls-supply-card-head i { font-size: 14px; }
+  .ls-supply-card.sup-buy  .ls-supply-card-head i,
+  .ls-supply-card.sup-buy  .ls-supply-who  { color: var(--stock-up); }
+  .ls-supply-card.sup-sell .ls-supply-card-head i,
+  .ls-supply-card.sup-sell .ls-supply-who  { color: var(--stock-down); }
+  .ls-supply-card.sup-flat .ls-supply-card-head i,
+  .ls-supply-card.sup-flat .ls-supply-who  { color: var(--text-sub); }
+  .ls-supply-who { font-size: 11px; font-weight: 600; }
+  .ls-supply-amount {
+    font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums;
+  }
+  .ls-supply-card.sup-buy  .ls-supply-amount { color: var(--stock-up); }
+  .ls-supply-card.sup-sell .ls-supply-amount { color: var(--stock-down); }
+  .ls-supply-card.sup-flat .ls-supply-amount { color: var(--text-sub); }
+  .ls-supply-unit { font-size: 10px; font-weight: 500; margin-left: 2px; opacity: 0.7; }
 
   .ls-detail-actions {
     display: flex; gap: 8px; margin-top: auto; padding-top: 4px;

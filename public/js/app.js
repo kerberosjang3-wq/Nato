@@ -1934,27 +1934,31 @@ function renderDetailPanel(symbol) {
     const fDir = sd.foreignDir, iDir = sd.institutionDir;
     const fUp = fDir === 'buy', iUp = iDir === 'buy';
     const fDown = fDir === 'sell', iDown = iDir === 'sell';
-    const cls = (fUp && iUp) ? 'supply-bull' : (fDown && iDown) ? 'supply-bear' : 'supply-mixed';
-    const fLabel = fUp ? '외↑' : fDown ? '외↓' : '외—';
-    const iLabel = iUp ? '기↑' : iDown ? '기↓' : '기—';
     const fNet = typeof sd.foreignNet === 'number' ? sd.foreignNet.toLocaleString('ko-KR') : '—';
     const iNet = typeof sd.institutionNet === 'number' ? sd.institutionNet.toLocaleString('ko-KR') : '—';
     const fSign = fUp ? '+' : '';
     const iSign = iUp ? '+' : '';
+    const fIcon = fUp ? 'ph-trend-up' : fDown ? 'ph-trend-down' : 'ph-minus';
+    const iIcon = iUp ? 'ph-trend-up' : iDown ? 'ph-trend-down' : 'ph-minus';
+    const fCls  = fUp ? 'sup-buy' : fDown ? 'sup-sell' : 'sup-flat';
+    const iCls  = iUp ? 'sup-buy' : iDown ? 'sup-sell' : 'sup-flat';
     supplyBlock = `<div class="ls-detail-divider"></div>
     <div class="ls-supply-section">
       <div class="ls-supply-title">외인/기관 수급 <span class="ls-supply-days">(최근 ${sd.days || 5}거래일 누적)</span></div>
-      <div class="ls-supply-row">
-        <span class="port-supply-badge ${cls}">${fLabel}${iLabel}</span>
-        <div class="ls-supply-vals">
-          <div class="ls-supply-item ${fUp ? 'gain-up' : fDown ? 'gain-down' : ''}">
-            <span class="ls-supply-label">외국인</span>
-            <span class="ls-supply-val">${fSign}${fNet}주</span>
+      <div class="ls-supply-grid">
+        <div class="ls-supply-card ${fCls}">
+          <div class="ls-supply-card-head">
+            <i class="ph ${fIcon}"></i>
+            <span class="ls-supply-who">외국인</span>
           </div>
-          <div class="ls-supply-item ${iUp ? 'gain-up' : iDown ? 'gain-down' : ''}">
-            <span class="ls-supply-label">기관</span>
-            <span class="ls-supply-val">${iSign}${iNet}주</span>
+          <div class="ls-supply-amount">${fSign}${fNet}<span class="ls-supply-unit">주</span></div>
+        </div>
+        <div class="ls-supply-card ${iCls}">
+          <div class="ls-supply-card-head">
+            <i class="ph ${iIcon}"></i>
+            <span class="ls-supply-who">기관</span>
           </div>
+          <div class="ls-supply-amount">${iSign}${iNet}<span class="ls-supply-unit">주</span></div>
         </div>
       </div>
     </div>`;
