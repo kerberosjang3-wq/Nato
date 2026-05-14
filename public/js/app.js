@@ -727,7 +727,7 @@ function renderSettings() {
         <div style="font-size:12px;color:var(--text-sub);margin-bottom:14px;line-height:1.6">
           증권사 앱 보유종목 화면을 캡처한 이미지를<br>선택하면 AI가 종목·매수가·수량을 자동으로 읽어옵니다.
         </div>
-        <input type="file" id="import-file-input" accept="image/*" capture="environment" style="display:none" onchange="handleImportFile(this)">
+        <input type="file" id="import-file-input" accept="image/*" style="display:none" onchange="handleImportFile(this)">
         <button class="btn-save" style="width:100%;justify-content:center;gap:8px" onclick="document.getElementById('import-file-input').click()">
           <i class="ph ph-upload-simple"></i> 스크린샷 선택
         </button>
