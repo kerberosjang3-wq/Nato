@@ -133,6 +133,7 @@ const state = {
   marketLastUpdated: null,
   userName: localStorage.getItem('userName') || '사용자',
   domesticExchange: localStorage.getItem('domesticExchange') || 'KRX', // KRX, NXT
+  importStocks: [],
 };
 
 // ── API ────────────────────────────────────────────────────────────────────
@@ -720,6 +721,19 @@ function renderSettings() {
         <div class="info-row-value">${Object.keys(state.watchlist).length}개</div>
       </div>
     </div>
+    <div class="section-title">보유종목 가져오기</div>
+    <div class="info-card">
+      <div style="padding:16px 16px 12px">
+        <div style="font-size:12px;color:var(--text-sub);margin-bottom:14px;line-height:1.6">
+          증권사 앱 보유종목 화면을 캡처한 이미지를<br>선택하면 AI가 종목·매수가·수량을 자동으로 읽어옵니다.
+        </div>
+        <input type="file" id="import-file-input" accept="image/*" capture="environment" style="display:none" onchange="handleImportFile(this)">
+        <button class="btn-save" style="width:100%;justify-content:center;gap:8px" onclick="document.getElementById('import-file-input').click()">
+          <i class="ph ph-upload-simple"></i> 스크린샷 선택
+        </button>
+        <div id="import-status" style="text-align:center;margin-top:10px;font-size:12px;color:var(--text-sub);min-height:18px"></div>
+      </div>
+    </div>
     <div class="section-title">iOS 안내</div>
     <div class="info-card">
       <div class="info-row" style="flex-direction:column;align-items:flex-start;gap:12px;padding:20px">
@@ -731,6 +745,145 @@ function renderSettings() {
         </div>
       </div>
     </div>`;
+}
+
+// ── 스크린샷 가져오기 ──────────────────────────────────────────────────────────
+function handleImportFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  input.value = '';
+
+  const setStatus = (msg) => {
+    const el = document.getElementById('import-status');
+    if (el) el.textContent = msg;
+  };
+
+  setStatus('이미지 분석 중…');
+
+  // 이미지 리사이즈 후 base64 변환 (API 비용 절감)
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = new Image();
+    img.onload = async () => {
+      // 최대 1200px로 축소
+      const MAX = 1200;
+      let { width: w, height: h } = img;
+      if (w > MAX || h > MAX) {
+        const r = Math.min(MAX / w, MAX / h);
+        w = Math.round(w * r); h = Math.round(h * r);
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      const b64 = canvas.toDataURL('image/jpeg', 0.85);
+
+      try {
+        const data = await apiFetch('/api/ocr-import', { method: 'POST', body: JSON.stringify({ image: b64 }) });
+        if (data.error) throw new Error(data.error);
+        if (!data.stocks?.length) throw new Error('종목을 인식하지 못했습니다');
+
+        setStatus('');
+        // 각 종목 심볼 검색 (병렬)
+        const enriched = await Promise.all(data.stocks.map(async (s) => {
+          try {
+            const r = await apiFetch(`/api/search?q=${encodeURIComponent(s.name)}`);
+            const best = r.quotes?.[0] || null;
+            return { ...s, symbol: best?.symbol || null, resolvedName: best?.shortname || s.name, checked: true };
+          } catch {
+            return { ...s, symbol: null, resolvedName: s.name, checked: true };
+          }
+        }));
+
+        state.importStocks = enriched;
+        renderImportSheet();
+        document.getElementById('import-overlay')?.classList.remove('hidden');
+      } catch (err) {
+        setStatus('오류: ' + err.message);
+      }
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function renderImportSheet() {
+  const wrap = document.getElementById('import-results');
+  if (!wrap) return;
+  const sub = document.getElementById('import-sheet-sub');
+  const checkedCount = state.importStocks.filter(s => s.checked && s.symbol).length;
+  if (sub) sub.textContent = `${state.importStocks.length}개 종목 인식 · ${checkedCount}개 추가 예정`;
+
+  wrap.innerHTML = state.importStocks.map((s, i) => `
+    <div class="import-row ${s.checked ? '' : 'import-row-off'}">
+      <label class="import-check-wrap">
+        <input type="checkbox" class="import-check" ${s.checked ? 'checked' : ''} onchange="toggleImportStock(${i}, this.checked)">
+        <span class="import-check-box"></span>
+      </label>
+      <div class="import-row-body">
+        <div class="import-row-top">
+          <div class="import-name-wrap">
+            <div class="import-resolved-name">${s.resolvedName}</div>
+            ${s.symbol
+              ? `<div class="import-symbol-badge">${s.symbol}</div>`
+              : `<div class="import-symbol-badge unmatched">미매칭</div>`}
+          </div>
+        </div>
+        <div class="import-row-inputs">
+          <div class="import-field">
+            <span class="import-field-label">매수가</span>
+            <input type="number" class="import-field-input" value="${s.buyPrice || ''}" placeholder="0"
+              oninput="updateImportStock(${i}, 'buyPrice', this.value)">
+          </div>
+          <div class="import-field">
+            <span class="import-field-label">수량</span>
+            <input type="number" class="import-field-input" value="${s.qty || ''}" placeholder="0"
+              oninput="updateImportStock(${i}, 'qty', this.value)">
+          </div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function toggleImportStock(i, checked) {
+  state.importStocks[i].checked = checked;
+  const sub = document.getElementById('import-sheet-sub');
+  const checkedCount = state.importStocks.filter(s => s.checked && s.symbol).length;
+  if (sub) sub.textContent = `${state.importStocks.length}개 종목 인식 · ${checkedCount}개 추가 예정`;
+}
+
+function updateImportStock(i, field, val) {
+  state.importStocks[i][field] = field === 'qty' ? Math.round(Number(val)) : Number(val);
+}
+
+async function confirmImportAll() {
+  const toAdd = state.importStocks.filter(s => s.checked && s.symbol && s.buyPrice > 0 && s.qty > 0);
+  if (!toAdd.length) { showToast('추가할 종목이 없습니다'); return; }
+
+  const btn = document.getElementById('import-add-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '추가 중…'; }
+
+  let added = 0;
+  for (const s of toAdd) {
+    try {
+      const currency = /\.(KS|KQ)$/i.test(s.symbol) ? 'KRW' : 'USD';
+      await savePortfolioItem(s.symbol, s.resolvedName, s.buyPrice, s.qty, currency, '');
+      added++;
+    } catch (_) {}
+  }
+
+  closeImportSheet();
+  await loadPortfolioPrices();
+  renderPortfolioHoldings();
+  showToast(`${added}개 종목이 추가되었습니다`);
+  switchTab('portfolio');
+}
+
+function closeImportSheet() {
+  document.getElementById('import-overlay')?.classList.add('hidden');
+  state.importStocks = [];
+  const el = document.getElementById('import-status');
+  if (el) el.textContent = '';
 }
 
 // ── Chart Modal ────────────────────────────────────────────────────────────
@@ -1209,6 +1362,20 @@ function renderPortfolioCard(item) {
   const pct = useNxt ? nxtPct : krxPct;
 
   const volume = q?.regularMarketVolume;
+  const dayHigh = q?.regularMarketDayHigh || null;
+  const dayLow  = q?.regularMarketDayLow  || null;
+
+  let rangeBarHtml = '';
+  if (dayHigh && dayLow && currentPrice && dayHigh > dayLow) {
+    const pos = Math.max(0, Math.min(100, Math.round(((currentPrice - dayLow) / (dayHigh - dayLow)) * 100)));
+    const fmtNum = (v) => currency === 'KRW' ? Math.round(v).toLocaleString('ko-KR') : v.toFixed(2);
+    rangeBarHtml = `<div class="port-range-bar">
+      <span class="port-range-low">${fmtNum(dayLow)}</span>
+      <div class="port-range-track"><div class="port-range-fill" style="width:${pos}%"></div><div class="port-range-dot" style="left:${pos}%"></div></div>
+      <span class="port-range-high">${fmtNum(dayHigh)}</span>
+    </div>`;
+  }
+
   const sparkData = state.sparklines[item.symbol];
 
   // 지지선: 하락 종목, 1년 데이터 기준
@@ -1347,6 +1514,7 @@ function renderPortfolioCard(item) {
           <div class="port-name">${item.name || q?.korName || item.symbol}</div>
           <div class="port-qty-row">${gain !== null ? `<span class="port-gain-side ${gainClass}">${gainSign}${formatPrice(Math.abs(gain), currency)}${gainPct !== null ? `<span class="port-gain-pct-inline"> (${gainSign}${gainPct.toFixed(2)}%)</span>` : ''}</span>` : ''}${miniSpark}${volNum ? `<span class="port-vol-group"><span class="port-vol-sep"> · </span><span class="port-vol-left">${volNum}</span></span>` : ''}${!isKR ? `<span class="port-vol-sep"> · </span><span class="port-ticker">${item.symbol}</span>` : ''}</div>
           ${regularLineLeft}
+          ${rangeBarHtml}
         </div>
         <div class="port-price-col">
           ${showKrx ? `

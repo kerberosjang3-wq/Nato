@@ -121,6 +121,7 @@ async function getYahooCrumb() {
 const YAHOO_FIELDS = [
   'regularMarketPrice', 'regularMarketChange', 'regularMarketChangePercent',
   'regularMarketVolume', 'regularMarketPreviousClose',
+  'regularMarketDayHigh', 'regularMarketDayLow',
   'postMarketPrice', 'postMarketChange', 'postMarketChangePercent',
   'preMarketPrice', 'preMarketChange', 'preMarketChangePercent',
   'marketState', 'shortName', 'longName', 'currency',
@@ -151,11 +152,15 @@ async function fetchNaverPrice(code) {
     const toNum = s => Number(String(s ?? '').replace(/,/g, '')) || 0;
     const price  = toNum(d.closePrice);
     if (!price) return null;
+    const high = toNum(d.highPrice);
+    const low  = toNum(d.lowPrice);
     return {
       regularMarketPrice:         price,
       regularMarketChange:        toNum(d.compareToPreviousClosePrice),
       regularMarketChangePercent: parseFloat(String(d.fluctuationsRatio ?? '').replace(/[+%]/g, '')) || 0,
       regularMarketVolume:        toNum(d.accumulatedTradingVolume ?? d.tradeVolume),
+      ...(high ? { regularMarketDayHigh: high } : {}),
+      ...(low  ? { regularMarketDayLow:  low  } : {}),
     };
   } catch (_) { return null; }
 }
@@ -588,7 +593,9 @@ app.get('/api/quote', async (req, res) => {
           result.regularMarketPrice         = naver.regularMarketPrice;
           result.regularMarketChange        = naver.regularMarketChange;
           result.regularMarketChangePercent = naver.regularMarketChangePercent;
-          if (naver.regularMarketVolume) result.regularMarketVolume = naver.regularMarketVolume;
+          if (naver.regularMarketVolume)  result.regularMarketVolume  = naver.regularMarketVolume;
+          if (naver.regularMarketDayHigh) result.regularMarketDayHigh = naver.regularMarketDayHigh;
+          if (naver.regularMarketDayLow)  result.regularMarketDayLow  = naver.regularMarketDayLow;
         }
         if (nxt) {
           result.nxtPrice  = nxt.nxtPrice;
@@ -1109,6 +1116,62 @@ app.get('/api/supply', async (req, res) => {
       foreignDir: foreignNet > 0 ? 'buy' : foreignNet < 0 ? 'sell' : 'flat',
       institutionDir: institutionNet > 0 ? 'buy' : institutionNet < 0 ? 'sell' : 'flat',
     });
+  } catch (e) {
+    res.status(502).json({ error: e.message });
+  }
+});
+
+// ── 증권사 스크린샷 OCR (Claude Vision) ───────────────────────────────────────
+app.post('/api/ocr-import', async (req, res) => {
+  const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY;
+  if (!ANTHROPIC_KEY) return res.status(503).json({ error: 'ANTHROPIC_API_KEY not configured' });
+
+  const { image } = req.body || {};
+  if (!image) return res.status(400).json({ error: 'image required' });
+
+  const m = image.match(/^data:(image\/[a-zA-Z+]+);base64,(.+)$/);
+  if (!m) return res.status(400).json({ error: 'invalid image data URL' });
+  const [, mediaType, b64data] = m;
+
+  try {
+    const r = await _fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      timeout: 30000,
+      headers: {
+        'x-api-key': ANTHROPIC_KEY,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 1024,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type: mediaType, data: b64data } },
+            { type: 'text', text: `이 이미지는 증권사 앱의 보유종목 화면입니다.
+각 종목의 종목명, 매수가(평균단가), 보유수량을 추출해서 아래 JSON 형식으로만 응답하세요.
+다른 텍스트는 절대 포함하지 마세요.
+{"stocks":[{"name":"삼성전자","buyPrice":65000,"qty":10}]}` }
+          ]
+        }]
+      }),
+    });
+
+    if (!r.ok) {
+      const err = await r.text();
+      return res.status(502).json({ error: `Claude API ${r.status}`, detail: err.slice(0, 200) });
+    }
+
+    const data = await r.json();
+    const text = (data.content?.[0]?.text || '').trim();
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) return res.status(502).json({ error: 'no JSON in response', raw: text.slice(0, 300) });
+
+    const parsed = JSON.parse(jsonMatch[0]);
+    if (!Array.isArray(parsed.stocks)) return res.status(502).json({ error: 'invalid response structure' });
+
+    res.json({ stocks: parsed.stocks });
   } catch (e) {
     res.status(502).json({ error: e.message });
   }
