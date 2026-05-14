@@ -770,8 +770,11 @@ html, body {
   margin-top: 4px; width: 100%;
 }
 .port-range-low, .port-range-high {
-  font-size: 9px; color: var(--text-sub); white-space: nowrap; flex-shrink: 0;
+  font-size: 9px; color: var(--text-sub); white-space: nowrap;
+  flex: 0 0 48px; overflow: hidden; text-overflow: ellipsis;
 }
+.port-range-low  { text-align: right; }
+.port-range-high { text-align: left; }
 .port-range-track {
   flex: 1; position: relative; height: 3px;
   background: var(--border); border-radius: 2px; overflow: visible;
