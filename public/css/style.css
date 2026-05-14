@@ -770,20 +770,21 @@ html, body {
   margin-top: 4px; width: 100%;
 }
 .port-range-low, .port-range-high {
-  font-size: 9px; color: var(--text-secondary); white-space: nowrap; flex-shrink: 0;
+  font-size: 9px; color: var(--text-sub); white-space: nowrap; flex-shrink: 0;
 }
 .port-range-track {
   flex: 1; position: relative; height: 3px;
-  background: var(--border-color); border-radius: 2px; overflow: visible;
+  background: var(--border); border-radius: 2px; overflow: visible;
 }
 .port-range-fill {
   position: absolute; left: 0; top: 0; height: 100%;
-  background: var(--text-secondary); border-radius: 2px; opacity: 0.4;
+  background: var(--text-sub); border-radius: 2px; opacity: 0.4;
 }
 .port-range-dot {
   position: absolute; top: 50%; transform: translate(-50%, -50%);
-  width: 7px; height: 7px; border-radius: 50%;
-  background: var(--accent-color); border: 1.5px solid var(--bg-card);
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--stock-up); border: 1.5px solid var(--bg-card);
+  z-index: 1;
 }
 
 .port-line2 {
