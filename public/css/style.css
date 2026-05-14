@@ -726,6 +726,7 @@ html, body {
 .port-div-badge i { font-size: 10px; line-height: 1; }
 .port-vol-group { display: none; }
 .port-ticker { color: var(--text-sub); font-size: 11px; font-weight: 600; letter-spacing: 0.3px; }
+.port-ticker-name { color: var(--text-sub); font-size: 10px; font-weight: 500; letter-spacing: 0.3px; }
 
 /* Exchange Badges */
 .ex-badge { font-size: 8px; font-weight: 800; padding: 1px 4px; border-radius: 4px; margin-right: 4px; line-height: 1.1; text-transform: uppercase; vertical-align: middle; }

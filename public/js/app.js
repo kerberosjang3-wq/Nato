@@ -1511,8 +1511,8 @@ function renderPortfolioCard(item) {
     <div class="stock-card-main">
       <div class="port-row">
         <div class="port-info">
-          <div class="port-name">${item.name || q?.korName || item.symbol}</div>
-          <div class="port-qty-row">${gain !== null ? `<span class="port-gain-side ${gainClass}">${gainSign}${formatPrice(Math.abs(gain), currency)}${gainPct !== null ? `<span class="port-gain-pct-inline"> (${gainSign}${gainPct.toFixed(2)}%)</span>` : ''}</span>` : ''}${miniSpark}${volNum ? `<span class="port-vol-group"><span class="port-vol-sep"> · </span><span class="port-vol-left">${volNum}</span></span>` : ''}${!isKR ? `<span class="port-vol-sep"> · </span><span class="port-ticker">${item.symbol}</span>` : ''}</div>
+          <div class="port-name">${item.name || q?.korName || item.symbol}${!isKR ? `<span class="port-ticker-name"> ${item.symbol}</span>` : ''}</div>
+          <div class="port-qty-row">${gain !== null ? `<span class="port-gain-side ${gainClass}">${gainSign}${formatPrice(Math.abs(gain), currency)}${gainPct !== null ? `<span class="port-gain-pct-inline"> (${gainSign}${gainPct.toFixed(2)}%)</span>` : ''}</span>` : ''}${miniSpark}${volNum ? `<span class="port-vol-group"><span class="port-vol-sep"> · </span><span class="port-vol-left">${volNum}</span></span>` : ''}</div>
           ${regularLineLeft}
           ${rangeBarHtml}
         </div>
