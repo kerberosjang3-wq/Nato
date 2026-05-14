@@ -767,8 +767,8 @@ html, body {
 .port-gain-pct-inline { font-size: 10px; font-weight: 600; opacity: 0.85; }
 
 .port-range-bar {
-  display: inline-flex; align-items: center; gap: 4px;
-  margin-top: 4px;
+  display: flex; align-items: center; gap: 4px;
+  margin-top: 4px; width: fit-content; max-width: 100%;
 }
 .port-range-qty {
   font-size: 9px; font-weight: 700; color: var(--text-sub); white-space: nowrap; flex-shrink: 0;
@@ -780,7 +780,7 @@ html, body {
   font-size: 9px; color: var(--text-sub); white-space: nowrap; flex-shrink: 0;
 }
 .port-range-track {
-  width: 64px; flex-shrink: 0; position: relative; height: 3px;
+  width: 48px; flex-shrink: 0; position: relative; height: 3px;
   background: var(--border); border-radius: 2px; overflow: visible;
 }
 .port-range-fill {
