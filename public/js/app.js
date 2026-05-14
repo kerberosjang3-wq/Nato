@@ -117,7 +117,7 @@ const state = {
   newsLoaded: false,
   newsFilter: null,  // { symbol, name } 또는 null(전체)
   portfolioSort: { domestic: 'gainPct', foreign: 'gainPct' },
-  portfolioCollapsed: { domestic: true, foreign: true },
+  portfolioCollapsed: { domestic: false, foreign: false },
   portfolioUpdatedAt: null,
   sparklines: {},
   sparklinesUpdatedAt: null,
@@ -1345,7 +1345,7 @@ function renderPortfolioCard(item) {
       <div class="port-row">
         <div class="port-info">
           <div class="port-name">${item.name || q?.korName || item.symbol}</div>
-          <div class="port-qty-row">${gain !== null ? `<span class="port-gain-side ${gainClass}">${gainSign}${formatPrice(Math.abs(gain), currency)}</span>` : ''}${miniSpark}${volNum ? `<span class="port-vol-group"><span class="port-vol-sep"> · </span><span class="port-vol-left">${volNum}</span></span>` : ''}${!isKR ? `<span class="port-vol-sep"> · </span><span class="port-ticker">${item.symbol}</span>` : ''}</div>
+          <div class="port-qty-row">${gain !== null ? `<span class="port-gain-side ${gainClass}">${gainSign}${formatPrice(Math.abs(gain), currency)}${gainPct !== null ? `<span class="port-gain-pct-inline"> (${gainSign}${gainPct.toFixed(2)}%)</span>` : ''}</span>` : ''}${miniSpark}${volNum ? `<span class="port-vol-group"><span class="port-vol-sep"> · </span><span class="port-vol-left">${volNum}</span></span>` : ''}${!isKR ? `<span class="port-vol-sep"> · </span><span class="port-ticker">${item.symbol}</span>` : ''}</div>
           ${regularLineLeft}
         </div>
         <div class="port-price-col">

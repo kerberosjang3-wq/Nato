@@ -763,6 +763,7 @@ html, body {
 }
 .port-gain-side.gain-up   { color: var(--stock-up); }
 .port-gain-side.gain-down { color: var(--stock-down); }
+.port-gain-pct-inline { font-size: 10px; font-weight: 600; opacity: 0.85; }
 
 .port-line2 {
   display: flex; align-items: center;
