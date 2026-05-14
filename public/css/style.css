@@ -783,7 +783,7 @@ html, body {
 .port-range-dot {
   position: absolute; top: 50%; transform: translate(-50%, -50%);
   width: 8px; height: 8px; border-radius: 50%;
-  background: var(--stock-up); border: 1.5px solid var(--bg-card);
+  background: var(--warning); border: 1.5px solid var(--bg-card);
   z-index: 1;
 }
 
