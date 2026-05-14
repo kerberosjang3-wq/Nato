@@ -1370,6 +1370,8 @@ function renderPortfolioCard(item) {
     const pos = Math.max(0, Math.min(100, Math.round(((currentPrice - dayLow) / (dayHigh - dayLow)) * 100)));
     const fmtNum = (v) => currency === 'KRW' ? Math.round(v).toLocaleString('ko-KR') : v.toFixed(2);
     rangeBarHtml = `<div class="port-range-bar">
+      <span class="port-range-qty">${item.qty.toLocaleString('ko-KR')}주</span>
+      <span class="port-range-sep">·</span>
       <span class="port-range-low">${fmtNum(dayLow)}</span>
       <div class="port-range-track"><div class="port-range-fill" style="width:${pos}%"></div><div class="port-range-dot" style="left:${pos}%"></div></div>
       <span class="port-range-high">${fmtNum(dayHigh)}</span>

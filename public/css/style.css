@@ -767,17 +767,20 @@ html, body {
 .port-gain-pct-inline { font-size: 10px; font-weight: 600; opacity: 0.85; }
 
 .port-range-bar {
-  display: flex; align-items: center; gap: 5px;
-  margin-top: 4px; width: 100%;
+  display: inline-flex; align-items: center; gap: 4px;
+  margin-top: 4px;
+}
+.port-range-qty {
+  font-size: 9px; font-weight: 700; color: var(--text-sub); white-space: nowrap; flex-shrink: 0;
+}
+.port-range-sep {
+  font-size: 9px; color: var(--border); flex-shrink: 0;
 }
 .port-range-low, .port-range-high {
-  font-size: 9px; color: var(--text-sub); white-space: nowrap;
-  flex: 0 0 48px; overflow: hidden; text-overflow: ellipsis;
+  font-size: 9px; color: var(--text-sub); white-space: nowrap; flex-shrink: 0;
 }
-.port-range-low  { text-align: right; }
-.port-range-high { text-align: left; }
 .port-range-track {
-  flex: 1; position: relative; height: 3px;
+  width: 64px; flex-shrink: 0; position: relative; height: 3px;
   background: var(--border); border-radius: 2px; overflow: visible;
 }
 .port-range-fill {
@@ -1424,7 +1427,7 @@ html, body {
 .psummary-group-detail {
   max-height: 0; overflow: hidden;
   transition: max-height 0.35s cubic-bezier(0.4,0,0.2,1), opacity 0.25s ease;
-  opacity: 0;
+  opacity: 0; padding: 0 14px;
 }
 .psummary-group-detail.expanded { max-height: 400px; opacity: 1; }
 
@@ -1436,11 +1439,13 @@ html, body {
 .psummary-stat {
   background: var(--bg-elevated); border-radius: 6px;
   padding: 4px 7px; display: flex; flex-direction: column; gap: 1px;
+  min-width: 0;
 }
 .psummary-stat-label { font-size: 9px; font-weight: 600; color: var(--text-sub); }
 .psummary-stat-val {
   font-size: 11px; font-weight: 700; color: var(--text);
   font-variant-numeric: tabular-nums;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .psummary-stat-val.gain-up  { color: var(--stock-up); }
 .psummary-stat-val.gain-down { color: var(--stock-down); }
