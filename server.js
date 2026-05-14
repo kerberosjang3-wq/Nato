@@ -1078,7 +1078,8 @@ app.get('/api/supply', async (req, res) => {
       headers: { 'User-Agent': UA, 'Referer': 'https://finance.naver.com/', 'Accept-Language': 'ko-KR,ko;q=0.9', 'Accept': 'text/html' }
     });
     if (!r.ok) return res.status(502).json({ error: `Naver ${r.status}` });
-    const html = await r.text();
+    const buf  = Buffer.from(await r.arrayBuffer());
+    const html = new TextDecoder('euc-kr').decode(buf);
 
     // "외국인 기관" 테이블 섹션 추출
     const sectionStart = html.indexOf('외국인 기관');
