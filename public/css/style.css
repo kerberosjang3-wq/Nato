@@ -715,6 +715,39 @@ html, body {
 .port-supply-badge.supply-mixed {
   color: var(--text-sub); background: rgba(128,128,128,0.08); border-color: rgba(128,128,128,0.2);
 }
+/* ── 저항선 통합 배지 ── */
+.port-resistance-badge {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 8px; font-weight: 700; white-space: nowrap;
+  padding: 2px 5px; border-radius: 4px; border: 1px solid;
+  flex-shrink: 0; line-height: 1.4;
+}
+.port-resistance-badge i { font-size: 11px; line-height: 1; }
+.port-resistance-amt {
+  font-size: 10px; font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.port-resistance-badge.trend-none {
+  color: var(--text-sub); background: rgba(128,128,128,0.07); border-color: rgba(128,128,128,0.18);
+}
+.port-resistance-badge.trend-bear {
+  color: var(--stock-down); background: rgba(96,144,216,0.07); border-color: rgba(96,144,216,0.2);
+}
+.port-resistance-badge.trend-bull {
+  color: var(--stock-up); background: rgba(224,102,102,0.07); border-color: rgba(224,102,102,0.2);
+}
+.port-resistance-badge.trend-mixed {
+  color: #e6b800; background: rgba(240,192,64,0.07); border-color: rgba(240,192,64,0.2);
+}
+/* ── RSI 하락 다이버전스 배지 ── */
+.port-div-bear-badge {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 8px; font-weight: 800; white-space: nowrap;
+  padding: 2px 5px; border-radius: 4px;
+  color: #ee5a24; background: rgba(238,90,36,0.1); border: 1px solid rgba(238,90,36,0.3);
+  flex-shrink: 0;
+}
+.port-div-bear-badge i { font-size: 10px; line-height: 1; }
 /* ── RSI 상승 다이버전스 배지 ── */
 .port-div-badge {
   display: inline-flex; align-items: center; gap: 3px;

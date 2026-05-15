@@ -1429,6 +1429,22 @@ function detectBullishDivergence(closes, rsi) {
   return b.price < a.price && b.rsi > a.rsi;
 }
 
+// 하락 다이버전스: 가격 고점↑ + RSI 고점↓ (최근 60봉 내 swing high 2개 비교)
+function detectBearishDivergence(closes, rsi) {
+  const wing = 3, lookback = 60;
+  const start = Math.max(wing, closes.length - lookback);
+  const highs = [];
+  for (let i = start; i < closes.length - wing; i++) {
+    if (rsi[i] === null) continue;
+    const leftOK  = closes.slice(i - wing, i).every(v => v <= closes[i]);
+    const rightOK = closes.slice(i + 1, i + wing + 1).every(v => v <= closes[i]);
+    if (leftOK && rightOK) highs.push({ price: closes[i], rsi: rsi[i] });
+  }
+  if (highs.length < 2) return false;
+  const a = highs[highs.length - 2], b = highs[highs.length - 1];
+  return b.price > a.price && b.rsi < a.rsi;
+}
+
 function renderPortfolioCard(item) {
   const q = state.portfolioPrices[item.symbol];
   const currency = q?.currency || item.currency || 'USD';
@@ -1542,6 +1558,74 @@ function renderPortfolioCard(item) {
     }
   }
 
+  // 저항선: 상승 종목, 1년 데이터 기준
+  const showResistance = pct > 0 && sparkData?.length >= 5 && currentPrice;
+  let resistanceLevel = null;
+  if (showResistance) {
+    const closesR = sparkData
+      .slice(0, -1)
+      .filter(v => v != null && !isNaN(v) && v > 0);
+    const histR = closesR.slice(0, closesR.length - 5);
+    const maxGapR = currentPrice * 0.15;
+
+    // 1. Swing High: 좌우 3봉보다 높고 현재가 이상 15% 이내
+    const wingR = 3;
+    let swingHigh = null;
+    for (let i = histR.length - 1; i >= wingR; i--) {
+      const gap = histR[i] - currentPrice;
+      if (gap <= 0 || gap > maxGapR) continue;
+      const leftOK  = histR.slice(i - wingR, i).every(v => v <= histR[i]);
+      const rightOK = histR.slice(i + 1, Math.min(histR.length, i + wingR + 1)).every(v => v <= histR[i]);
+      if (leftOK && rightOK) { swingHigh = histR[i]; break; }
+    }
+
+    // 2. MA 저항선 후보 (60/120/200일) — 현재가 이상 15% 이내만
+    const maValR = (period) => {
+      if (histR.length < period) return null;
+      const v = histR.slice(-period).reduce((a, b) => a + b, 0) / period;
+      const gap = v - currentPrice;
+      return gap > 0 && gap <= maxGapR ? v : null;
+    };
+    const maCandidatesR = [60, 120, 200].map(maValR).filter(v => v !== null);
+
+    // 3. 후보 중 현재가에 가장 가까운(낮은) 값을 저항선으로
+    const allCandidatesR = [...(swingHigh !== null ? [swingHigh] : []), ...maCandidatesR];
+    resistanceLevel = allCandidatesR.length > 0 ? Math.min(...allCandidatesR) : null;
+  }
+
+  // 장기 이평선 기울기 → 저항 배지 색상·아이콘 결정
+  let resIconClass = '', resTrendClass = 'trend-none';
+  if (showResistance && sparkData && sparkData.length >= 70) {
+    const nR = sparkData.length;
+    const maAvgR = (period, offset = 0) => {
+      const sl = sparkData.slice(-(period + offset), offset > 0 ? -offset : undefined);
+      return sl.length >= period ? sl.reduce((a, b) => a + b, 0) / sl.length : null;
+    };
+    const maDirR = (period) => {
+      const cur = maAvgR(period), prev = maAvgR(period, 10);
+      return (cur !== null && prev !== null) ? (cur > prev ? 1 : cur < prev ? -1 : 0) : 0;
+    };
+    const dirsR = [maDirR(60), nR >= 130 ? maDirR(120) : null, nR >= 210 ? maDirR(200) : null].filter(v => v !== null);
+    const allDownR = dirsR.every(d => d < 0), allUpR = dirsR.every(d => d > 0);
+    if (allDownR)    { resIconClass = 'ph ph-trend-down'; resTrendClass = 'trend-bear'; }
+    else if (allUpR) { resIconClass = 'ph ph-trend-up';   resTrendClass = 'trend-bull'; }
+    else             { resIconClass = 'ph ph-minus';       resTrendClass = 'trend-mixed'; }
+  }
+
+  const resistanceInline = showResistance && resistanceLevel !== null
+    ? `<span class="port-resistance-badge ${resTrendClass}">저항선 <span class="port-resistance-amt">${formatPrice(Math.round(resistanceLevel), currency)}</span>${resIconClass ? `<i class="${resIconClass}"></i>` : ''}</span>`
+    : '';
+
+  // RSI 하락 다이버전스 감지 (저항선 있을 때만)
+  let bearishDivBadge = '';
+  if (showResistance && resistanceLevel !== null && sparkData && sparkData.length >= 30) {
+    const validClosesR = sparkData.filter(v => v != null && !isNaN(v) && v > 0);
+    const rsiR = calcRSI(validClosesR);
+    if (detectBearishDivergence(validClosesR, rsiR)) {
+      bearishDivBadge = `<span class="port-div-bear-badge"><i class="ph ph-arrows-split"></i> 과열신호</span>`;
+    }
+  }
+
   // miniSpark는 최근 22봉(1달)만 사용
   const sparkRecent = sparkData ? sparkData.slice(-22) : null;
   const miniSpark = sparkRecent
@@ -1619,7 +1703,7 @@ function renderPortfolioCard(item) {
             ${fmtChange(krxChange, currency) ? `<span class="port-diff ${krxChangeClass}">${fmtChange(krxChange, currency)}</span>` : ''}
             <span class="port-tri-pct ${krxChangeClass}">${krxAbsPctStr}</span>
           </div>
-          ${(divergenceBadge || supportInline) ? `<div class="port-line3">${divergenceBadge}${supportInline}</div>` : ''}` : ''}
+          ${(divergenceBadge || supportInline || bearishDivBadge || resistanceInline) ? `<div class="port-line3">${divergenceBadge}${supportInline}${bearishDivBadge}${resistanceInline}</div>` : ''}` : ''}
           ${showNxt ? `
           <div class="port-line1 nxt-line">
             <span class="port-price ${nxtChangeClass}">${formatPrice(nxtPrice, currency)}</span>
@@ -1628,7 +1712,7 @@ function renderPortfolioCard(item) {
             ${fmtChange(nxtChange, currency) ? `<span class="port-diff ${nxtChangeClass}">${fmtChange(nxtChange, currency)}</span>` : ''}
             <span class="port-tri-pct ${nxtChangeClass}">${nxtPctStr}</span>
           </div>
-          ${(divergenceBadge || supportInline) ? `<div class="port-line3">${divergenceBadge}${supportInline}</div>` : ''}` : ''}
+          ${(divergenceBadge || supportInline || bearishDivBadge || resistanceInline) ? `<div class="port-line3">${divergenceBadge}${supportInline}${bearishDivBadge}${resistanceInline}</div>` : ''}` : ''}
         </div>
         <button class="port-dots-btn" onclick="event.stopPropagation();handlePortfolioCardTap('${item.symbol}')"><i class="ph ph-dots-three-vertical"></i></button>
       </div>
