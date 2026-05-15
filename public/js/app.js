@@ -117,6 +117,7 @@ const state = {
   newsLoaded: false,
   newsFilter: null,  // { symbol, name } 또는 null(전체)
   portfolioSort: { domestic: 'gainPct', foreign: 'gainPct' },
+  portfolioOrder: { domestic: [], foreign: [] },
   portfolioCollapsed: { domestic: false, foreign: false },
   portfolioUpdatedAt: null,
   sparklines: {},
@@ -262,11 +263,38 @@ async function fetchSupplyData() {
   }));
 }
 
+async function loadPortfolioOrder() {
+  try {
+    const data = await apiFetch('/api/portfolio/order');
+    if (data && !data.error) {
+      state.portfolioOrder = { domestic: data.domestic || [], foreign: data.foreign || [] };
+    }
+  } catch {
+    try {
+      const cached = localStorage.getItem('portfolioOrder');
+      if (cached) state.portfolioOrder = JSON.parse(cached);
+    } catch (_) {}
+  }
+}
+
+async function savePortfolioOrder() {
+  localStorage.setItem('portfolioOrder', JSON.stringify(state.portfolioOrder));
+  try {
+    await apiFetch('/api/portfolio/order', { method: 'POST', body: JSON.stringify(state.portfolioOrder) });
+  } catch (_) {}
+}
+
 async function savePortfolioItem(symbol, name, buyPrice, qty, currency, broker) {
   const item = { symbol, name, buyPrice, qty, currency, ...(broker ? { broker } : {}) };
   await apiFetch('/api/portfolio', { method: 'POST', body: JSON.stringify(item) });
   state.portfolio[symbol] = item;
   localStorage.setItem('portfolio', JSON.stringify(state.portfolio));
+  // 커스텀 순서 모드일 때 새 종목을 해당 그룹 끝에 추가
+  const group = (currency === 'KRW') ? 'domestic' : 'foreign';
+  if (state.portfolioSort[group] === 'custom' && !state.portfolioOrder[group].includes(symbol)) {
+    state.portfolioOrder[group].push(symbol);
+    savePortfolioOrder();
+  }
 }
 
 async function deletePortfolioItem(symbol) {
@@ -274,6 +302,11 @@ async function deletePortfolioItem(symbol) {
   delete state.portfolio[symbol];
   delete state.portfolioPrices[symbol];
   localStorage.setItem('portfolio', JSON.stringify(state.portfolio));
+  // 커스텀 순서에서도 제거
+  for (const group of ['domestic', 'foreign']) {
+    const idx = state.portfolioOrder[group].indexOf(symbol);
+    if (idx !== -1) { state.portfolioOrder[group].splice(idx, 1); savePortfolioOrder(); }
+  }
 }
 
 
@@ -2082,13 +2115,23 @@ function renderPortfolioSearch() {
   }).join('');
 }
 
-const SORT_MODES = ['gainPct', 'change', 'value', 'name'];
-const SORT_LABELS = { gainPct: '수익률', change: '등락률', value: '평가금', name: '종목명' };
-const SORT_ICONS  = { gainPct: 'ph-trend-up', change: 'ph-chart-bar', value: 'ph-currency-krw', name: 'ph-sort-ascending' };
+const SORT_MODES = ['gainPct', 'change', 'value', 'name', 'custom'];
+const SORT_LABELS = { gainPct: '수익률', change: '등락률', value: '평가금', name: '종목명', custom: '직접순서' };
+const SORT_ICONS  = { gainPct: 'ph-trend-up', change: 'ph-chart-bar', value: 'ph-currency-krw', name: 'ph-sort-ascending', custom: 'ph-arrows-down-up' };
 
 function cycleSortMode(group) {
   const cur = state.portfolioSort[group];
   const next = SORT_MODES[(SORT_MODES.indexOf(cur) + 1) % SORT_MODES.length];
+  // 커스텀 모드 진입 시 현재 정렬 순서를 초기 커스텀 순서로 저장
+  if (next === 'custom') {
+    const getItemCurrency = item => state.portfolioPrices[item.symbol]?.currency || item.currency || 'USD';
+    const allItems = Object.values(state.portfolio);
+    const groupItems = group === 'domestic'
+      ? allItems.filter(item => getItemCurrency(item) === 'KRW')
+      : allItems.filter(item => getItemCurrency(item) !== 'KRW');
+    state.portfolioOrder[group] = sortGroup(groupItems, cur, group).map(i => i.symbol);
+    savePortfolioOrder();
+  }
   state.portfolioSort[group] = next;
   localStorage.setItem('portfolioSort', JSON.stringify(state.portfolioSort));
   renderPortfolioHoldings();
@@ -2103,7 +2146,17 @@ function cycleDomesticExchange() {
   renderPortfolioHoldings();
 }
 
-function sortGroup(items, mode) {
+function sortGroup(items, mode, group) {
+  if (mode === 'custom' && group) {
+    const order = state.portfolioOrder[group] || [];
+    const orderMap = {};
+    order.forEach((sym, i) => { orderMap[sym] = i; });
+    return [...items].sort((a, b) => {
+      const ia = orderMap[a.symbol] ?? 9999;
+      const ib = orderMap[b.symbol] ?? 9999;
+      return ia - ib;
+    });
+  }
   return [...items].sort((a, b) => {
     const qa = state.portfolioPrices[a.symbol];
     const qb = state.portfolioPrices[b.symbol];
@@ -2149,8 +2202,8 @@ function renderPortfolioHoldings() {
   const getItemCurrency = item => state.portfolioPrices[item.symbol]?.currency || item.currency || 'USD';
   const domesticRaw = items.filter(item => getItemCurrency(item) === 'KRW');
   const foreignRaw  = items.filter(item => getItemCurrency(item) !== 'KRW');
-  const domestic = sortGroup(domesticRaw, state.portfolioSort.domestic);
-  const foreign  = sortGroup(foreignRaw,  state.portfolioSort.foreign);
+  const domestic = sortGroup(domesticRaw, state.portfolioSort.domestic, 'domestic');
+  const foreign  = sortGroup(foreignRaw,  state.portfolioSort.foreign,  'foreign');
 
   const upDownBadges = group => {
     const up   = group.filter(i => (getDisplayPct(state.portfolioPrices[i.symbol]) ?? 0) > 0).length;
@@ -2163,7 +2216,8 @@ function renderPortfolioHoldings() {
 
   const sortBtn = (group) => {
     const mode = state.portfolioSort[group];
-    return `<button class="port-sort-btn" onclick="event.stopPropagation();cycleSortMode('${group}')">
+    const isCustom = mode === 'custom';
+    return `<button class="port-sort-btn${isCustom ? ' active-custom' : ''}" onclick="event.stopPropagation();cycleSortMode('${group}')">
       <i class="ph ${SORT_ICONS[mode]}"></i>
       <span>${SORT_LABELS[mode]}</span>
     </button>`;
@@ -2190,7 +2244,7 @@ function renderPortfolioHoldings() {
         <i class="ph ph-dots-three-vertical"></i>
       </button>
     </div>
-    <div class="port-group-cards${dcol ? ' collapsed' : ''}" data-group="domestic">
+    <div class="port-group-cards${dcol ? ' collapsed' : ''}" data-group="domestic" data-sort="${state.portfolioSort.domestic}">
       ${domestic.map(item => renderPortfolioCard(item)).join('')}
     </div>`;
   }
@@ -2206,11 +2260,12 @@ function renderPortfolioHoldings() {
         <i class="ph ph-dots-three-vertical"></i>
       </button>
     </div>
-    <div class="port-group-cards${fcol ? ' collapsed' : ''}" data-group="foreign">
+    <div class="port-group-cards${fcol ? ' collapsed' : ''}" data-group="foreign" data-sort="${state.portfolioSort.foreign}">
       ${foreign.map(item => renderPortfolioCard(item)).join('')}
     </div>`;
   }
   wrap.innerHTML = html;
+  requestAnimationFrame(initSortable);
 }
 
 function toggleGroupCollapse(group) {
@@ -2220,6 +2275,42 @@ function toggleGroupCollapse(group) {
   const caret = document.querySelector(`.portfolio-section-header[data-group="${group}"] .port-group-caret`);
   if (cards) cards.classList.toggle('collapsed', collapsed);
   if (caret) caret.classList.toggle('collapsed', collapsed);
+}
+
+let _sortableInstances = {};
+
+function initSortable() {
+  if (typeof Sortable === 'undefined') return;
+  Object.values(_sortableInstances).forEach(s => { try { s.destroy(); } catch (_) {} });
+  _sortableInstances = {};
+
+  ['domestic', 'foreign'].forEach(group => {
+    const container = document.querySelector(`.port-group-cards[data-group="${group}"]`);
+    if (!container) return;
+    const isCustom = state.portfolioSort[group] === 'custom';
+
+    _sortableInstances[group] = Sortable.create(container, {
+      animation: 150,
+      delay: 500,
+      delayOnTouchOnly: true,
+      touchStartThreshold: 8,
+      ghostClass: 'sortable-ghost',
+      chosenClass: 'sortable-chosen',
+      dragClass: 'sortable-drag',
+      disabled: !isCustom,
+      filter: '.card-actions, .port-expand-body, .port-dots-btn',
+      preventOnFilter: false,
+      onChoose() {
+        if (navigator.vibrate) navigator.vibrate(40);
+      },
+      onEnd() {
+        const newOrder = Array.from(container.querySelectorAll('.stock-card[data-symbol]'))
+          .map(el => el.dataset.symbol);
+        state.portfolioOrder[group] = newOrder;
+        savePortfolioOrder();
+      }
+    });
+  });
 }
 
 
@@ -3171,6 +3262,7 @@ async function init() {
     await loadWatchlist();
     await loadPrices();
     await loadPortfolio();
+    await loadPortfolioOrder();
     await loadPortfolioPrices();
     await fetchFxRates();
     await loadSparklines();

@@ -359,6 +359,22 @@ app.delete('/api/portfolio/:symbol', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+app.get('/api/portfolio/order', async (req, res) => {
+  try { const s = await getStore(); res.json(s.portfolioOrders?.[getCid(req)] || {}); }
+  catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/portfolio/order', async (req, res) => {
+  try {
+    const s = await getStore();
+    const id = getCid(req);
+    if (!s.portfolioOrders) s.portfolioOrders = {};
+    s.portfolioOrders[id] = req.body;
+    await saveStore(s);
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // 한국 종목 데이터 로드
 let KR_STOCKS = [];
 let KR_STOCKS_MAP = new Map();

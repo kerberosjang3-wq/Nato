@@ -1507,6 +1507,35 @@ html, body {
 .port-group-caret.collapsed { transform: rotate(-90deg); }
 .port-group-cards { overflow: hidden; transition: max-height 0.3s ease, opacity 0.25s; max-height: 9999px; opacity: 1; }
 .port-group-cards.collapsed { max-height: 0; opacity: 0; }
+
+/* ── 직접순서 드래그 스타일 ── */
+.port-group-cards[data-sort="custom"] .stock-card { cursor: grab; }
+.port-group-cards[data-sort="custom"] .stock-card:active { cursor: grabbing; }
+
+.sortable-ghost {
+  opacity: 0.25;
+  background: var(--primary-glow) !important;
+  border: 1px dashed var(--primary) !important;
+}
+.sortable-chosen {
+  background: var(--bg-elevated) !important;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+}
+.sortable-drag {
+  opacity: 0.96;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5) !important;
+  transform: scale(1.02);
+  border-radius: 10px;
+  z-index: 9999;
+  background: var(--bg-card) !important;
+}
+
+/* 직접순서 모드일 때 정렬 버튼 강조 */
+.port-sort-btn.active-custom {
+  color: var(--primary);
+  background: var(--primary-glow);
+  border-radius: 6px;
+}
 .section-ud {
   display: inline-flex; align-items: center; gap: 2px;
   font-size: 10px; font-weight: 700;
