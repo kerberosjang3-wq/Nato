@@ -2115,23 +2115,17 @@ function renderPortfolioSearch() {
   }).join('');
 }
 
-const SORT_MODES = ['gainPct', 'change', 'value', 'name', 'custom'];
+const SORT_MODES = ['gainPct', 'change', 'value', 'name'];
 const SORT_LABELS = { gainPct: '수익률', change: '등락률', value: '평가금', name: '종목명', custom: '직접순서' };
 const SORT_ICONS  = { gainPct: 'ph-trend-up', change: 'ph-chart-bar', value: 'ph-currency-krw', name: 'ph-sort-ascending', custom: 'ph-arrows-down-up' };
 
 function cycleSortMode(group) {
   const cur = state.portfolioSort[group];
-  const next = SORT_MODES[(SORT_MODES.indexOf(cur) + 1) % SORT_MODES.length];
-  // 커스텀 모드 진입 시 현재 정렬 순서를 초기 커스텀 순서로 저장
-  if (next === 'custom') {
-    const getItemCurrency = item => state.portfolioPrices[item.symbol]?.currency || item.currency || 'USD';
-    const allItems = Object.values(state.portfolio);
-    const groupItems = group === 'domestic'
-      ? allItems.filter(item => getItemCurrency(item) === 'KRW')
-      : allItems.filter(item => getItemCurrency(item) !== 'KRW');
-    state.portfolioOrder[group] = sortGroup(groupItems, cur, group).map(i => i.symbol);
-    savePortfolioOrder();
-  }
+  // custom 모드에서 버튼을 누르면 첫 번째 모드(gainPct)로 리셋
+  const baseIdx = SORT_MODES.indexOf(cur);
+  const next = baseIdx === -1
+    ? SORT_MODES[0]
+    : SORT_MODES[(baseIdx + 1) % SORT_MODES.length];
   state.portfolioSort[group] = next;
   localStorage.setItem('portfolioSort', JSON.stringify(state.portfolioSort));
   renderPortfolioHoldings();
@@ -2292,16 +2286,26 @@ function initSortable() {
       animation: 150,
       delay: 500,
       delayOnTouchOnly: true,
-      touchStartThreshold: 8,
+      touchStartThreshold: 5,
+      forceFallback: true,
+      fallbackTolerance: 3,
       ghostClass: 'sortable-ghost',
       chosenClass: 'sortable-chosen',
       dragClass: 'sortable-drag',
       filter: '.card-actions, .port-expand-body, .port-dots-btn',
       preventOnFilter: false,
+      onStart() {
+        // 드래그 중 페이지 스크롤 차단
+        const main = document.querySelector('.main');
+        if (main) main.style.overflow = 'hidden';
+      },
       onChoose() {
         if (navigator.vibrate) navigator.vibrate(40);
       },
       onEnd() {
+        // 스크롤 복원
+        const main = document.querySelector('.main');
+        if (main) main.style.overflow = '';
         const newOrder = Array.from(container.querySelectorAll('.stock-card[data-symbol]'))
           .map(el => el.dataset.symbol);
         state.portfolioOrder[group] = newOrder;
