@@ -2287,7 +2287,6 @@ function initSortable() {
   ['domestic', 'foreign'].forEach(group => {
     const container = document.querySelector(`.port-group-cards[data-group="${group}"]`);
     if (!container) return;
-    const isCustom = state.portfolioSort[group] === 'custom';
 
     _sortableInstances[group] = Sortable.create(container, {
       animation: 150,
@@ -2297,7 +2296,6 @@ function initSortable() {
       ghostClass: 'sortable-ghost',
       chosenClass: 'sortable-chosen',
       dragClass: 'sortable-drag',
-      disabled: !isCustom,
       filter: '.card-actions, .port-expand-body, .port-dots-btn',
       preventOnFilter: false,
       onChoose() {
@@ -2307,6 +2305,21 @@ function initSortable() {
         const newOrder = Array.from(container.querySelectorAll('.stock-card[data-symbol]'))
           .map(el => el.dataset.symbol);
         state.portfolioOrder[group] = newOrder;
+        // 어떤 정렬 모드든 드래그 후 자동으로 직접순서 모드로 전환
+        if (state.portfolioSort[group] !== 'custom') {
+          state.portfolioSort[group] = 'custom';
+          localStorage.setItem('portfolioSort', JSON.stringify(state.portfolioSort));
+          // 전체 리렌더 없이 버튼·컨테이너만 즉시 업데이트
+          container.dataset.sort = 'custom';
+          const header = document.querySelector(`.portfolio-section-header[data-group="${group}"]`);
+          if (header) {
+            const btn = header.querySelector('.port-sort-btn');
+            if (btn) {
+              btn.className = 'port-sort-btn active-custom';
+              btn.innerHTML = `<i class="ph ph-arrows-down-up"></i><span>직접순서</span>`;
+            }
+          }
+        }
         savePortfolioOrder();
       }
     });
