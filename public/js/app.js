@@ -246,6 +246,7 @@ async function fetchFxRates() {
     if (data.rates && Object.keys(data.rates).length) {
       Object.assign(state.fxRates, data.rates);
       state.fxRatesUpdatedAt = Date.now();
+      localStorage.setItem('fxRates', JSON.stringify({ rates: state.fxRates, ts: state.fxRatesUpdatedAt }));
     }
   } catch (_) {}
 }
@@ -281,6 +282,49 @@ async function savePortfolioOrder() {
   localStorage.setItem('portfolioOrder', JSON.stringify(state.portfolioOrder));
   try {
     await apiFetch('/api/portfolio/order', { method: 'POST', body: JSON.stringify(state.portfolioOrder) });
+  } catch (_) {}
+}
+
+// ── 낙관적 캐시 복원: 서버 응답 전에 localStorage 데이터로 즉시 렌더링 ──
+function restoreFromCache() {
+  try {
+    const wl = localStorage.getItem('watchlist');
+    if (wl) state.watchlist = JSON.parse(wl);
+  } catch (_) {}
+  try {
+    const p = localStorage.getItem('portfolio');
+    if (p) {
+      state.portfolio = JSON.parse(p);
+      for (const key in state.portfolio) {
+        if (!state.portfolio[key] || !state.portfolio[key].symbol) delete state.portfolio[key];
+      }
+    }
+  } catch (_) {}
+  try {
+    const pp = localStorage.getItem('portfolioPrices');
+    if (pp) state.portfolioPrices = JSON.parse(pp);
+    const ts = localStorage.getItem('portfolioUpdatedAt');
+    if (ts) state.portfolioUpdatedAt = Number(ts);
+  } catch (_) {}
+  try {
+    const pr = localStorage.getItem('prices');
+    if (pr) { const { data, ts } = JSON.parse(pr); state.prices = data || {}; state.lastUpdated = ts || null; }
+  } catch (_) {}
+  try {
+    const po = localStorage.getItem('portfolioOrder');
+    if (po) state.portfolioOrder = JSON.parse(po);
+  } catch (_) {}
+  try {
+    const ps = localStorage.getItem('portfolioSort');
+    if (ps) state.portfolioSort = { ...state.portfolioSort, ...JSON.parse(ps) };
+  } catch (_) {}
+  try {
+    const fx = localStorage.getItem('fxRates');
+    if (fx) { const { rates, ts } = JSON.parse(fx); if (Date.now() - ts < 3600000) Object.assign(state.fxRates, rates); }
+  } catch (_) {}
+  try {
+    const sp = localStorage.getItem('sparklines_v3');
+    if (sp) { const { data, ts } = JSON.parse(sp); if (Date.now() - ts < 4 * 3600000) { state.sparklines = data || {}; state.sparklinesUpdatedAt = ts; } }
   } catch (_) {}
 }
 
@@ -3250,13 +3294,11 @@ async function init() {
   try {
     document.documentElement.setAttribute('data-theme', state.theme);
 
-    // Register SW
+    // Register SW (백그라운드 — await 불필요)
     if ('serviceWorker' in navigator) {
-      try {
-        state.swReg = await navigator.serviceWorker.register('/sw.js');
-      } catch (e) {
-        console.warn('SW registration failed:', e);
-      }
+      navigator.serviceWorker.register('/sw.js')
+        .then(reg => { state.swReg = reg; })
+        .catch(e => console.warn('SW registration failed:', e));
     }
 
     await updateNotifStatus();
@@ -3264,41 +3306,46 @@ async function init() {
     setupEventListeners();
     checkBiometricLock();
 
-    // 스파크라인 캐시 복원 (4시간 이내)
-    try {
-      const _sp = localStorage.getItem('sparklines_v3');
-      if (_sp) {
-        const { data, ts } = JSON.parse(_sp);
-        if (Date.now() - ts < 4 * 60 * 60 * 1000) { state.sparklines = data || {}; state.sparklinesUpdatedAt = ts; }
-      }
-    } catch (_) {}
-
-    // Load data
-    state.loading = true;
+    // ── 방안 2: 캐시로 즉시 렌더 (서버 응답 전에 UI 표시) ──
+    restoreFromCache();
+    state.loading = false;
     renderHome();
-    await loadWatchlist();
-    await loadPrices();
-    await loadPortfolio();
-    await loadPortfolioOrder();
-    await loadPortfolioPrices();
-    await fetchFxRates();
-    await loadSparklines();
+    renderPortfolioHoldings();
+    switchTab('portfolio');
+    setupSwipeEvents();
+
+    // ── 방안 1 Phase 1: 독립 API 병렬 호출 ──
+    await Promise.all([
+      loadWatchlist(),
+      loadPortfolio(),
+      loadPortfolioOrder(),
+      fetchFxRates(),
+    ]);
+    renderHome();
+    renderPortfolioHoldings();
+
+    // ── 방안 1 Phase 2: 가격 데이터 병렬 호출 (심볼 목록 확정 후) ──
+    await Promise.all([
+      loadPrices(),
+      loadPortfolioPrices(),
+    ]);
+    renderHome();
+    renderPortfolioHoldings();
+
+    startAutoRefresh();
+
+    // ── 방안 1 Phase 3: 무거운 데이터 백그라운드 처리 (화면 차단 없음) ──
+    loadSparklines().catch(() => {});
+
     fetchSupplyData().then(() => {
       renderPortfolioHoldings();
       const sel = document.querySelector('#portfolio-holdings .stock-card.ls-selected');
       if (sel) renderDetailPanel(sel.dataset.symbol);
     }).catch(() => {});
-    state.loading = false;
-    renderHome();
-
-    switchTab('portfolio');
-    setupSwipeEvents();
-    startAutoRefresh();
 
     // Auto-subscribe if permission already granted
     if (Notification.permission === 'granted' && state.notifStatus !== 'active') {
-      await subscribePush();
-      await updateNotifStatus();
+      subscribePush().then(() => updateNotifStatus()).catch(() => {});
     }
   } catch (err) {
     console.error('Init error:', err);
