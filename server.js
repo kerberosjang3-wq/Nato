@@ -76,6 +76,60 @@ async function saveStore(data) {
   try { fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2)); } catch (_) { }
 }
 
+// ── Input Sanitization ─────────────────────────────────────────────────────
+const VALID_CURRENCIES = new Set(['KRW', 'USD', 'JPY', 'EUR', 'HKD', 'CNY', 'GBP', 'AUD', 'CAD']);
+
+function sanitizeSymbol(sym) {
+  if (!sym || typeof sym !== 'string') return null;
+  const clean = sym.replace(/[^A-Za-z0-9.\-_^]/g, '').slice(0, 20);
+  return clean || null;
+}
+
+function sanitizeWatchlistItem(body) {
+  const sym = sanitizeSymbol(body.symbol);
+  if (!sym) return null;
+  return {
+    symbol: sym,
+    name:        typeof body.name === 'string'        ? body.name.slice(0, 100)        : '',
+    alertPrice:  isFinite(Number(body.alertPrice))    ? Number(body.alertPrice)         : null,
+    targetPrice: isFinite(Number(body.targetPrice))   ? Number(body.targetPrice)        : null,
+    currency:    VALID_CURRENCIES.has(body.currency)  ? body.currency                  : 'USD',
+  };
+}
+
+function sanitizePortfolioItem(body) {
+  const sym = sanitizeSymbol(body.symbol);
+  if (!sym) return null;
+  return {
+    symbol:   sym,
+    name:     typeof body.name === 'string'      ? body.name.slice(0, 100)       : '',
+    buyPrice: isFinite(Number(body.buyPrice))    ? Number(body.buyPrice)          : 0,
+    qty:      isFinite(Number(body.qty))         ? Number(body.qty)               : 0,
+    currency: VALID_CURRENCIES.has(body.currency)? body.currency                  : 'USD',
+    ...(body.broker && typeof body.broker === 'string' ? { broker: body.broker.slice(0, 50) } : {}),
+  };
+}
+
+// ── Rate Limiting ──────────────────────────────────────────────────────────
+const _rlMap = new Map();
+function rateLimit(ip, key, max, windowMs) {
+  const k = `${ip}:${key}`;
+  const now = Date.now();
+  const hits = (_rlMap.get(k) || []).filter(t => t > now - windowMs);
+  hits.push(now);
+  _rlMap.set(k, hits);
+  // 오래된 키 주기적 정리 (메모리 누수 방지)
+  if (_rlMap.size > 5000) {
+    for (const [mk, mv] of _rlMap) {
+      if (!mv.some(t => t > now - windowMs)) _rlMap.delete(mk);
+    }
+  }
+  return hits.length > max;
+}
+function getIp(req) {
+  return (req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown').split(',')[0].trim();
+}
+
 // ── VAPID ──────────────────────────────────────────────────────────────────
 let vapidKeys;
 if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
@@ -309,21 +363,25 @@ app.get('/api/watchlist', async (req, res) => {
 });
 
 app.post('/api/watchlist', async (req, res) => {
+  if (rateLimit(getIp(req), 'watchlist-post', 30, 60000)) return res.status(429).json({ error: 'Too many requests' });
+  const item = sanitizeWatchlistItem(req.body);
+  if (!item) return res.status(400).json({ error: 'Invalid input' });
   try {
     const s = await getStore();
     const id = getCid(req);
     if (!s.watchlists[id]) s.watchlists[id] = {};
-    s.watchlists[id][req.body.symbol] = { ...req.body, addedAt: Date.now() };
+    s.watchlists[id][item.symbol] = { ...item, addedAt: Date.now() };
     await saveStore(s);
     res.json({ success: true });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.delete('/api/watchlist/:symbol', async (req, res) => {
+  const sym = sanitizeSymbol(decodeURIComponent(req.params.symbol));
+  if (!sym) return res.status(400).json({ error: 'Invalid symbol' });
   try {
     const s = await getStore();
     const id = getCid(req);
-    const sym = decodeURIComponent(req.params.symbol);
     if (s.watchlists[id]) delete s.watchlists[id][sym];
     await saveStore(s);
     res.json({ success: true });
@@ -337,22 +395,26 @@ app.get('/api/portfolio', async (req, res) => {
 });
 
 app.post('/api/portfolio', async (req, res) => {
+  if (rateLimit(getIp(req), 'portfolio-post', 30, 60000)) return res.status(429).json({ error: 'Too many requests' });
+  const item = sanitizePortfolioItem(req.body);
+  if (!item) return res.status(400).json({ error: 'Invalid input' });
   try {
     const s = await getStore();
     const id = getCid(req);
     if (!s.portfolios) s.portfolios = {};
     if (!s.portfolios[id]) s.portfolios[id] = {};
-    s.portfolios[id][req.body.symbol] = { ...req.body, addedAt: Date.now() };
+    s.portfolios[id][item.symbol] = { ...item, addedAt: Date.now() };
     await saveStore(s);
     res.json({ success: true });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.delete('/api/portfolio/:symbol', async (req, res) => {
+  const sym = sanitizeSymbol(decodeURIComponent(req.params.symbol));
+  if (!sym) return res.status(400).json({ error: 'Invalid symbol' });
   try {
     const s = await getStore();
     const id = getCid(req);
-    const sym = decodeURIComponent(req.params.symbol);
     if (s.portfolios?.[id]) delete s.portfolios[id][sym];
     await saveStore(s);
     res.json({ success: true });
@@ -482,8 +544,9 @@ const US_NAMES = new Map([
 ]);
 
 app.get('/api/search', async (req, res) => {
+  if (rateLimit(getIp(req), 'search', 20, 60000)) return res.status(429).json({ error: 'Too many requests' });
   const { q } = req.query;
-  if (!q) return res.json({ quotes: [] });
+  if (!q || typeof q !== 'string' || q.length > 100) return res.json({ quotes: [] });
 
   let results = [];
   const resultsSet = new Set();
@@ -588,8 +651,9 @@ app.get('/api/search', async (req, res) => {
 });
 
 app.get('/api/quote', async (req, res) => {
+  if (rateLimit(getIp(req), 'quote', 60, 60000)) return res.status(429).json({ error: 'Too many requests' });
   try {
-    const symbols = (req.query.symbols || '').split(',').map(s => s.trim()).filter(Boolean);
+    const symbols = (req.query.symbols || '').split(',').map(s => sanitizeSymbol(s)).filter(Boolean).slice(0, 50);
     if (!symbols.length) return res.json({ quoteResponse: { result: [] } });
     
     const yahooResult = await fetchQuotesBatch(symbols);
@@ -629,7 +693,7 @@ app.get('/api/quote', async (req, res) => {
 
 app.get('/api/cron', async (req, res) => {
   const secret = process.env.CRON_SECRET;
-  if (secret && req.headers.authorization !== `Bearer ${secret}`) return res.status(401).end();
+  if (!secret || req.headers.authorization !== `Bearer ${secret}`) return res.status(401).end();
   try {
     const result = await checkPrices();
     res.json({ ok: true, ...result });
@@ -787,7 +851,7 @@ app.get('/api/news', async (req, res) => {
       let m;
       while ((m = itemRe.exec(xml)) !== null) {
         const block = m[1];
-        const get = (tag) => { const t = new RegExp(`<${tag}[^>]*><!\\[CDATA\\[([\\s\\S]*?)\\]\\]><\\/${tag}>|<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`).exec(block); return t ? (t[1] || t[2] || '').trim() : ''; };
+        const get = (tag) => { const t = new RegExp(`<${tag}[^>]{0,200}><!\\[CDATA\\[([^\\]]{0,2000})\\]\\]><\\/${tag}>|<${tag}[^>]{0,200}>([^<]{0,2000})<\\/${tag}>`).exec(block); return t ? (t[1] || t[2] || '').trim() : ''; };
         const title   = get('title');
         const link    = get('link') || (/<link\/>([\s\S]*?)<\/link>/.exec(block)?.[1] || '').trim();
         const pubDate = get('pubDate');

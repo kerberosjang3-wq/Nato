@@ -1,6 +1,16 @@
 'use strict';
 
 // ── Utilities ──────────────────────────────────────────────────────────────
+function escHtml(str) {
+  if (str == null) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 function uid() {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
     const r = Math.random() * 16 | 0;
@@ -502,6 +512,11 @@ async function loadSparklines() {
   const symbols = [...new Set([...Object.keys(state.watchlist), ...Object.keys(state.portfolio)])];
   if (!symbols.length) return;
   if (state.sparklinesUpdatedAt && Object.keys(state.sparklines).length && Date.now() - state.sparklinesUpdatedAt < 4 * 60 * 60 * 1000) return;
+  // 더 이상 보유/관심에 없는 심볼의 스파크라인 캐시 제거 (메모리 절약)
+  const validSet = new Set(symbols);
+  for (const sym of Object.keys(state.sparklines)) {
+    if (!validSet.has(sym)) delete state.sparklines[sym];
+  }
   try {
     const data = await apiFetch(`/api/spark?symbols=${symbols.join(',')}`);
     if (data.result && Object.keys(data.result).length) {
@@ -562,7 +577,7 @@ function renderStockCard(item) {
       <div class="mts-row">
         <div class="mts-info">
           <div class="mts-name-row">
-            <span class="stock-name">${item.name || q?.korName || item.symbol}</span>
+            <span class="stock-name">${escHtml(item.name || q?.korName || item.symbol)}</span>
           </div>
           <div class="mts-meta">${metaStr}</div>
         </div>
@@ -1001,7 +1016,7 @@ function openChartModal(code, name, market) {
 
 function closeChartModal() {
   document.getElementById('chart-overlay').classList.remove('open');
-  // 위젯 정리 (다음 오픈 시 새로 주입)
+  if (_krChartRos['chart-widget-wrap']) { _krChartRos['chart-widget-wrap'].disconnect(); delete _krChartRos['chart-widget-wrap']; }
   document.getElementById('chart-widget-wrap').innerHTML = '';
   document.body.style.overflow = '';
 }
@@ -1590,7 +1605,7 @@ function renderPortfolioCard(item) {
     <div class="stock-card-main">
       <div class="port-row">
         <div class="port-info">
-          <div class="port-name">${item.name || q?.korName || item.symbol}${!isKR ? `<span class="port-ticker-name"> ${item.symbol}</span>` : ''}</div>
+          <div class="port-name">${escHtml(item.name || q?.korName || item.symbol)}${!isKR ? `<span class="port-ticker-name"> ${escHtml(item.symbol)}</span>` : ''}</div>
           <div class="port-qty-row">${gain !== null ? `<span class="port-gain-side ${gainClass}">${gainSign}${formatPrice(Math.abs(gain), currency)}${gainPct !== null ? `<span class="port-gain-pct-inline"> (${gainSign}${gainPct.toFixed(2)}%)</span>` : ''}</span>` : ''}${miniSpark}${volNum ? `<span class="port-vol-group"><span class="port-vol-sep"> · </span><span class="port-vol-left">${volNum}</span></span>` : ''}</div>
           ${regularLineLeft}
           ${rangeBarHtml}
@@ -1723,6 +1738,7 @@ const _tvLibQueue = [];
 // "TradingView에서만 제공되는 심볼" 확인 다이얼로그 자동 닫기
 // TV 위젯은 크로스 오리진 iframe을 사용하므로 세 가지 방어선을 동시 적용한다.
 let _tvDialogObs = null;
+const _krChartRos = {}; // containerId → ResizeObserver
 function _setupTvDialogAutoDismiss() {
   // 1) window.confirm 오버라이드 — 일부 버전이 네이티브 confirm을 사용하는 경우
   if (!window._tvConfirmPatched) {
@@ -1948,17 +1964,20 @@ async function renderKrChart(yahooSymbol, containerId, interval = '1d', range) {
     candleSeries.setData(candles);
     chart.timeScale().fitContent();
 
+    if (_krChartRos[containerId]) { _krChartRos[containerId].disconnect(); }
     const ro = new ResizeObserver(entries => {
       const { width, height } = entries[0].contentRect;
       chart.resize(width, height);
     });
     ro.observe(canvas);
+    _krChartRos[containerId] = ro;
   }));
 }
 
 function clearDetailPanel() {
   const detail = document.getElementById('ls-detail');
   if (!detail) return;
+  if (_krChartRos['ls-chart-wrap']) { _krChartRos['ls-chart-wrap'].disconnect(); delete _krChartRos['ls-chart-wrap']; }
   detail.innerHTML = '<div class="ls-detail-empty"><i class="ph ph-chart-line-up"></i><span>종목을 선택하면<br>상세 정보가 표시됩니다</span></div>';
   document.querySelectorAll('#portfolio-holdings .stock-card').forEach(c => c.classList.remove('ls-selected'));
 }
@@ -2050,8 +2069,8 @@ function renderDetailPanel(symbol) {
     ${inLandscape ? `<div class="ls-detail-chart" id="ls-chart-wrap"></div>` : ''}
     <div class="ls-detail-header">
       <div>
-        <div class="ls-detail-name">${name}</div>
-        <div class="ls-detail-symbol">${item.symbol} · ${item.qty.toLocaleString('ko-KR')}주</div>
+        <div class="ls-detail-name">${escHtml(name)}</div>
+        <div class="ls-detail-symbol">${escHtml(item.symbol)} · ${item.qty.toLocaleString('ko-KR')}주</div>
       </div>
       <div class="ls-detail-price-wrap">
         <div class="ls-detail-price">${currentPrice ? formatPrice(currentPrice, currency) : '—'}</div>
@@ -2145,7 +2164,7 @@ function renderPortfolioSearch() {
     return `
     <div class="result-item ${added ? 'added' : ''}" onclick="openPortfolioModal('${r.symbol}','${name}','${currency}')">
       <div class="result-info">
-        <div class="result-name">${r.longname || r.shortname || r.symbol}</div>
+        <div class="result-name">${escHtml(r.longname || r.shortname || r.symbol)}</div>
         <div class="result-meta"><span class="result-exchange">${r.exchange || ''}</span> <span>${r.symbol}</span></div>
       </div>
       <div class="result-right">
@@ -2441,7 +2460,7 @@ function renderWatchlistSearch() {
     return `
     <div class="result-item ${added ? 'added' : ''}" onclick="openAddModal('${r.symbol}','${name}','${currency}')">
       <div class="result-info">
-        <div class="result-name">${r.longname || r.shortname || r.symbol}</div>
+        <div class="result-name">${escHtml(r.longname || r.shortname || r.symbol)}</div>
         <div class="result-meta"><span class="result-exchange">${r.exchange || ''}</span> <span>${r.symbol}</span></div>
       </div>
       <div class="result-right">
@@ -2657,10 +2676,10 @@ function renderNews() {
 
   el.innerHTML = filterBar + state.news.map(a => {
     const ago = a.ts ? timeAgo(a.ts) : '';
-    const src = a.source ? `<span class="news-source">${a.source}</span>` : '';
+    const src = a.source ? `<span class="news-source">${escHtml(a.source)}</span>` : '';
     return `<a class="news-card" href="${a.link || '#'}" target="_blank" rel="noopener">
       <div class="news-card-badge">${a.stockName}</div>
-      <div class="news-card-title">${a.title}</div>
+      <div class="news-card-title">${escHtml(a.title)}</div>
       <div class="news-card-meta">${src}${ago ? `<span class="news-card-time">${ago}</span>` : ''}</div>
     </a>`;
   }).join('');
@@ -2722,7 +2741,7 @@ function renderSurgePicks(picks) {
               <div class="surge-rank ${RANK_CLS[i]}">${RANK[i]}</div>
               <div class="surge-info">
                 <div class="surge-name-row">
-                  <span class="surge-name">${s.name}</span>
+                  <span class="surge-name">${escHtml(s.name)}</span>
                   <span class="surge-mkt">${s.market === 'KOSPI' ? 'KOSPI' : 'KOSDAQ'}</span>
                 </div>
                 <div class="surge-bar-wrap"><div class="surge-bar" style="width:${barW}%"></div></div>
@@ -2857,7 +2876,7 @@ function renderMarketTrends() {
                   <div class="mtop-rank ${rankCls}">${idx + 1}</div>
                   <div class="mtop-info">
                     <div class="mtop-name-row">
-                      <span class="mtop-name">${s.name}</span>
+                      <span class="mtop-name">${escHtml(s.name)}</span>
                       ${badge}
                     </div>
                     <div class="mtop-vol">거래량 ${vol}</div>
@@ -2889,7 +2908,7 @@ function renderMarketTrends() {
                    data-market="${s.market}"
                    onclick="openChartModal(this.dataset.code, this.dataset.name, this.dataset.market)">
                 <div class="scanner-name-row">
-                  <span class="scanner-name">${s.name}</span>
+                  <span class="scanner-name">${escHtml(s.name)}</span>
                   <span class="scanner-market">${s.market === 'KOSPI' ? 'KOSPI' : 'KOSDAQ'}</span>
                 </div>
                 <div class="scanner-data">
@@ -2949,7 +2968,7 @@ function renderMarketTrends() {
                   <div class="mtop-rank ${rankCls}">${idx + 1}</div>
                   <div class="mtop-info">
                     <div class="mtop-name-row">
-                      <span class="mtop-name">${s.name}</span>
+                      <span class="mtop-name">${escHtml(s.name)}</span>
                       ${badge}
                     </div>
                     <div class="mtop-vol">현재 ${vol} · 평균 ${avgVol}</div>
