@@ -1591,6 +1591,7 @@ function renderPortfolioCard(item) {
     // 3. 후보 중 현재가에 가장 가까운(낮은) 값을 저항선으로
     const allCandidatesR = [...(swingHigh !== null ? [swingHigh] : []), ...maCandidatesR];
     resistanceLevel = allCandidatesR.length > 0 ? Math.min(...allCandidatesR) : null;
+    console.debug(`[저항선] ${item.symbol} pct=${pct?.toFixed(2)} cur=${currentPrice} swingHigh=${swingHigh} MAs=${maCandidatesR} => resistanceLevel=${resistanceLevel} histLen=${histR.length} maxAbove=${histR.length ? Math.max(...histR.filter(v=>v>currentPrice), 0).toFixed(0) : '-'}`);
   }
 
   // 장기 이평선 기울기 → 저항 배지 색상·아이콘 결정
